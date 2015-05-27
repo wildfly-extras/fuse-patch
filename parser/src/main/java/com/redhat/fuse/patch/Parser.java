@@ -144,9 +144,7 @@ public final class Parser {
 			pw.close();
 		}
 		
-		String message = "Patch metadata generated: " + outfile;
-		System.out.println(message);
-		LOG.info(message);
+		LOG.info("Patch metadata generated: " + outfile);
 		
 		return outfile;
 	}
@@ -200,9 +198,7 @@ public final class Parser {
     		outzip.close();
     	}
     	
-		String message = "Patch generated: " + outfile;
-		System.out.println(message);
-		LOG.info(message);
+		LOG.info("Patch generated: " + outfile);
 		
     	return outfile;
 	}
