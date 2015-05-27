@@ -5,19 +5,19 @@ A simple Fuse patch utility.
 In a first step, you can generate some metadata from an existing zip
 
 ```
-> fusepatch --build-ref --version=1.0 some-distro.zip
+> fusepatch --build-ref some-distro.zip
 ```
 
 Subsequent distro zip files can be reduced by filtering out entries that were identical in the referenced metadata obtained from a previous distro
 
 ```
-> fusepatch --ref=some-distro-1.0.metadata --version=2.0 some-distro-next.zip
+> fusepatch --ref=some-distro.metadata some-distro-next.zip
 ```
 
 ### Example
 
 ```
-> fusepatch --buildref --version=2.2 wildfly-camel-patch-2.2.0.zip 
+> fusepatch --buildref wildfly-camel-patch-2.2.0.zip 
 Patch metadata generated: .../wildfly-camel-patch-2.2.0.metadata
 
 > fusepatch --ref=.../wildfly-camel-patch-2.2.0.metadata wildfly-camel-patch-2.3.0.zip
