@@ -17,13 +17,19 @@
  * limitations under the License.
  * #L%
  */
-package com.redhat.fuse.patch.internal;
+package com.redhat.fuse.patch.utils;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class IOUtils {
 
+    private static Logger LOG = LoggerFactory.getLogger(IOUtils.class);
+    
     /**
      * Writing the specified contents to the specified OutputStream. Flushing the stream when
      * completed. Caller is responsible for opening and closing the specified stream.
@@ -41,5 +47,15 @@ public class IOUtils {
         }
         output.write(content, offset, content.length - offset);
         output.flush();
+    }
+    
+    public static void safeClose (Closeable item) {
+    	if (item != null) {
+    		try {
+				item.close();
+			} catch (IOException ex) {
+				LOG.warn("Cannot close: " + item);
+			}
+    	}
     }
 }

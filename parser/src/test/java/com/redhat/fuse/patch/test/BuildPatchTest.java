@@ -31,6 +31,7 @@ import org.junit.Test;
 
 import com.redhat.fuse.patch.Parser;
 import com.redhat.fuse.patch.ParserBuilder;
+import com.redhat.fuse.patch.Parser.Metadata;
 import com.redhat.fuse.patch.test.subA.ClassA;
 
 public class BuildPatchTest {
@@ -61,7 +62,8 @@ public class BuildPatchTest {
 		outfile = parser.buildMetadata(outfile);
 		Assert.assertTrue("Is file: " + outfile, outfile.isFile());
 		
-		Map<String, Long> entries = Parser.parseMetadata(outfile);
+		Metadata metadata = Parser.parseMetadata(outfile);
+		Map<String, Long> entries = metadata.getEntries();
 		Assert.assertEquals(1, entries.size());
 		Assert.assertTrue(entries.get("propsA.properties") > 0L);
 	}

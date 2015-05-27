@@ -30,6 +30,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.redhat.fuse.patch.Parser;
+import com.redhat.fuse.patch.Parser.Metadata;
 import com.redhat.fuse.patch.ParserBuilder;
 import com.redhat.fuse.patch.test.subA.ClassA;
 
@@ -55,7 +56,9 @@ public class BuildRefTest {
 		Assert.assertTrue("Is file: " + outfile, outfile.isFile());
 		Assert.assertEquals(outpath, outfile.getPath());
 		
-		Map<String, Long> entries = Parser.parseMetadata(outfile);
+		Metadata metadata = Parser.parseMetadata(outfile);
+		Map<String, Long> entries = metadata.getEntries();
+		Assert.assertEquals(Parser.VERSION, metadata.getVersion());
 		Assert.assertEquals(2, entries.size());
 		Assert.assertTrue(entries.get("com/redhat/fuse/patch/test/subA/ClassA.class") > 0L);
 		Assert.assertTrue(entries.get("propsA.properties") > 0L);
