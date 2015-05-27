@@ -80,13 +80,9 @@ public final class Parser {
 		if (options.ref != null) {
 			outfile = options.ref.toFile();
 		} else {
-	    	IllegalStateAssertion.assertNotNull(options.version, "Version cannot be null");
 	    	String inpath = infile.getPath();
 	    	int dotindex = inpath.lastIndexOf(".");
 			String prefix = inpath.substring(0, dotindex);
-			if (!prefix.endsWith(options.version.toString())) {
-				prefix = prefix + "-" + options.version;
-			}
 			String outpath = prefix + ".metadata";
 			outfile = new File(outpath);
 		}

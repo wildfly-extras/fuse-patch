@@ -44,11 +44,6 @@ public class ParserBuilder {
 		return this;
 	}
 	
-	public ParserBuilder version(String version) {
-		options.version = Version.parseVersion(version);
-		return this;
-	}
-	
     public Parser build() {
         return new Parser(options);
     }

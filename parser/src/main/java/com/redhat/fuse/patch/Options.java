@@ -29,8 +29,6 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.spi.FileOptionHandler;
 
-import com.redhat.fuse.patch.internal.VersionOptionHandler;
-
 public final class Options {
 
     @Option(name = "--help", help = true)
@@ -42,9 +40,6 @@ public final class Options {
     @Option(name = "--ref", usage = "Path to the patch metadata")
     Path ref;
 
-    @Option(name = "--version", usage = "Patch or metadata version", handler = VersionOptionHandler.class)
-    Version version;
-    
     @Argument(hidden = true, handler = FileOptionHandler.class)
     List<File> arguments = new ArrayList<>();
     
@@ -54,10 +49,6 @@ public final class Options {
 
 	Path getRef() {
 		return ref;
-	}
-
-    Version getVersion() {
-		return version;
 	}
 
     void helpScreen(CmdLineParser cmdParser) {

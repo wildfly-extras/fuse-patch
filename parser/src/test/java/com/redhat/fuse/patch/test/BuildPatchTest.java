@@ -33,10 +33,10 @@ import com.redhat.fuse.patch.Parser;
 import com.redhat.fuse.patch.ParserBuilder;
 import com.redhat.fuse.patch.test.subA.ClassA;
 
-public class BuildPatch {
+public class BuildPatchTest {
 	
 	static String inpath = "target/A2.jar";
-	static String refpath = "target/A1-1.0.0.metadata";
+	static String refpath = "src/test/resources/A1.metadata";
 	
 	@Before
 	public void setUp() throws Exception {
@@ -51,7 +51,7 @@ public class BuildPatch {
 	@Test
 	public void testBuildPatch() throws Exception {
 		
-		Parser parser = new ParserBuilder().ref(refpath).version("2.0").build();
+		Parser parser = new ParserBuilder().ref(refpath).build();
 		File outfile = parser.buildPatch(new File(inpath));
 		Assert.assertTrue("Is file: " + outfile, outfile.isFile());
 		Assert.assertEquals("target/A2-fusepatch.jar", outfile.getPath());
