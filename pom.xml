@@ -68,7 +68,7 @@
     
     <!-- Modules -->
     <modules>
-        <module>parser</module>
+        <module>tool</module>
         <module>distro</module>
     </modules>
     

@@ -2,31 +2,24 @@
 
 A simple Fuse patch utility.
 
-In a first step, you can generate some metadata from an existing zip
+The patch tool interacts with a target [server instance](tool/src/main/java/com/redhat/fuse/patch/ServerInstance.java) and a [patch pool](tool/src/main/java/com/redhat/fuse/patch/PatchPool.java) that contains the available patches.
+
+The server and the pool can be queried like this respectively
 
 ```
-> fusepatch --build-ref some-distro.zip
+> fusepatch --query-server
+> fusepatch --query-pool 
 ```
 
-Subsequent distro zip files can be reduced by filtering out entries that were identical in the referenced metadata obtained from a previous distro
+The main function of the patch tool however is to update the server like this
 
 ```
-> fusepatch --ref=some-distro.metadata some-distro-next.zip
+> fusepatch --update-server
 ```
 
-### Example
+Updating the target server involves the following steps
 
-```
-> fusepatch --buildref wildfly-camel-patch-2.2.0.zip 
-Patch metadata generated: .../wildfly-camel-patch-2.2.0.metadata
-
-> fusepatch --ref=.../wildfly-camel-patch-2.2.0.metadata wildfly-camel-patch-2.3.0.zip
-Patch generated: .../wildfly-camel-patch-2.3.0-fusepatch.zip
-
-> ls -l .../wildfly-camel-*.zip
--rw-r--r--  1 user  staff  105926382 May 13 16:55 .../wildfly-camel-patch-2.2.0.zip
--rw-r--r--  1 user  staff   83021472 May 13 17:01 .../wildfly-camel-patch-2.3.0-fusepatch.zip
--rw-r--r--  1 user  staff  140056300 May 13 16:59 .../wildfly-camel-patch-2.3.0.zip
-```
-
-The patch has been reduces from 140MB to 83MB
+1. query the server for the latest installed patch
+2. contact the patch pool to compute a [smart patch](tool/src/main/java/com/redhat/fuse/patch/SmartPatch.java)
+3. apply the smart patch, which supports file remove, replace and add operations
+4. store smart patch metadata on the target server for the next query operation
