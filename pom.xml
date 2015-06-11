@@ -27,8 +27,8 @@
     <version>1.0.1-SNAPSHOT</version>
     
     <name>Fuse Patch</name>
-    
-    <url>http://maven.apache.org</url>
+    <description>Fuse Patching Tool</description>
+    <url>https://github.com/jboss-fuse/fuse-patch</url>
     
     <!-- Properties -->
     <properties>
@@ -41,6 +41,7 @@
         <version-license-maven-plugin>1.8</version-license-maven-plugin>
         <version-maven-compiler-plugin>3.1</version-maven-compiler-plugin>
         <version-maven-release-plugin>2.5</version-maven-release-plugin>
+        <version-maven-source-plugin>2.3</version-maven-source-plugin>
     </properties>
     
     <!-- Source Control -->
@@ -48,27 +49,11 @@
         <connection>scm:git:git://github.com/jboss-fuse/fuse-patch.git</connection>
         <developerConnection>scm:git:git@github.com:jboss-fuse/fuse-patch.git</developerConnection>
         <url>http://github.com/jboss-fuse/fuse-patch</url>
-        <tag>1.0.0</tag>
     </scm>
-    
-    <!-- Licenses -->
-    <licenses>
-        <license>
-            <name>apache_v2</name>
-            <url>http://repository.jboss.org/licenses/apache-2.0.txt</url>
-        </license>
-    </licenses>
-
-    <!-- Developers -->
-    <developers>
-        <developer>
-            <name>Fuse Patch Committers</name>
-        </developer>
-    </developers>
     
     <!-- Modules -->
     <modules>
-        <module>tool</module>
+        <module>core</module>
         <module>distro</module>
     </modules>
     
@@ -119,9 +104,9 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>license-maven-plugin</artifactId>
-                    <version>${version-license-maven-plugin}</version>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>${version-maven-source-plugin}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -131,9 +116,27 @@
                         <autoVersionSubmodules>true</autoVersionSubmodules>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <version>${version-license-maven-plugin}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <inherited>true</inherited>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>license-maven-plugin</artifactId>
@@ -154,4 +157,39 @@
         </plugins>
     </build>
 
+    <!-- Licenses -->
+    <licenses>
+        <license>
+            <name>apache_v2</name>
+            <url>http://repository.jboss.org/licenses/apache-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <!-- Developers -->
+    <developers>
+        <developer>
+            <name>Fuse Committers</name>
+        </developer>
+    </developers>
+
+    <!-- Distribution Management -->
+    <distributionManagement>
+        <repository>
+            <id>jboss-releases-repository</id>
+            <name>JBoss Releases Repository</name>
+            <url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2</url>
+        </repository>
+        <snapshotRepository>
+            <id>jboss-snapshots-repository</id>
+            <name>JBoss Snapshots Repository</name>
+            <url>https://repository.jboss.org/nexus/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <!-- Issue Management -->
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/jboss-fuse/fuse-patch/issues</url>
+    </issueManagement>
+    
 </project>
