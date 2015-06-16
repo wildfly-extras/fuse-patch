@@ -20,6 +20,7 @@
 package com.redhat.fuse.patch.internal;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -27,6 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.redhat.fuse.patch.PatchId;
+import com.redhat.fuse.patch.PatchTool;
+import com.redhat.fuse.patch.PatchToolBuilder;
 
 public class Main {
 
@@ -47,37 +50,54 @@ public class Main {
         	run(parser, options);
         } catch (Exception rte) {
         	LOG.error("Cannot run fusepatch", rte);
-        	System.err.println("Error: " + rte.getMessage());
+        	rte.printStackTrace(System.err);
         	Runtime.getRuntime().exit(1);
         }
     }
 
 	private static void run(CmdLineParser cmdParser, Options options) throws IOException {
 		
-		PatchTool patchTool = new PatchTool();
-		
+	    boolean opfound = false;
+	    
 		// Query the server
 		if (options.queryServer) {
-			patchTool.queryServer(options.serverHome);
+	        PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).build();
+		    printPatches(patchTool.queryServer());
+		    opfound = true;
 		} 
 		
-		// Query the pool
-		else if (options.queryPool) {
-			patchTool.queryPool(options.poolUrl);
+		// Query the repository
+		if (options.queryRepository) {
+            PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
+		    printPatches(patchTool.queryRepository());
+            opfound = true;
 		} 
         
+        // Add to repository
+        if (options.addPath != null) {
+            PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
+            PatchId patchId = patchTool.add(options.addPath);
+            System.out.println("Patch archive added: " + patchId);
+            opfound = true;
+        }
+        
+        
         // Install to server
-        else if (options.patchId != null) {
-            patchTool.install(options.serverHome, options.poolUrl, PatchId.fromString(options.patchId));
-        } 
+        if (options.installId != null) {
+            PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).repositoryUrl(options.repositoryUrl).build();
+            patchTool.install(PatchId.fromString(options.installId));
+            opfound = true;
+        }
         
         // Update the server
-        else if (options.update) {
-            patchTool.update(options.serverHome, options.poolUrl);
+        if (options.updateName != null) {
+            PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).repositoryUrl(options.repositoryUrl).build();
+            patchTool.update(options.updateName);
+            opfound = true;
         } 
 		
 		// Show help screen
-		else {
+		if (!opfound) {
             helpScreen(cmdParser);
 		}
 	}
@@ -86,4 +106,10 @@ public class Main {
 		System.err.println("fusepatch [options...]");
 		cmdParser.printUsage(System.err);
 	}
+
+    private static void printPatches(List<PatchId> patches) {
+        for (PatchId patchId : patches) {
+            System.out.println(patchId);
+        }
+    }
 }

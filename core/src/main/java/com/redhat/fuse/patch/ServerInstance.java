@@ -37,6 +37,11 @@ public interface ServerInstance {
 	Path getServerHome();
 	
 	/**
+	 * Get the default repository path
+	 */
+    Path getDefaultRepositoryPath();
+    
+	/**
 	 * Get the list of applied patches
 	 */
 	List<PatchId> queryAppliedPatches();
@@ -44,10 +49,10 @@ public interface ServerInstance {
     /**
      * Get an applied patch set
      */
-    PatchSet getAppliedPatch(PatchId patchId);
+    PatchSet getAppliedPatchSet(PatchId patchId);
     
     /**
-     * Get the currently active patch set
+     * Get the latest applied patch
      */
     PatchSet getLatestPatch();
 
@@ -55,4 +60,5 @@ public interface ServerInstance {
 	 * Apply a smart patch and return the result
 	 */
 	PatchSet applySmartPatch(SmartPatch smartPatch) throws IOException;
+
 }

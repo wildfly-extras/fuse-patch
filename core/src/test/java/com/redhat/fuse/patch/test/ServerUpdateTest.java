@@ -31,31 +31,31 @@ import org.junit.Test;
 
 import com.redhat.fuse.patch.ArtefactId;
 import com.redhat.fuse.patch.PatchId;
-import com.redhat.fuse.patch.PatchPool;
+import com.redhat.fuse.patch.PatchRepository;
 import com.redhat.fuse.patch.PatchSet;
 import com.redhat.fuse.patch.SmartPatch;
-import com.redhat.fuse.patch.internal.DefaultPatchPool;
+import com.redhat.fuse.patch.internal.DefaultPatchRepository;
 import com.redhat.fuse.patch.internal.WildFlyServerInstance;
 import com.redhat.fuse.patch.utils.IOUtils;
 
 public class ServerUpdateTest {
 
     final static Path targetPath = Paths.get("target/servers/serverB");
-    final static Path poolPath = Paths.get("target/pools/poolB");
+    final static Path repoPath = Paths.get("target/repos/repoB");
 
     @BeforeClass
     public static void setUp() throws Exception {
         IOUtils.rmdirs(targetPath);
         targetPath.toFile().mkdirs();
-        QueryPoolTest.setupPoolA(poolPath);
-        QueryPoolTest.setupPoolB(poolPath);
+        QueryRepositoryTest.setupPoolA(repoPath);
+        QueryRepositoryTest.setupPoolB(repoPath);
     }
 
     @Test
     public void testServerUpdate() throws Exception {
 
         WildFlyServerInstance server = new WildFlyServerInstance(targetPath);
-        PatchPool pool = new DefaultPatchPool(poolPath.toUri().toURL());
+        PatchRepository repo = new DefaultPatchRepository(repoPath.toUri().toURL());
 
         // Verify clean server
         List<PatchId> patches = server.queryAppliedPatches();
@@ -63,10 +63,10 @@ public class ServerUpdateTest {
         PatchSet latest = server.getLatestPatch();
         Assert.assertNull("Latest is null", latest);
         
-        // Obtain the smart patch from the pool
-        SmartPatch smartPatch = pool.getSmartPatch(latest, PatchId.fromString("foo-1.0.0"));
+        // Obtain the smart patch from the repo
+        SmartPatch smartPatch = repo.getSmartPatch(latest, PatchId.fromString("foo-1.0.0"));
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), smartPatch.getPatchId());
-        Assert.assertEquals(poolPath.resolve("foo-1.0.0.zip").toAbsolutePath(), smartPatch.getPatchFile().toPath());
+        Assert.assertEquals(repoPath.resolve("foo-1.0.0.zip").toAbsolutePath(), smartPatch.getPatchFile().toPath());
         Assert.assertTrue("Patch set empty", smartPatch.getRemoveSet().isEmpty());
         Assert.assertTrue("Patch set empty", smartPatch.getReplaceSet().isEmpty());
         
@@ -108,23 +108,22 @@ public class ServerUpdateTest {
         Assert.assertEquals(path2, itpatch.next().getPath());
         Assert.assertEquals(path3, itpatch.next().getPath());
         
-        // Obtain the same smart patch from the pool
-        smartPatch = pool.getSmartPatch(latest, PatchId.fromString("foo-1.0.0"));
+        // Obtain the same smart patch from the repo
+        smartPatch = repo.getSmartPatch(latest, PatchId.fromString("foo-1.0.0"));
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), smartPatch.getPatchId());
-        Assert.assertEquals(poolPath.resolve("foo-1.0.0.zip").toAbsolutePath(), smartPatch.getPatchFile().toPath());
+        Assert.assertEquals(repoPath.resolve("foo-1.0.0.zip").toAbsolutePath(), smartPatch.getPatchFile().toPath());
         Assert.assertEquals("Zero to remove", 0, smartPatch.getRemoveSet().size());
         Assert.assertEquals("Zero to replace", 0, smartPatch.getReplaceSet().size());
         Assert.assertEquals("Zero to add", 0, smartPatch.getAddSet().size());
 
         // Nothing to do on empty smart patch
         patch = server.applySmartPatch(smartPatch);
-        Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patch.getPatchId());
-        Assert.assertEquals(3, patch.getArtefacts().size());
+        Assert.assertNull(patch);
 
-        // Obtain the latest smart patch from the pool
-        smartPatch = pool.getSmartPatch(latest, null);
+        // Obtain the latest smart patch from the repo
+        smartPatch = repo.getSmartPatch(latest, null);
         Assert.assertEquals(PatchId.fromString("foo-1.1.0"), smartPatch.getPatchId());
-        Assert.assertEquals(poolPath.resolve("foo-1.1.0.zip").toAbsolutePath(), smartPatch.getPatchFile().toPath());
+        Assert.assertEquals(repoPath.resolve("foo-1.1.0.zip").toAbsolutePath(), smartPatch.getPatchFile().toPath());
         Assert.assertEquals("Two to remove", 2, smartPatch.getRemoveSet().size());
         Assert.assertTrue(smartPatch.isRemovePath(path2));
         Assert.assertTrue(smartPatch.isRemovePath(path3));

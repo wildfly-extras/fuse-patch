@@ -32,18 +32,21 @@ final class Options {
 	@Option(name = "--server", usage = "Path to the target server")
 	Path serverHome;
 
-	@Option(name = "--pool", usage = "URL to the patch pool")
-	URL poolUrl;
+	@Option(name = "--repository", usage = "URL to the patch repository")
+	URL repositoryUrl;
 
-	@Option(name = "--query-server", forbids = { "--query-pool", "--update", "--install" }, usage = "Query the server for installed patches")
+	@Option(name = "--query-server", usage = "Query the server for installed patches")
 	boolean queryServer;
 
-	@Option(name = "--query-pool", forbids = { "--query-server", "--update", "--install" }, usage = "Query the given patch pool URL for available patches")
-	boolean queryPool;
+	@Option(name = "--query-repository", usage = "Query the repository for available patches")
+	boolean queryRepository;
 
-    @Option(name = "--install", forbids = { "--query-server", "--query-pool", "--update" }, usage = "Install the given patch id to the server")
-    String patchId;
+    @Option(name = "--add", usage = "Add the given file to the repository")
+    Path addPath;
     
-    @Option(name = "--update", forbids = { "--query-server", "--query-pool", "--install" }, usage = "Update the server")
-    boolean update;
+    @Option(name = "--install", usage = "Install the given patch id to the server")
+    String installId;
+    
+    @Option(name = "--update", usage = "Update the server for the given patch name")
+    String updateName;
 }

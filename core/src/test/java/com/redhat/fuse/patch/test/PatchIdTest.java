@@ -54,6 +54,7 @@ public class PatchIdTest {
         
         id = PatchId.fromString("aaa-2.0.0-SNAPSHOT");
         Assert.assertEquals(PatchId.create("aaa", Version.parseVersion("2.0.0-SNAPSHOT")), id);
+        Assert.assertEquals("aaa-2.0.0-SNAPSHOT", id.getCanonicalForm());
         
         id = PatchId.fromString("aaa-bbb-ccc");
         Assert.assertEquals(PatchId.create("aaa-bbb-ccc", Version.parseVersion("0.0.0")), id);

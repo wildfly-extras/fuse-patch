@@ -36,59 +36,59 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.redhat.fuse.patch.PatchId;
-import com.redhat.fuse.patch.PatchPool;
-import com.redhat.fuse.patch.internal.DefaultPatchPool;
+import com.redhat.fuse.patch.PatchRepository;
+import com.redhat.fuse.patch.internal.DefaultPatchRepository;
 import com.redhat.fuse.patch.test.subA.ClassA;
 
-public class QueryPoolTest {
+public class QueryRepositoryTest {
 
-    final static Path poolPath = Paths.get("target/pools/poolA");
+    final static Path repoPath = Paths.get("target/repos/repoA");
 
     @BeforeClass
     public static void setUp() throws Exception {
-        setupPoolA(poolPath);
-        setupPoolB(poolPath);
+        setupPoolA(repoPath);
+        setupPoolB(repoPath);
     }
 
     @Test
     public void testRelativePoolUrl() throws Exception {
         
-        PatchPool pool = new DefaultPatchPool(new URL("file:./target/pools/poolA"));
-        List<PatchId> patches = pool.queryAvailablePatches(null);
+        PatchRepository repo = new DefaultPatchRepository(new URL("file:./target/repos/repoA"));
+        List<PatchId> patches = repo.queryAvailable(null);
         Assert.assertEquals("Patch available", 2, patches.size());
     }
 
     @Test
     public void testQueryPool() throws Exception {
         
-        PatchPool pool = new DefaultPatchPool(poolPath.toUri().toURL());
-        List<PatchId> patches = pool.queryAvailablePatches(null);
+        PatchRepository repo = new DefaultPatchRepository(repoPath.toUri().toURL());
+        List<PatchId> patches = repo.queryAvailable(null);
         Assert.assertEquals("Patch available", 2, patches.size());
         
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patches.get(0));
         Assert.assertEquals(PatchId.fromString("foo-1.1.0"), patches.get(1));
-        Assert.assertEquals(PatchId.fromString("foo-1.1.0"), pool.getLatestPatch("foo"));
-        Assert.assertNull(pool.getLatestPatch("bar"));
+        Assert.assertEquals(PatchId.fromString("foo-1.1.0"), repo.getLatestAvailable("foo"));
+        Assert.assertNull(repo.getLatestAvailable("bar"));
     }
 
-    static void setupPoolA(Path poolPath) {
+    static void setupPoolA(Path repoPath) {
         JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "foo-1.0.0.jar");
         jar.addClasses(ClassA.class);
         GenericArchive archive = ShrinkWrap.create(GenericArchive.class);
         archive.add(new ArchiveAsset(jar, ZipExporter.class), "lib/" + jar.getName());
         archive.add(new FileAsset(new File("src/test/resources/propsA1.properties")), "config/removeme.properties");
         archive.add(new FileAsset(new File("src/test/resources/propsA1.properties")), "config/propsA.properties");
-        poolPath.toFile().mkdirs();
-        archive.as(ZipExporter.class).exportTo(poolPath.resolve("foo-1.0.0.zip").toFile(), true);
+        repoPath.toFile().mkdirs();
+        archive.as(ZipExporter.class).exportTo(repoPath.resolve("foo-1.0.0.zip").toFile(), true);
     }
 
-    static void setupPoolB(Path poolPath) {
+    static void setupPoolB(Path repoPath) {
         JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "foo-1.1.0.jar");
         jar.addClasses(ClassA.class);
         GenericArchive archive = ShrinkWrap.create(GenericArchive.class);
         archive.add(new ArchiveAsset(jar, ZipExporter.class), "lib/" + jar.getName());
         archive.add(new FileAsset(new File("src/test/resources/propsA2.properties")), "config/propsA.properties");
-        poolPath.toFile().mkdirs();
-        archive.as(ZipExporter.class).exportTo(poolPath.resolve("foo-1.1.0.zip").toFile(), true);
+        repoPath.toFile().mkdirs();
+        archive.as(ZipExporter.class).exportTo(repoPath.resolve("foo-1.1.0.zip").toFile(), true);
     }
 }

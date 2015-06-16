@@ -22,4 +22,4 @@ cd $CURDIR
 
 java -jar \
         -Dlog4j.configuration=file://$HOMEDIR/config/logging.properties \
-        $HOMEDIR/lib/fuse-patch-tool-@project.version@.jar "$@"
+        $HOMEDIR/lib/fuse-patch-core-@project.version@.jar "$@"

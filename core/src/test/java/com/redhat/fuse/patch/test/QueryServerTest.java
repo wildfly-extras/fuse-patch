@@ -61,9 +61,5 @@ public class QueryServerTest {
         patches = server.queryAppliedPatches();
         Assert.assertEquals("Patch not empty", 1, patches.size());
         Assert.assertEquals(patchId, patches.get(0));
-        
-        // verify that we can query the latest
-        patchSet = server.getLatestPatch();
-        Assert.assertEquals(patchId, patchSet.getPatchId());
     }
 }
