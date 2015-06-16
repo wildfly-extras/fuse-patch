@@ -161,7 +161,6 @@
                         <configuration>
                             <executable>${fusepatch.home}/bin/fusepatch.sh</executable>
                             <arguments>
-                                <argument>--repository=file://${fusepatch.home}/repository</argument>
                                 <argument>--add=target/fuse-patch-distro-wildfly-${project.version}.zip</argument>
                             </arguments>
                         </configuration>
@@ -175,7 +174,6 @@
                         <configuration>
                             <executable>${fusepatch.home}/bin/fusepatch.sh</executable>
                             <arguments>
-                                <argument>--repository=file://${fusepatch.home}/repository</argument>
                                 <argument>--server=${jboss.home}</argument>
                                 <argument>--install=fuse-patch-distro-wildfly-${project.version}</argument>
                             </arguments>

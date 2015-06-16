@@ -61,9 +61,12 @@ public final class WildFlyServerInstance implements ServerInstance {
     private final Path homePath;
 
     public WildFlyServerInstance(Path homePath) {
-        Path path = homePath != null ? homePath : inferServerHome();
-        IllegalStateAssertion.assertTrue(path.toFile().isDirectory(), "Not a valid server directory: " + path);
-        this.homePath = path.toAbsolutePath();
+        if (homePath == null) {
+            homePath = getConfiguredHomePath();
+        }
+        IllegalStateAssertion.assertNotNull(homePath, "Cannot obtain JBOSS_HOME");
+        IllegalStateAssertion.assertTrue(homePath.toFile().isDirectory(), "Directory JBOSS_HOME does not exist: " + homePath);
+        this.homePath = homePath.toAbsolutePath();
     }
 
     @Override
@@ -251,7 +254,7 @@ public final class WildFlyServerInstance implements ServerInstance {
         return getWorkspace().resolve(FUSEPATCH_PREFIX + patchId.getCanonicalForm());
     }
 
-    private Path inferServerHome() {
+    static Path getConfiguredHomePath() {
         String jbossHome = System.getProperty("jboss.home");
         if (jbossHome == null) {
             jbossHome = System.getProperty("jboss.home.dir");
@@ -259,13 +262,6 @@ public final class WildFlyServerInstance implements ServerInstance {
         if (jbossHome == null) {
             jbossHome = System.getenv("JBOSS_HOME");
         }
-        IllegalStateAssertion.assertNotNull(jbossHome, "Cannot obtain JBOSS_HOME: " + jbossHome);
-        Path homePath = Paths.get(jbossHome);
-        Path standalonePath = Paths.get(jbossHome, "standalone", "configuration");
-        Path modulesPath = Paths.get(jbossHome, "modules");
-        IllegalStateAssertion.assertTrue(homePath.toFile().exists(), "Directory JBOSS_HOME does not exist: " + jbossHome);
-        IllegalStateAssertion.assertTrue(standalonePath.toFile().exists(), "Directory JBOSS_HOME/standalone does not exist: " + standalonePath);
-        IllegalStateAssertion.assertTrue(modulesPath.toFile().exists(), "Directory JBOSS_HOME/modules does not exist: " + modulesPath);
-        return homePath;
+        return jbossHome != null ? Paths.get(jbossHome) : null;
     }
 }

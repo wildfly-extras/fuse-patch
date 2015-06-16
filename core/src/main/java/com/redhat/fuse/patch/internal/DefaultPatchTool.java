@@ -26,9 +26,9 @@ import java.nio.file.Path;
 import java.util.List;
 
 import com.redhat.fuse.patch.PatchId;
+import com.redhat.fuse.patch.PatchRepository;
 import com.redhat.fuse.patch.PatchSet;
 import com.redhat.fuse.patch.PatchTool;
-import com.redhat.fuse.patch.PatchRepository;
 import com.redhat.fuse.patch.ServerInstance;
 import com.redhat.fuse.patch.SmartPatch;
 import com.redhat.fuse.patch.utils.IllegalArgumentAssertion;
@@ -110,10 +110,13 @@ public final class DefaultPatchTool implements PatchTool {
     private PatchRepository getPatchRepository() {
         if (patchRepository == null) {
             if (repoUrl == null) {
-                try {
-                    repoUrl = getServerInstance().getDefaultRepositoryPath().toUri().toURL();
-                } catch (MalformedURLException ex) {
-                    throw new IllegalStateException(ex);
+                repoUrl = DefaultPatchRepository.getConfiguredUrl();
+                if (repoUrl == null) {
+                    try {
+                        repoUrl = getServerInstance().getDefaultRepositoryPath().toUri().toURL();
+                    } catch (MalformedURLException ex) {
+                        throw new IllegalStateException(ex);
+                    }
                 }
             }
             patchRepository = new DefaultPatchRepository(repoUrl);

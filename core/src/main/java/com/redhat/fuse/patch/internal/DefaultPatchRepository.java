@@ -26,6 +26,7 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,8 +54,12 @@ public final class DefaultPatchRepository implements PatchRepository {
     private final Path rootPath;
 
     public DefaultPatchRepository(URL repoUrl) {
-        Path path = repoUrl != null ? Paths.get(repoUrl.getPath()) : inferRootPath();
-        IllegalStateAssertion.assertTrue(path.toFile().isDirectory(), "Not a valid root directory: " + path);
+        if (repoUrl == null) {
+            repoUrl = getConfiguredUrl();
+        }
+        IllegalStateAssertion.assertNotNull(repoUrl, "Cannot obtain repository URL");
+        Path path = Paths.get(repoUrl.getPath());
+        IllegalStateAssertion.assertTrue(path.toFile().isDirectory(), "Repository root does not exist: " + path);
         this.rootPath = path.toAbsolutePath();
     }
 
@@ -207,7 +212,18 @@ public final class DefaultPatchRepository implements PatchRepository {
         }
     }
 
-    private Path inferRootPath() {
-        throw new IllegalStateException("Cannot infer patch repository location");
+    static URL getConfiguredUrl() {
+        String repoSpec = System.getProperty("fusepatch.repository");
+        if (repoSpec == null) {
+            repoSpec = System.getenv("FUSEPATCH_REPOSITORY");
+        }
+        if (repoSpec != null) {
+            try {
+                return new URL(repoSpec);
+            } catch (MalformedURLException ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
+        return null;
     }
 }
