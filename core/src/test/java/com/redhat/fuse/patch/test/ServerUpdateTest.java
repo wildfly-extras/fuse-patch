@@ -34,28 +34,33 @@ import com.redhat.fuse.patch.PatchId;
 import com.redhat.fuse.patch.PatchRepository;
 import com.redhat.fuse.patch.PatchSet;
 import com.redhat.fuse.patch.SmartPatch;
+import com.redhat.fuse.patch.SmartPatch.Metadata;
 import com.redhat.fuse.patch.internal.DefaultPatchRepository;
 import com.redhat.fuse.patch.internal.WildFlyServerInstance;
 import com.redhat.fuse.patch.utils.IOUtils;
 
 public class ServerUpdateTest {
 
-    final static Path targetPath = Paths.get("target/servers/serverB");
-    final static Path repoPath = Paths.get("target/repos/repoB");
+    final static Path serverPath = Paths.get("target/servers/sut");
+    final static Path repoPath = Paths.get("target/repos/sut");
 
     @BeforeClass
     public static void setUp() throws Exception {
-        IOUtils.rmdirs(targetPath);
-        targetPath.toFile().mkdirs();
-        QueryRepositoryTest.setupPoolA(repoPath);
-        QueryRepositoryTest.setupPoolB(repoPath);
+        IOUtils.rmdirs(serverPath);
+        IOUtils.rmdirs(repoPath);
+        serverPath.toFile().mkdirs();
+        repoPath.toFile().mkdirs();
     }
 
     @Test
     public void testServerUpdate() throws Exception {
 
-        WildFlyServerInstance server = new WildFlyServerInstance(targetPath);
+        WildFlyServerInstance server = new WildFlyServerInstance(serverPath);
         PatchRepository repo = new DefaultPatchRepository(repoPath.toUri().toURL());
+        repo.addArchive(QueryRepositoryTest.getRepoContentA());
+        repo.addArchive(QueryRepositoryTest.getRepoContentB());
+        repo.addPostCommand(PatchId.fromString("foo-1.0.0"), "echo Do first");
+        repo.addPostCommand(PatchId.fromString("foo-1.0.0"), "echo Do after");
 
         // Verify clean server
         List<PatchId> patches = server.queryAppliedPatches();
@@ -81,6 +86,13 @@ public class ServerUpdateTest {
         Assert.assertTrue(smartPatch.isAddPath(path2));
         Assert.assertTrue(smartPatch.isAddPath(path3));
         
+        // Verify post install commands
+        Metadata metadata = smartPatch.getMetadata();
+        List<String> cmds = metadata.getPostCommands();
+        Assert.assertEquals(2, cmds.size());
+        Assert.assertEquals("echo Do first", cmds.get(0));
+        Assert.assertEquals("echo Do after", cmds.get(1));
+        
         // Update the server with a known patch
         PatchSet patch = server.applySmartPatch(smartPatch);
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patch.getPatchId());
@@ -89,13 +101,13 @@ public class ServerUpdateTest {
         Assert.assertEquals(3, patch.getArtefacts().size());
         Iterator<ArtefactId> itpatch = patch.getArtefacts().iterator();
         Assert.assertEquals(path1, itpatch.next().getPath());
-        File file = targetPath.resolve(path1).toFile();
+        File file = serverPath.resolve(path1).toFile();
         Assert.assertTrue("File exists: " + file, file.exists());
         Assert.assertEquals(path2, itpatch.next().getPath());
-        file = targetPath.resolve(path2).toFile();
+        file = serverPath.resolve(path2).toFile();
         Assert.assertTrue("File exists: " + file, file.exists());
         Assert.assertEquals(path3, itpatch.next().getPath());
-        file = targetPath.resolve(path3).toFile();
+        file = serverPath.resolve(path3).toFile();
         Assert.assertTrue("File exists: " + file, file.exists());
         
         // Verify latest server patch
@@ -142,14 +154,14 @@ public class ServerUpdateTest {
         // Verify server files
         itpatch = patch.getArtefacts().iterator();
         Assert.assertEquals(path1, itpatch.next().getPath());
-        file = targetPath.resolve(path1).toFile();
+        file = serverPath.resolve(path1).toFile();
         Assert.assertTrue("File exists: " + file, file.exists());
         Assert.assertEquals(path4, itpatch.next().getPath());
-        file = targetPath.resolve(path4).toFile();
+        file = serverPath.resolve(path4).toFile();
         Assert.assertTrue("File exists: " + file, file.exists());
-        file = targetPath.resolve(path2).toFile();
+        file = serverPath.resolve(path2).toFile();
         Assert.assertFalse("File does not exists: " + file, file.exists());
-        file = targetPath.resolve(path3).toFile();
+        file = serverPath.resolve(path3).toFile();
         Assert.assertFalse("File does not exists: " + file, file.exists());
         
         // Verify latest server patch

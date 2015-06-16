@@ -36,7 +36,6 @@ import com.redhat.fuse.patch.test.subA.ClassA;
 public class BuildRefTest {
 	
 	static String inpath = "target/A1.jar";
-	static String outpath = "target/A1.metadata";
 	
 	@BeforeClass
 	public static void setUp() throws Exception {
@@ -52,7 +51,6 @@ public class BuildRefTest {
 		
 		File outfile = new Parser().buildMetadataFile(new File(inpath), null);
 		Assert.assertTrue("Is file: " + outfile, outfile.isFile());
-		Assert.assertEquals(outpath, outfile.getPath());
 		
 		Metadata metadata = Parser.parseMetadata(outfile);
 		Map<String, Long> entries = metadata.getEntries();

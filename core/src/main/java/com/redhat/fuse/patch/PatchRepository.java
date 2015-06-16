@@ -50,10 +50,16 @@ public interface PatchRepository {
      */
     PatchId addArchive(Path filePath) throws IOException;
     
+    /**
+     * Add a post-install command for the given patch id
+     */
+    void addPostCommand(PatchId patchId, String cmd);
+    
 	/**
 	 * Get the smart patch for the given seed.
      * @param seedPatch The patch set obtained from the server - may be null
      * @param patchId The target patch id - null for the latest
 	 */
 	SmartPatch getSmartPatch(PatchSet seedPatch, PatchId patchId);
+
 }

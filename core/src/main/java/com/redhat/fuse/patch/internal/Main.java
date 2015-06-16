@@ -81,6 +81,16 @@ public class Main {
             opfound = true;
         }
         
+        // Add post install command
+        if (options.addCmd != null) {
+            PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
+            int index = options.addCmd.indexOf(":");
+            PatchId patchId = index > 0 ? PatchId.fromString(options.addCmd.substring(0, index)) : null;
+            String cmd = index > 0 ? options.addCmd.substring(index + 1) : options.addCmd;
+            patchTool.addPostCommand(patchId, cmd);
+            System.out.println("Added post install cmd '" + cmd + "' to: " + patchId);
+            opfound = true;
+        }
         
         // Install to server
         if (options.installId != null) {
@@ -95,7 +105,7 @@ public class Main {
             patchTool.update(options.updateName);
             opfound = true;
         } 
-		
+        
 		// Show help screen
 		if (!opfound) {
             helpScreen(cmdParser);

@@ -37,18 +37,18 @@ import com.redhat.fuse.patch.utils.IOUtils;
 
 public class QueryServerTest {
 
-    final static Path targetPath = Paths.get("target/servers/serverA");
+    final static Path serverPath = Paths.get("target/servers/qst");
 
     @BeforeClass
     public static void setUp() throws Exception {
-        IOUtils.rmdirs(targetPath);
-        targetPath.toFile().mkdirs();
+        IOUtils.rmdirs(serverPath);
+        serverPath.toFile().mkdirs();
     }
 
     @Test
     public void testQueryServer() throws Exception {
 
-        WildFlyServerInstance server = new WildFlyServerInstance(targetPath);
+        WildFlyServerInstance server = new WildFlyServerInstance(serverPath);
         List<PatchId> patches = server.queryAppliedPatches();
         Assert.assertTrue("Patch set empty", patches.isEmpty());
         

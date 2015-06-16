@@ -26,17 +26,18 @@ import java.nio.file.Path;
 import java.util.List;
 
 import com.redhat.fuse.patch.PatchId;
-import com.redhat.fuse.patch.PatchRepository;
 import com.redhat.fuse.patch.PatchSet;
 import com.redhat.fuse.patch.PatchTool;
+import com.redhat.fuse.patch.PatchRepository;
 import com.redhat.fuse.patch.ServerInstance;
 import com.redhat.fuse.patch.SmartPatch;
+import com.redhat.fuse.patch.utils.IllegalArgumentAssertion;
 
 
 public final class DefaultPatchTool implements PatchTool {
 
-    private ServerInstance server;
-    private PatchRepository repository;
+    private ServerInstance serverInstance;
+    private PatchRepository patchRepository;
     private Path serverPath;
     private URL repoUrl;
     
@@ -61,48 +62,53 @@ public final class DefaultPatchTool implements PatchTool {
     }
 
     @Override
-    public void install(PatchId patchId) throws IOException {
-        PatchId serverId = null;
+    public void addPostCommand(PatchId patchId, String cmd) {
+        getPatchRepository().addPostCommand(patchId, cmd);
+    }
+
+    @Override
+    public PatchSet install(PatchId patchId) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
+        PatchId latestId = null;
         String symbolicName = patchId.getSymbolicName();
         for (PatchId pid : getServerInstance().queryAppliedPatches()) {
             if (pid.getSymbolicName().equals(symbolicName)) {
-                serverId = pid;
+                latestId = pid;
             }
         }
-        
-        PatchSet latest = serverId != null ? getServerInstance().getAppliedPatchSet(serverId) : null;
+        PatchSet latest = latestId != null ? getServerInstance().getAppliedPatchSet(latestId) : null;
         SmartPatch smartPatch = getPatchRepository().getSmartPatch(latest, patchId);
-        getServerInstance().applySmartPatch(smartPatch);
+        return getServerInstance().applySmartPatch(smartPatch);
     }
     
     @Override
-    public void update(String symbolicName) throws IOException {
-        PatchId serverId = null;
+    public PatchSet update(String prefix) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
+        PatchId latestId = null;
         for (PatchId pid : getServerInstance().queryAppliedPatches()) {
-            if (pid.getSymbolicName().equals(symbolicName)) {
-                serverId = pid;
+            if (pid.getSymbolicName().equals(prefix)) {
+                latestId = pid;
             }
         }
         
         PatchId repoId = null;
-        for (PatchId pid : getPatchRepository().queryAvailable(symbolicName)) {
+        for (PatchId pid : getPatchRepository().queryAvailable(prefix)) {
             repoId = pid;
         }
-        
-        PatchSet latest = serverId != null ? getServerInstance().getAppliedPatchSet(serverId) : null;
+        PatchSet latest = latestId != null ? getServerInstance().getAppliedPatchSet(latestId) : null;
         SmartPatch smartPatch = getPatchRepository().getSmartPatch(latest, repoId);
-        getServerInstance().applySmartPatch(smartPatch);
+        return getServerInstance().applySmartPatch(smartPatch);
     }
 
     private ServerInstance getServerInstance() {
-        if (server == null) {
-            server = new WildFlyServerInstance(serverPath);
+        if (serverInstance == null) {
+            serverInstance = new WildFlyServerInstance(serverPath);
         }
-        return server;
+        return serverInstance;
     }
 
     private PatchRepository getPatchRepository() {
-        if (repository == null) {
+        if (patchRepository == null) {
             if (repoUrl == null) {
                 try {
                     repoUrl = getServerInstance().getDefaultRepositoryPath().toUri().toURL();
@@ -110,8 +116,8 @@ public final class DefaultPatchTool implements PatchTool {
                     throw new IllegalStateException(ex);
                 }
             }
-            repository = new DefaultPatchRepository(repoUrl);
+            patchRepository = new DefaultPatchRepository(repoUrl);
         }
-        return repository;
+        return patchRepository;
     }
 }

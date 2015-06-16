@@ -47,7 +47,6 @@ import com.redhat.fuse.patch.PatchId;
 import com.redhat.fuse.patch.PatchSet;
 import com.redhat.fuse.patch.ServerInstance;
 import com.redhat.fuse.patch.SmartPatch;
-import com.redhat.fuse.patch.internal.Parser.Metadata;
 import com.redhat.fuse.patch.utils.IOUtils;
 import com.redhat.fuse.patch.utils.IllegalArgumentAssertion;
 import com.redhat.fuse.patch.utils.IllegalStateAssertion;
@@ -58,7 +57,7 @@ public final class WildFlyServerInstance implements ServerInstance {
 
     private static final String FUSEPATCH_LATEST = "fusepatch.latest";
     private static final String FUSEPATCH_PREFIX = "fpatch-";
-    
+
     private final Path homePath;
 
     public WildFlyServerInstance(Path homePath) {
@@ -97,35 +96,35 @@ public final class WildFlyServerInstance implements ServerInstance {
     @Override
     public PatchSet getAppliedPatchSet(PatchId patchId) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
-        
+
         Path patchdir = getPatchDir(patchId);
         IllegalStateAssertion.assertTrue(patchdir.toFile().exists(), "Path does not exist: " + patchdir);
-        
-        Metadata metadata;
+
+        Parser.Metadata metadata;
         try {
             File mdfile = patchdir.resolve(patchId + ".metadata").toFile();
             metadata = Parser.parseMetadata(mdfile);
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         }
-        
+
         Set<ArtefactId> artefacts = new LinkedHashSet<>();
         for (Entry<String, Long> entry : metadata.getEntries().entrySet()) {
             Path path = Paths.get(entry.getKey());
             Long checksum = entry.getValue();
             artefacts.add(ArtefactId.create(path, checksum));
         }
-        
+
         return new PatchSet(patchId, artefacts);
     }
 
     @Override
     public PatchSet getLatestPatch() {
-        
+
         List<PatchId> pids = queryAppliedPatches();
-        if (pids.isEmpty()) 
+        if (pids.isEmpty())
             return null;
-        
+
         PatchId latestId = pids.get(pids.size() - 1);
         return getAppliedPatchSet(latestId);
     }
@@ -133,21 +132,21 @@ public final class WildFlyServerInstance implements ServerInstance {
     @Override
     public PatchSet applySmartPatch(SmartPatch smartPatch) throws IOException {
         IllegalArgumentAssertion.assertNotNull(smartPatch, "smartPatch");
-        
+
         if (smartPatch.getRemoveSet().isEmpty() && smartPatch.getReplaceSet().isEmpty() && smartPatch.getAddSet().isEmpty()) {
             LOG.warn("Nothing to do on empty smart patch: {}", smartPatch);
             return null;
         }
-        
+
         // Remove all files in the remove set
         for (ArtefactId artefactId : smartPatch.getRemoveSet()) {
             Path path = getServerHome().resolve(artefactId.getPath());
             IllegalStateAssertion.assertTrue(path.toFile().exists(), "Path does not exist: " + path);
             Files.delete(path);
         }
-        
+
         Set<ArtefactId> artefacts = new HashSet<>();
-        
+
         // Handle replace and add sets
         File patchFile = smartPatch.getPatchFile();
         ZipInputStream zip = new ZipInputStream(new FileInputStream(patchFile));
@@ -185,21 +184,31 @@ public final class WildFlyServerInstance implements ServerInstance {
         } finally {
             zip.close();
         }
-        
+
+        // Update server side metadata
         PatchSet result = new PatchSet(smartPatch.getPatchId(), artefacts);
         updatePatchSet(result);
+
+        // Run post install commands
+        SmartPatch.Metadata metadata = smartPatch.getMetadata();
+        for (String cmd : metadata.getPostCommands()) {
+            String[] envarr = {};
+            String[] cmdarr = cmd.split("\\s") ;
+            Runtime.getRuntime().exec(cmdarr, envarr, homePath.toFile());
+        }
+        
         return result;
     }
 
     public void updatePatchSet(PatchSet patchSet) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
-        
+
         // Create the patch directory
         PatchId patchId = patchSet.getPatchId();
         File patchdir = getPatchDir(patchId).toFile();
         IllegalStateAssertion.assertFalse(patchdir.exists(), "Patch directory already exists: " + patchdir);
         patchdir.mkdirs();
-        
+
         // Write marker file
         File markerFile = getMarkerFile();
         PrintWriter pw = new PrintWriter(new FileWriter(markerFile));
@@ -213,14 +222,14 @@ public final class WildFlyServerInstance implements ServerInstance {
         File mdfile = patchdir.toPath().resolve(patchId + ".metadata").toFile();
         pw = new PrintWriter(new FileWriter(mdfile));
         try {
-            
+
             List<String> lines = new ArrayList<>();
             Collections.sort(lines);
             for (ArtefactId entry : patchSet.getArtefacts()) {
                 lines.add(entry.getPath() + " " + entry.getChecksum());
             }
             Collections.sort(lines);
-            
+
             pw.println(Parser.VERSION_PREFIX + " " + Parser.VERSION);
             for (String line : lines) {
                 pw.println(line);

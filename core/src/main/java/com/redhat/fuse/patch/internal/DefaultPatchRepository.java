@@ -19,9 +19,13 @@
  */
 package com.redhat.fuse.patch.internal;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,10 +41,10 @@ import java.util.Set;
 
 import com.redhat.fuse.patch.ArtefactId;
 import com.redhat.fuse.patch.PatchId;
-import com.redhat.fuse.patch.PatchRepository;
 import com.redhat.fuse.patch.PatchSet;
+import com.redhat.fuse.patch.PatchRepository;
 import com.redhat.fuse.patch.SmartPatch;
-import com.redhat.fuse.patch.internal.Parser.Metadata;
+import com.redhat.fuse.patch.SmartPatch.Metadata;
 import com.redhat.fuse.patch.utils.IllegalArgumentAssertion;
 import com.redhat.fuse.patch.utils.IllegalStateAssertion;
 
@@ -89,6 +93,15 @@ public final class DefaultPatchRepository implements PatchRepository {
     }
 
     @Override
+    public void addPostCommand(PatchId patchId, String cmd) {
+        IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
+        IllegalArgumentAssertion.assertNotNull(cmd, "cmd");
+        SmartPatch.Metadata metadata = parseMetadata(patchId);
+        metadata.addPostCommand(cmd);
+        writeMetadata(patchId, metadata);
+    }
+
+    @Override
     public SmartPatch getSmartPatch(PatchSet seedPatch, PatchId patchId) {
 
         // Derive the target patch id from the seed patch id
@@ -113,7 +126,7 @@ public final class DefaultPatchRepository implements PatchRepository {
         }
 
         try {
-            Metadata metadata = new Parser().buildMetadata(zipfile);
+            Parser.Metadata metadata = new Parser().buildMetadata(zipfile);
             for (Entry<String, Long> entry : metadata.getEntries().entrySet()) {
                 String path = entry.getKey();
                 Long checksum = entry.getValue();
@@ -132,9 +145,66 @@ public final class DefaultPatchRepository implements PatchRepository {
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         }
-
         Set<ArtefactId> removeSet = new HashSet<>(removeMap.values());
-        return new SmartPatch(zipfile, patchId, removeSet, replaceSet, addSet);
+        
+        SmartPatch.Metadata metadata = parseMetadata(patchId);
+        return new SmartPatch(zipfile, patchId, removeSet, replaceSet, addSet, metadata);
+    }
+
+    public SmartPatch.Metadata parseMetadata(PatchId patchId) {
+        Path metadataPath = rootPath.resolve(patchId + ".metadata");
+        return parseMetadata(metadataPath);
+    }
+
+    public SmartPatch.Metadata parseMetadata(Path metadataPath) {
+        SmartPatch.Metadata metadata = new SmartPatch.Metadata();
+        if (metadataPath.toFile().exists()) {
+            try{
+                String mode = null;
+                BufferedReader br = new BufferedReader(new FileReader(metadataPath.toFile()));
+                try {
+                    String line = br.readLine();
+                    while (line != null) {
+                        line = line.trim();
+                        if (line.length() == 0 || line.startsWith("#")) {
+                            line = br.readLine();
+                            continue;
+                        }
+                        if (line.startsWith("[") && line.endsWith("]")) {
+                            mode = line;
+                            line = br.readLine();
+                            continue;
+                        }
+                        if ("[post-install-commands]".equals(mode)) {
+                            metadata.addPostCommand(line);
+                        }
+                        line = br.readLine();
+                    }
+                } finally {
+                    br.close();
+                }
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
+        return metadata;
+    }
+
+    private void writeMetadata(PatchId patchId, Metadata metadata) {
+        Path metadataPath = rootPath.resolve(patchId + ".metadata");
+        try{
+            PrintWriter pw = new PrintWriter(new FileWriter(metadataPath.toFile()));
+            try {
+                pw.println("[post-install-commands]");
+                for (String cmd : metadata.getPostCommands()) {
+                    pw.println(cmd);
+                }
+            } finally {
+                pw.close();
+            }
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 
     private Path inferRootPath() {

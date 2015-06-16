@@ -54,4 +54,12 @@
             </includes>
         </fileSet>
     </fileSets>
+
+    <files>
+        <file>
+            <source>etc/repository/fuse-patch-wildfly.metadata</source>
+            <destName>fuse-patch-wildfly-${project.version}.metadata</destName>
+            <outputDirectory>repository</outputDirectory>
+        </file>
+    </files>
 </assembly>

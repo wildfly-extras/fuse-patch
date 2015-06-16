@@ -41,8 +41,11 @@ final class Options {
 	@Option(name = "--query-repository", usage = "Query the repository for available patches")
 	boolean queryRepository;
 
-    @Option(name = "--add", usage = "Add the given file to the repository")
+    @Option(name = "--add", usage = "Add the given archive to the repository")
     Path addPath;
+    
+    @Option(name = "--add-cmd", usage = "Add a post-install command for a given patch id (i.e. foo-1.0.0:ls -l)")
+    String addCmd;
     
     @Option(name = "--install", usage = "Install the given patch id to the server")
     String installId;

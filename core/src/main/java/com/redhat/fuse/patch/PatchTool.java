@@ -23,17 +23,22 @@ public interface PatchTool {
     List<PatchId> queryRepository();
 
     /**
-     * Add the given file to the repository
+     * Add the given archive to the repository
      */
-    PatchId add(Path filePath) throws IOException;
+    PatchId add(Path archivePath) throws IOException;
+    
+    /**
+     * Add a post install command for the given patch id
+     */
+    void addPostCommand(PatchId patchId, String cmd);
     
     /**
      * Install the given patch id to the server
      */
-    void install(PatchId patchId) throws IOException;
+    PatchSet install(PatchId patchId) throws IOException;
 
     /**
      * Update the server for the given patch name
      */
-    void update(String symbolicName) throws IOException;
+    PatchSet update(String symbolicName) throws IOException;
 }

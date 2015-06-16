@@ -21,13 +21,16 @@ package com.redhat.fuse.patch;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.redhat.fuse.patch.utils.IllegalArgumentAssertion;
+import com.redhat.fuse.patch.utils.IllegalStateAssertion;
 
 
 /**
@@ -47,15 +50,48 @@ public final class SmartPatch {
     private final Map<Path, ArtefactId> removeMap = new HashMap<>();
     private final Map<Path, ArtefactId> replaceMap = new HashMap<>();
     private final Map<Path, ArtefactId> addMap = new HashMap<>();
+    private final Metadata metadata;
 
-    public SmartPatch(File patchFile, PatchId patchId, Set<ArtefactId> removeSet, Set<ArtefactId> replaceSet, Set<ArtefactId> addSet) {
+    public static class Metadata {
+        private List<String> postCommands = new ArrayList<>();
+        private boolean immutable;
+        
+        public Metadata() {
+        }
+
+        private Metadata(Metadata other) {
+            this.postCommands.addAll(other.postCommands); 
+        }
+
+        public List<String> getPostCommands() {
+            return Collections.unmodifiableList(postCommands);
+        }
+
+        public void addPostCommand(String cmd) {
+            assertMutable();
+            this.postCommands.add(cmd);
+        }
+        
+        Metadata immutable() {
+            immutable = true;
+            return this;
+        }
+        
+        private void assertMutable() {
+            IllegalStateAssertion.assertFalse(immutable, "Metadata not mutable");
+        }
+    }
+    
+    public SmartPatch(File patchFile, PatchId patchId, Set<ArtefactId> removeSet, Set<ArtefactId> replaceSet, Set<ArtefactId> addSet, Metadata metadata) {
         IllegalArgumentAssertion.assertNotNull(patchFile, "patchFile");
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         IllegalArgumentAssertion.assertNotNull(removeSet, "removeSet");
         IllegalArgumentAssertion.assertNotNull(replaceSet, "replaceSet");
         IllegalArgumentAssertion.assertNotNull(addSet, "addSet");
+        IllegalArgumentAssertion.assertNotNull(metadata, "metadata");
         this.patchId = patchId;
         this.patchFile = patchFile;
+        this.metadata = new Metadata(metadata);
         for (ArtefactId aid : removeSet) {
             removeMap.put(aid.getPath(), aid);
         }
@@ -73,6 +109,10 @@ public final class SmartPatch {
 
     public File getPatchFile() {
         return patchFile;
+    }
+
+    public Metadata getMetadata() {
+        return metadata.immutable();
     }
 
     public Set<ArtefactId> getRemoveSet() {
