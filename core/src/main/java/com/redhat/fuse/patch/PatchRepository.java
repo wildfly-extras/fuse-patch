@@ -19,6 +19,8 @@
  */
 package com.redhat.fuse.patch;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 
 
@@ -35,14 +37,19 @@ public interface PatchRepository {
      * Get the list of available patches
      * @param prefix The patch name prefix - null for all patches
      */
-    List<PatchId> queryAvailablePatches(String prefix);
+    List<PatchId> queryAvailable(String prefix);
 
     /**
      * Get the latest available patche for the given prefix
      * @param prefix The mandatory patch name prefix
      */
-    PatchId getLatestPatch(String prefix);
+    PatchId getLatestAvailable(String prefix);
 
+    /**
+     * Add the given patch archive
+     */
+    PatchId addArchive(Path filePath) throws IOException;
+    
 	/**
 	 * Get the smart patch for the given seed.
      * @param seedPatch The patch set obtained from the server - may be null

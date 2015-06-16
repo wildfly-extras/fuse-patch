@@ -59,20 +59,42 @@ public final class DefaultPatchTool implements PatchTool {
 
 	@Override
     public List<PatchId> queryRepository() {
-		return repository.queryAvailablePatches(null);
+		return repository.queryAvailable(null);
 	}
 
     @Override
-    public void install(PatchId patchId) throws IOException {
-        PatchSet latest = server.getLatestPatch();
-        SmartPatch smartPatch = repository.getSmartPatch(latest, patchId);
-        server.applySmartPatch(smartPatch);
+    public PatchId add(Path filePath) throws IOException {
+        return repository.addArchive(filePath);
     }
 
     @Override
-    public void update() throws IOException {
-        PatchSet latest = server.getLatestPatch();
-        SmartPatch smartPatch = repository.getSmartPatch(latest, null);
+    public void install(PatchId patchId) throws IOException {
+        PatchId serverId = null;
+        String symbolicName = patchId.getSymbolicName();
+        for (PatchId pid : server.queryAppliedPatches()) {
+            if (pid.getSymbolicName().equals(symbolicName)) {
+                serverId = pid;
+            }
+        }
+        PatchSet latest = serverId != null ? server.getAppliedPatchSet(serverId) : null;
+        SmartPatch smartPatch = repository.getSmartPatch(latest, patchId);
+        server.applySmartPatch(smartPatch);
+    }
+    
+    @Override
+    public void update(String symbolicName) throws IOException {
+        PatchId serverId = null;
+        for (PatchId pid : server.queryAppliedPatches()) {
+            if (pid.getSymbolicName().equals(symbolicName)) {
+                serverId = pid;
+            }
+        }
+        PatchId repoId = null;
+        for (PatchId pid : repository.queryAvailable(symbolicName)) {
+            repoId = pid;
+        }
+        PatchSet latest = serverId != null ? server.getAppliedPatchSet(serverId) : null;
+        SmartPatch smartPatch = repository.getSmartPatch(latest, repoId);
         server.applySmartPatch(smartPatch);
     }
 }

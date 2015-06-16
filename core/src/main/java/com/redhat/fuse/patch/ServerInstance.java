@@ -44,10 +44,10 @@ public interface ServerInstance {
     /**
      * Get an applied patch set
      */
-    PatchSet getAppliedPatch(PatchId patchId);
+    PatchSet getAppliedPatchSet(PatchId patchId);
     
     /**
-     * Get the currently active patch set
+     * Get the latest applied patch
      */
     PatchSet getLatestPatch();
 

@@ -50,39 +50,54 @@ public class Main {
         	run(parser, options);
         } catch (Exception rte) {
         	LOG.error("Cannot run fusepatch", rte);
-        	System.err.println("Error: " + rte.getMessage());
+        	rte.printStackTrace(System.err);
         	Runtime.getRuntime().exit(1);
         }
     }
 
 	private static void run(CmdLineParser cmdParser, Options options) throws IOException {
 		
+	    boolean opfound = false;
+	    
 		// Query the server
 		if (options.queryServer) {
 	        PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).build();
 		    printPatches(patchTool.queryServer());
+		    opfound = true;
 		} 
 		
 		// Query the repository
-		else if (options.queryRepository) {
+		if (options.queryRepository) {
             PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
 		    printPatches(patchTool.queryRepository());
+            opfound = true;
 		} 
         
+        // Add to repository
+        if (options.addPath != null) {
+            PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
+            PatchId patchId = patchTool.add(options.addPath);
+            System.out.println("Patch archive added: " + patchId);
+            opfound = true;
+        }
+        
+        
         // Install to server
-        else if (options.patchId != null) {
+        if (options.installId != null) {
             PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).repositoryUrl(options.repositoryUrl).build();
-            patchTool.install(PatchId.fromString(options.patchId));
-        } 
+            patchTool.install(PatchId.fromString(options.installId));
+            opfound = true;
+        }
         
         // Update the server
-        else if (options.update) {
+        if (options.updateName != null) {
             PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).repositoryUrl(options.repositoryUrl).build();
-            patchTool.update();
+            patchTool.update(options.updateName);
+            opfound = true;
         } 
 		
 		// Show help screen
-		else {
+		if (!opfound) {
             helpScreen(cmdParser);
 		}
 	}

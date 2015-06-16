@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -43,19 +44,18 @@ import com.redhat.fuse.patch.internal.Parser.Metadata;
 import com.redhat.fuse.patch.utils.IllegalArgumentAssertion;
 import com.redhat.fuse.patch.utils.IllegalStateAssertion;
 
-
 public final class DefaultPatchRepository implements PatchRepository {
 
-	private final Path rootPath;
-	
-	public DefaultPatchRepository(URL repoUrl) {
+    private final Path rootPath;
+
+    public DefaultPatchRepository(URL repoUrl) {
         Path path = repoUrl != null ? Paths.get(repoUrl.getPath()) : inferRootPath();
         IllegalStateAssertion.assertTrue(path.toFile().isDirectory(), "Not a valid root directory: " + path);
         this.rootPath = path.toAbsolutePath();
-	}
-	
-	@Override
-	public List<PatchId> queryAvailablePatches(final String prefix) {
+    }
+
+    @Override
+    public List<PatchId> queryAvailable(final String prefix) {
         final List<PatchId> result = new ArrayList<>();
         rootPath.toFile().listFiles(new FilenameFilter() {
             @Override
@@ -69,40 +69,49 @@ public final class DefaultPatchRepository implements PatchRepository {
         });
         Collections.sort(result);
         return Collections.unmodifiableList(result);
-	}
+    }
 
-	@Override
-    public PatchId getLatestPatch(String prefix) {
+    @Override
+    public PatchId getLatestAvailable(String prefix) {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
-        List<PatchId> list = queryAvailablePatches(prefix);
+        List<PatchId> list = queryAvailable(prefix);
         return list.isEmpty() ? null : list.get(list.size() - 1);
     }
 
     @Override
-	public SmartPatch getSmartPatch(PatchSet seedPatch, PatchId patchId) {
-        
+    public PatchId addArchive(Path filePath) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(filePath, "filePath");
+        Path fileName = filePath.getFileName();
+        PatchId result = PatchId.fromString(fileName.toString());
+        Path targetPath = rootPath.resolve(fileName);
+        Files.copy(filePath, targetPath);
+        return result;
+    }
+
+    @Override
+    public SmartPatch getSmartPatch(PatchSet seedPatch, PatchId patchId) {
+
         // Derive the target patch id from the seed patch id
         if (patchId == null) {
             IllegalArgumentAssertion.assertNotNull(seedPatch, "seedPatch");
-            patchId = getLatestPatch(seedPatch.getPatchId().getSymbolicName());
+            patchId = getLatestAvailable(seedPatch.getPatchId().getSymbolicName());
         }
-        
+
         // Get the patch zip file
         File zipfile = rootPath.resolve(patchId.getCanonicalForm() + ".zip").toFile();
         IllegalStateAssertion.assertTrue(zipfile.isFile(), "Cannot obtain patch file: " + zipfile);
-        
-        
+
         Map<Path, ArtefactId> removeMap = new HashMap<>();
         Set<ArtefactId> replaceSet = new HashSet<>();
         Set<ArtefactId> addSet = new HashSet<>();
-        
+
         // All seed patch artefacts are remove candidates
         if (seedPatch != null) {
             for (ArtefactId artefactId : seedPatch.getArtefacts()) {
                 removeMap.put(artefactId.getPath(), artefactId);
             }
         }
-        
+
         try {
             Metadata metadata = new Parser().buildMetadata(zipfile);
             for (Entry<String, Long> entry : metadata.getEntries().entrySet()) {
@@ -123,12 +132,12 @@ public final class DefaultPatchRepository implements PatchRepository {
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         }
-        
-        Set<ArtefactId> removeSet = new HashSet<>(removeMap.values());
-		return new SmartPatch(zipfile, patchId, removeSet, replaceSet, addSet);
-	}
 
-	private Path inferRootPath() {
-		throw new IllegalStateException("Cannot infer patch repository location");
-	}
+        Set<ArtefactId> removeSet = new HashSet<>(removeMap.values());
+        return new SmartPatch(zipfile, patchId, removeSet, replaceSet, addSet);
+    }
+
+    private Path inferRootPath() {
+        throw new IllegalStateException("Cannot infer patch repository location");
+    }
 }

@@ -127,7 +127,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>run-fuse-patch</id>
+                        <id>install-fuse-patch</id>
                         <phase>generate-resources</phase>
                         <goals>
                             <goal>exec</goal>
@@ -138,6 +138,19 @@
                                 <argument>--repository=file://${fusepatch.home}/repository</argument>
                                 <argument>--server=${jboss.home}</argument>
                                 <argument>--install=fuse-patch-wildfly-${project.version}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-fuse-patch</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${jboss.home}/bin/fusepatch.sh</executable>
+                            <arguments>
+                                <argument>--add=${fusepatch.home}/repository/fuse-patch-wildfly-${project.version}.zip</argument>
                             </arguments>
                         </configuration>
                     </execution>

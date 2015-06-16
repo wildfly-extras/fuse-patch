@@ -35,15 +35,18 @@ final class Options {
 	@Option(name = "--repository", usage = "URL to the patch repository")
 	URL repositoryUrl;
 
-	@Option(name = "--query-server", forbids = { "--query-repository", "--update", "--install" }, usage = "Query the server for installed patches")
+	@Option(name = "--query-server", usage = "Query the server for installed patches")
 	boolean queryServer;
 
-	@Option(name = "--query-repository", forbids = { "--query-server", "--update", "--install" }, usage = "Query the patch repository URL for available patches")
+	@Option(name = "--query-repository", usage = "Query the repository for available patches")
 	boolean queryRepository;
 
-    @Option(name = "--install", forbids = { "--query-server", "--query-repository", "--update" }, usage = "Install the given patch id to the server")
-    String patchId;
+    @Option(name = "--add", usage = "Add the given file to the repository")
+    Path addPath;
     
-    @Option(name = "--update", forbids = { "--query-server", "--query-repository", "--install" }, usage = "Update the server")
-    boolean update;
+    @Option(name = "--install", usage = "Install the given patch id to the server")
+    String installId;
+    
+    @Option(name = "--update", usage = "Update the server for the given patch name")
+    String updateName;
 }

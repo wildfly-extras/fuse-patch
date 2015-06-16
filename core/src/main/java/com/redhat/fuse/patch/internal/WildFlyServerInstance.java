@@ -91,7 +91,7 @@ public final class WildFlyServerInstance implements ServerInstance {
     }
 
     @Override
-    public PatchSet getAppliedPatch(PatchId patchId) {
+    public PatchSet getAppliedPatchSet(PatchId patchId) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         
         Path patchdir = getPatchDir(patchId);
@@ -118,23 +118,12 @@ public final class WildFlyServerInstance implements ServerInstance {
     @Override
     public PatchSet getLatestPatch() {
         
-        File markerFile = getMarkerFile();
-        if (!markerFile.exists())
+        List<PatchId> pids = queryAppliedPatches();
+        if (pids.isEmpty()) 
             return null;
         
-        // Read patch id from marker file
-        PatchId patchId;
-        BufferedReader pw = null;
-        try {
-            pw = new BufferedReader(new FileReader(markerFile));
-            patchId = PatchId.fromString(pw.readLine());
-        } catch (IOException ex) {
-            throw new IllegalStateException(ex);
-        } finally {
-            IOUtils.safeClose(pw);
-        }
-        
-        return getAppliedPatch(patchId);
+        PatchId latestId = pids.get(pids.size() - 1);
+        return getAppliedPatchSet(latestId);
     }
 
     @Override
@@ -143,7 +132,7 @@ public final class WildFlyServerInstance implements ServerInstance {
         
         if (smartPatch.getRemoveSet().isEmpty() && smartPatch.getReplaceSet().isEmpty() && smartPatch.getAddSet().isEmpty()) {
             LOG.warn("Nothing to do on empty smart patch: {}", smartPatch);
-            return getLatestPatch();
+            return null;
         }
         
         // Remove all files in the remove set

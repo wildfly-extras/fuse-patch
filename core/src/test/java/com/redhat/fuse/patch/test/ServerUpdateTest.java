@@ -118,8 +118,7 @@ public class ServerUpdateTest {
 
         // Nothing to do on empty smart patch
         patch = server.applySmartPatch(smartPatch);
-        Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patch.getPatchId());
-        Assert.assertEquals(3, patch.getArtefacts().size());
+        Assert.assertNull(patch);
 
         // Obtain the latest smart patch from the repo
         smartPatch = repo.getSmartPatch(latest, null);

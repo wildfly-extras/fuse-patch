@@ -54,7 +54,7 @@ public class QueryRepositoryTest {
     public void testRelativePoolUrl() throws Exception {
         
         PatchRepository repo = new DefaultPatchRepository(new URL("file:./target/repos/repoA"));
-        List<PatchId> patches = repo.queryAvailablePatches(null);
+        List<PatchId> patches = repo.queryAvailable(null);
         Assert.assertEquals("Patch available", 2, patches.size());
     }
 
@@ -62,13 +62,13 @@ public class QueryRepositoryTest {
     public void testQueryPool() throws Exception {
         
         PatchRepository repo = new DefaultPatchRepository(repoPath.toUri().toURL());
-        List<PatchId> patches = repo.queryAvailablePatches(null);
+        List<PatchId> patches = repo.queryAvailable(null);
         Assert.assertEquals("Patch available", 2, patches.size());
         
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patches.get(0));
         Assert.assertEquals(PatchId.fromString("foo-1.1.0"), patches.get(1));
-        Assert.assertEquals(PatchId.fromString("foo-1.1.0"), repo.getLatestPatch("foo"));
-        Assert.assertNull(repo.getLatestPatch("bar"));
+        Assert.assertEquals(PatchId.fromString("foo-1.1.0"), repo.getLatestAvailable("foo"));
+        Assert.assertNull(repo.getLatestAvailable("bar"));
     }
 
     static void setupPoolA(Path repoPath) {

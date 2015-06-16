@@ -61,4 +61,12 @@ public class SimpleAccessTest {
         Assert.assertEquals(1, pids.size());
         Assert.assertEquals("fuse-patch-wildfly", pids.get(0).getSymbolicName());
     }
+
+    @Test
+    public void testQueryRepository() throws Exception {
+        PatchTool patchTool = new PatchToolBuilder().build();
+        List<PatchId> pids = patchTool.queryRepository();
+        Assert.assertEquals(1, pids.size());
+        Assert.assertEquals("fuse-patch-wildfly", pids.get(0).getSymbolicName());
+    }
 }

@@ -2,7 +2,7 @@
 
 A Fuse installer and patch utility.
 
-The patch tool interacts with a target [server instance](tool/src/main/java/com/redhat/fuse/patch/ServerInstance.java) and a [patch repository](tool/src/main/java/com/redhat/fuse/patch/PatchRepository.java) that contains the available patches.
+The patch tool interacts with a target [server instance](core/src/main/java/com/redhat/fuse/patch/ServerInstance.java) and a [patch repository](core/src/main/java/com/redhat/fuse/patch/PatchRepository.java) that contains the available patches.
 
 The server and the repository can be queried like this respectively
 
@@ -20,10 +20,10 @@ The main function of the patch tool however is to install a distribution from th
 or update the server to the the latest like this
 
 ```
-> fusepatch --update
+> fusepatch --update=fuse-eap-distro
 ```
 
-The patch tool maintains audit metadata on the server, which allows to review/reproduce what has been changed and perhaps more importantly to calculate a [smart patch](tool/src/main/java/com/redhat/fuse/patch/SmartPatch.java) as the required diff between the current server state and the latest available patch release in the repository.
+The patch tool maintains audit metadata on the server, which allows to review/reproduce what has been changed and perhaps more importantly to calculate a [smart patch](core/src/main/java/com/redhat/fuse/patch/SmartPatch.java) as the required diff between the current server state and the latest available patch release in the repository.
 
 Updating the target server involves the following steps
 
