@@ -24,12 +24,12 @@ import java.util.List;
 
 
 /**
- * A patch pool.
+ * A patch repository.
  *
  * @author thomas.diesler@jboss.com
  * @since 10-Jun-2015
  */
-public interface PatchPool {
+public interface PatchRepository {
 
     /**
      * Get the list of available patches
@@ -46,7 +46,7 @@ public interface PatchPool {
 	/**
 	 * Get the smart patch for the given seed.
      * @param seedPatch The patch set obtained from the server - may be null
-     * @param patchId The target patch id - null for the latest in the pool
+     * @param patchId The target patch id - null for the latest
 	 */
 	SmartPatch getSmartPatch(PatchSet seedPatch, PatchId patchId);
 }

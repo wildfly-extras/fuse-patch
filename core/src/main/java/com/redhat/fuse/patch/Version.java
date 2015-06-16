@@ -302,7 +302,7 @@ public class Version implements Comparable<Version> {
         result.append(SEPARATOR);
         result.append(micro);
         if (q > 0) {
-            result.append(SEPARATOR);
+            result.append("-");
             result.append(qualifier);
         }
         return versionString = result.toString();

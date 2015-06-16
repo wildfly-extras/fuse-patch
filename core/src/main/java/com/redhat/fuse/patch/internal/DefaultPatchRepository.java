@@ -36,7 +36,7 @@ import java.util.Set;
 
 import com.redhat.fuse.patch.ArtefactId;
 import com.redhat.fuse.patch.PatchId;
-import com.redhat.fuse.patch.PatchPool;
+import com.redhat.fuse.patch.PatchRepository;
 import com.redhat.fuse.patch.PatchSet;
 import com.redhat.fuse.patch.SmartPatch;
 import com.redhat.fuse.patch.internal.Parser.Metadata;
@@ -44,12 +44,12 @@ import com.redhat.fuse.patch.utils.IllegalArgumentAssertion;
 import com.redhat.fuse.patch.utils.IllegalStateAssertion;
 
 
-public final class DefaultPatchPool implements PatchPool {
+public final class DefaultPatchRepository implements PatchRepository {
 
 	private final Path rootPath;
 	
-	public DefaultPatchPool(URL poolUrl) {
-        Path path = poolUrl != null ? Paths.get(poolUrl.getPath()) : inferRootPath();
+	public DefaultPatchRepository(URL repoUrl) {
+        Path path = repoUrl != null ? Paths.get(repoUrl.getPath()) : inferRootPath();
         IllegalStateAssertion.assertTrue(path.toFile().isDirectory(), "Not a valid root directory: " + path);
         this.rootPath = path.toAbsolutePath();
 	}
@@ -129,6 +129,6 @@ public final class DefaultPatchPool implements PatchPool {
 	}
 
 	private Path inferRootPath() {
-		throw new IllegalStateException("Cannot infer patch pool location");
+		throw new IllegalStateException("Cannot infer patch repository location");
 	}
 }

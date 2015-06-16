@@ -38,6 +38,13 @@
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.redhat.fuse.patch</groupId>
+            <artifactId>fuse-patch-distro-wildfly</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+            <type>zip</type>
+        </dependency>
     </dependencies>
 
     <build>

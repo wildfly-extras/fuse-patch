@@ -252,14 +252,18 @@ public final class WildFlyServerInstance implements ServerInstance {
     private Path inferServerHome() {
         String jbossHome = System.getProperty("jboss.home");
         if (jbossHome == null) {
+            jbossHome = System.getProperty("jboss.home.dir");
+        }
+        if (jbossHome == null) {
             jbossHome = System.getenv("JBOSS_HOME");
         }
+        IllegalStateAssertion.assertNotNull(jbossHome, "Cannot obtain JBOSS_HOME: " + jbossHome);
         Path homePath = Paths.get(jbossHome);
         Path standalonePath = Paths.get(jbossHome, "standalone", "configuration");
         Path modulesPath = Paths.get(jbossHome, "modules");
-        IllegalStateAssertion.assertTrue(homePath.toFile().exists(), "Cannot obtain JBOSS_HOME: " + jbossHome);
-        IllegalStateAssertion.assertTrue(standalonePath.toFile().exists(), "Cannot obtain JBOSS_HOME/standalone: " + standalonePath);
-        IllegalStateAssertion.assertTrue(modulesPath.toFile().exists(), "Cannot obtain JBOSS_HOME/modules: " + modulesPath);
+        IllegalStateAssertion.assertTrue(homePath.toFile().exists(), "Directory JBOSS_HOME does not exist: " + jbossHome);
+        IllegalStateAssertion.assertTrue(standalonePath.toFile().exists(), "Directory JBOSS_HOME/standalone does not exist: " + standalonePath);
+        IllegalStateAssertion.assertTrue(modulesPath.toFile().exists(), "Directory JBOSS_HOME/modules does not exist: " + modulesPath);
         return homePath;
     }
 }

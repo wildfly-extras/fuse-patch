@@ -20,6 +20,7 @@
 package com.redhat.fuse.patch.internal;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -27,6 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.redhat.fuse.patch.PatchId;
+import com.redhat.fuse.patch.PatchTool;
+import com.redhat.fuse.patch.PatchToolBuilder;
 
 public class Main {
 
@@ -54,26 +57,28 @@ public class Main {
 
 	private static void run(CmdLineParser cmdParser, Options options) throws IOException {
 		
-		PatchTool patchTool = new PatchTool();
-		
 		// Query the server
 		if (options.queryServer) {
-			patchTool.queryServer(options.serverHome);
+	        PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).build();
+		    printPatches(patchTool.queryServer());
 		} 
 		
-		// Query the pool
-		else if (options.queryPool) {
-			patchTool.queryPool(options.poolUrl);
+		// Query the repository
+		else if (options.queryRepository) {
+            PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
+		    printPatches(patchTool.queryRepository());
 		} 
         
         // Install to server
         else if (options.patchId != null) {
-            patchTool.install(options.serverHome, options.poolUrl, PatchId.fromString(options.patchId));
+            PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).repositoryUrl(options.repositoryUrl).build();
+            patchTool.install(PatchId.fromString(options.patchId));
         } 
         
         // Update the server
         else if (options.update) {
-            patchTool.update(options.serverHome, options.poolUrl);
+            PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).repositoryUrl(options.repositoryUrl).build();
+            patchTool.update();
         } 
 		
 		// Show help screen
@@ -86,4 +91,10 @@ public class Main {
 		System.err.println("fusepatch [options...]");
 		cmdParser.printUsage(System.err);
 	}
+
+    private static void printPatches(List<PatchId> patches) {
+        for (PatchId patchId : patches) {
+            System.out.println(patchId);
+        }
+    }
 }
