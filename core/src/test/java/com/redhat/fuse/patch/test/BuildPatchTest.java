@@ -36,7 +36,7 @@ import com.redhat.fuse.patch.test.subA.ClassA;
 public class BuildPatchTest {
 	
 	static String inpath = "target/A2.jar";
-	static String refpath = "src/test/resources/A1.metadata";
+	static String refpath = "src/test/resources/A1.server.metadata";
 	
 	@Before
 	public void setUp() throws Exception {

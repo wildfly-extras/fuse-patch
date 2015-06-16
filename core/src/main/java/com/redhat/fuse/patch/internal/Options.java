@@ -44,9 +44,15 @@ final class Options {
     @Option(name = "--add", usage = "Add the given file to the repository")
     Path addPath;
     
+    @Option(name = "--add-script", usage = "Add a post-update script for a given patch id (i.e. foo-1.0.0:some-script.sh)")
+    String addScript;
+    
     @Option(name = "--install", usage = "Install the given patch id to the server")
     String installId;
     
     @Option(name = "--update", usage = "Update the server for the given patch name")
     String updateName;
+    
+    @Option(name = "--mkjar", usage = "Make an executable jar containing repository content")
+    String mkjar;
 }

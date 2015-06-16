@@ -31,10 +31,10 @@ import org.junit.Test;
 
 import com.redhat.fuse.patch.ArtefactId;
 import com.redhat.fuse.patch.PatchId;
-import com.redhat.fuse.patch.PatchRepository;
+import com.redhat.fuse.patch.Repository;
 import com.redhat.fuse.patch.PatchSet;
 import com.redhat.fuse.patch.SmartPatch;
-import com.redhat.fuse.patch.internal.DefaultPatchRepository;
+import com.redhat.fuse.patch.internal.DefaultRepository;
 import com.redhat.fuse.patch.internal.WildFlyServerInstance;
 import com.redhat.fuse.patch.utils.IOUtils;
 
@@ -47,15 +47,15 @@ public class ServerUpdateTest {
     public static void setUp() throws Exception {
         IOUtils.rmdirs(targetPath);
         targetPath.toFile().mkdirs();
-        QueryRepositoryTest.setupPoolA(repoPath);
-        QueryRepositoryTest.setupPoolB(repoPath);
+        QueryRepositoryTest.setupRepoContentA(repoPath);
+        QueryRepositoryTest.setupRepoContentB(repoPath);
     }
 
     @Test
     public void testServerUpdate() throws Exception {
 
         WildFlyServerInstance server = new WildFlyServerInstance(targetPath);
-        PatchRepository repo = new DefaultPatchRepository(repoPath.toUri().toURL());
+        Repository repo = new DefaultRepository(repoPath.toUri().toURL());
 
         // Verify clean server
         List<PatchId> patches = server.queryAppliedPatches();

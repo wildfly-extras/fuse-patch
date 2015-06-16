@@ -36,8 +36,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.redhat.fuse.patch.PatchId;
-import com.redhat.fuse.patch.PatchRepository;
-import com.redhat.fuse.patch.internal.DefaultPatchRepository;
+import com.redhat.fuse.patch.Repository;
+import com.redhat.fuse.patch.internal.DefaultRepository;
 import com.redhat.fuse.patch.test.subA.ClassA;
 
 public class QueryRepositoryTest {
@@ -46,22 +46,22 @@ public class QueryRepositoryTest {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        setupPoolA(repoPath);
-        setupPoolB(repoPath);
+        setupRepoContentA(repoPath);
+        setupRepoContentB(repoPath);
     }
 
     @Test
-    public void testRelativePoolUrl() throws Exception {
+    public void testRelativeRepositoryUrl() throws Exception {
         
-        PatchRepository repo = new DefaultPatchRepository(new URL("file:./target/repos/repoA"));
+        Repository repo = new DefaultRepository(new URL("file:./target/repos/repoA"));
         List<PatchId> patches = repo.queryAvailable(null);
         Assert.assertEquals("Patch available", 2, patches.size());
     }
 
     @Test
-    public void testQueryPool() throws Exception {
+    public void testQueryRepository() throws Exception {
         
-        PatchRepository repo = new DefaultPatchRepository(repoPath.toUri().toURL());
+        Repository repo = new DefaultRepository(repoPath.toUri().toURL());
         List<PatchId> patches = repo.queryAvailable(null);
         Assert.assertEquals("Patch available", 2, patches.size());
         
@@ -71,7 +71,7 @@ public class QueryRepositoryTest {
         Assert.assertNull(repo.getLatestAvailable("bar"));
     }
 
-    static void setupPoolA(Path repoPath) {
+    static void setupRepoContentA(Path repoPath) {
         JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "foo-1.0.0.jar");
         jar.addClasses(ClassA.class);
         GenericArchive archive = ShrinkWrap.create(GenericArchive.class);
@@ -82,7 +82,7 @@ public class QueryRepositoryTest {
         archive.as(ZipExporter.class).exportTo(repoPath.resolve("foo-1.0.0.zip").toFile(), true);
     }
 
-    static void setupPoolB(Path repoPath) {
+    static void setupRepoContentB(Path repoPath) {
         JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "foo-1.1.0.jar");
         jar.addClasses(ClassA.class);
         GenericArchive archive = ShrinkWrap.create(GenericArchive.class);

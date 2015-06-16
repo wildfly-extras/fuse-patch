@@ -47,15 +47,30 @@ public final class SmartPatch {
     private final Map<Path, ArtefactId> removeMap = new HashMap<>();
     private final Map<Path, ArtefactId> replaceMap = new HashMap<>();
     private final Map<Path, ArtefactId> addMap = new HashMap<>();
+    private final Metadata metadata;
 
-    public SmartPatch(File patchFile, PatchId patchId, Set<ArtefactId> removeSet, Set<ArtefactId> replaceSet, Set<ArtefactId> addSet) {
+    public static class Metadata {
+        private final String postScript;
+        
+        public Metadata(String postScript) {
+            this.postScript = postScript;
+        }
+
+        public String getPostScript() {
+            return postScript;
+        }
+    }
+    
+    public SmartPatch(File patchFile, PatchId patchId, Set<ArtefactId> removeSet, Set<ArtefactId> replaceSet, Set<ArtefactId> addSet, Metadata metadata) {
         IllegalArgumentAssertion.assertNotNull(patchFile, "patchFile");
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         IllegalArgumentAssertion.assertNotNull(removeSet, "removeSet");
         IllegalArgumentAssertion.assertNotNull(replaceSet, "replaceSet");
         IllegalArgumentAssertion.assertNotNull(addSet, "addSet");
+        IllegalArgumentAssertion.assertNotNull(metadata, "metadata");
         this.patchId = patchId;
         this.patchFile = patchFile;
+        this.metadata = metadata;
         for (ArtefactId aid : removeSet) {
             removeMap.put(aid.getPath(), aid);
         }
@@ -73,6 +88,10 @@ public final class SmartPatch {
 
     public File getPatchFile() {
         return patchFile;
+    }
+
+    public Metadata getMetadata() {
+        return metadata;
     }
 
     public Set<ArtefactId> getRemoveSet() {

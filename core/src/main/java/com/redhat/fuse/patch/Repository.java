@@ -31,7 +31,7 @@ import java.util.List;
  * @author thomas.diesler@jboss.com
  * @since 10-Jun-2015
  */
-public interface PatchRepository {
+public interface Repository {
 
     /**
      * Get the list of available patches

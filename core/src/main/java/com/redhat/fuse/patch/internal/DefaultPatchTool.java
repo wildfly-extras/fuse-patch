@@ -27,7 +27,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import com.redhat.fuse.patch.PatchId;
-import com.redhat.fuse.patch.PatchRepository;
+import com.redhat.fuse.patch.Repository;
 import com.redhat.fuse.patch.PatchSet;
 import com.redhat.fuse.patch.PatchTool;
 import com.redhat.fuse.patch.ServerInstance;
@@ -37,7 +37,7 @@ import com.redhat.fuse.patch.SmartPatch;
 public final class DefaultPatchTool implements PatchTool {
 
     private final ServerInstance server;
-    private final PatchRepository repository;
+    private final Repository repository;
     
 	public DefaultPatchTool(Path serverPath, URL repoUrl) {
         server = new WildFlyServerInstance(serverPath);
@@ -49,7 +49,7 @@ public final class DefaultPatchTool implements PatchTool {
                 // ignore
             }
         }
-        repository = new DefaultPatchRepository(repoUrl);
+        repository = new DefaultRepository(repoUrl);
     }
 
     @Override
