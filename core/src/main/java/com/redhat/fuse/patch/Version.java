@@ -302,7 +302,8 @@ public class Version implements Comparable<Version> {
         result.append(SEPARATOR);
         result.append(micro);
         if (q > 0) {
-            result.append("-");
+            boolean snap = qualifier.equals("SNAPSHOT");
+            result.append(snap ? "-" : SEPARATOR);
             result.append(qualifier);
         }
         return versionString = result.toString();
