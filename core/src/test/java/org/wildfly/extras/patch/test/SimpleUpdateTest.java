@@ -52,38 +52,41 @@ public class SimpleUpdateTest {
         
         // Verify smart patch A
         PatchSet setA = Archives.getPatchSetA();
+        PatchId patchId = setA.getPatchId();
         SmartPatch smartPatch = new SmartPatch(setA, Archives.getZipFileA());
-        Assert.assertEquals(setA.getPatchId(), smartPatch.getPatchId());
+        Assert.assertEquals(patchId, smartPatch.getPatchId());
         Assert.assertEquals(setA.getRecords(), smartPatch.getRecords());
         
         // Apply smart patch A
         PatchSet curSet = server.applySmartPatch(smartPatch);
-        Assert.assertEquals(setA.getPatchId(), curSet.getPatchId());
+        Assert.assertEquals(patchId, curSet.getPatchId());
         Assert.assertEquals(setA.getRecords(), curSet.getRecords());
+        Archives.assertPathsEqual(setA.getRecords(), server.getPatchSet(patchId).getRecords());
+        Archives.assertPathsEqual(setA, serverPath);
 
         // Verify smart patch B
         PatchSet setB = Archives.getPatchSetB();
+        patchId = setB.getPatchId();
         PatchSet smartSet = PatchSet.smartSet(setA, setB);
         smartPatch = new SmartPatch(smartSet, Archives.getZipFileB());
         Assert.assertEquals(4, smartPatch.getRecords().size());
-        Archives.assertEqualActionPath("UPD config/propsA.properties", smartPatch.getRecords().get(0));
-        Archives.assertEqualActionPath("DEL config/removeme.properties", smartPatch.getRecords().get(1));
-        Archives.assertEqualActionPath("DEL lib/foo-1.0.0.jar", smartPatch.getRecords().get(2));
-        Archives.assertEqualActionPath("ADD lib/foo-1.1.0.jar", smartPatch.getRecords().get(3));
+        Archives.assertActionPathEquals("UPD config/propsA.properties", smartPatch.getRecords().get(0));
+        Archives.assertActionPathEquals("DEL config/removeme.properties", smartPatch.getRecords().get(1));
+        Archives.assertActionPathEquals("DEL lib/foo-1.0.0.jar", smartPatch.getRecords().get(2));
+        Archives.assertActionPathEquals("ADD lib/foo-1.1.0.jar", smartPatch.getRecords().get(3));
 
         // Apply smart patch B
         curSet = server.applySmartPatch(smartPatch);
-        Assert.assertEquals(setB.getPatchId(), curSet.getPatchId());
+        Assert.assertEquals(patchId, curSet.getPatchId());
         Assert.assertEquals(2, curSet.getRecords().size());
         Assert.assertEquals(setB.getRecords(), curSet.getRecords());
+        Archives.assertPathsEqual(setB.getRecords(), server.getPatchSet(patchId).getRecords());
+        Archives.assertPathsEqual(setB, serverPath);
         
         // verify that we can query the set
         patches = server.queryAppliedPatches();
         Assert.assertEquals(1, patches.size());
-        Assert.assertEquals(setB.getPatchId(), patches.get(0));
-        
-        PatchSet wasB = server.getPatchSet(setB.getPatchId());
-        Assert.assertEquals(setB.getPatchId(), wasB.getPatchId());
-        Assert.assertEquals(setB.getRecords(), wasB.getRecords());
+        Assert.assertEquals(patchId, patches.get(0));
+        Assert.assertEquals(patchId, server.getLatestApplied("foo"));
     }
 }
