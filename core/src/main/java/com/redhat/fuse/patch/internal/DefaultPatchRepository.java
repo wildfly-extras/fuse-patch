@@ -19,38 +19,31 @@
  */
 package com.redhat.fuse.patch.internal;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
-import com.redhat.fuse.patch.ArtefactId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.redhat.fuse.patch.PatchId;
-import com.redhat.fuse.patch.PatchSet;
 import com.redhat.fuse.patch.PatchRepository;
+import com.redhat.fuse.patch.PatchSet;
+import com.redhat.fuse.patch.PatchSet.Action;
 import com.redhat.fuse.patch.SmartPatch;
-import com.redhat.fuse.patch.SmartPatch.Metadata;
 import com.redhat.fuse.patch.utils.IllegalArgumentAssertion;
 import com.redhat.fuse.patch.utils.IllegalStateAssertion;
 
 public final class DefaultPatchRepository implements PatchRepository {
 
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultPatchRepository.class);
+    
     private final Path rootPath;
 
     public DefaultPatchRepository(URL repoUrl) {
@@ -65,45 +58,61 @@ public final class DefaultPatchRepository implements PatchRepository {
 
     @Override
     public List<PatchId> queryAvailable(final String prefix) {
-        final List<PatchId> result = new ArrayList<>();
-        rootPath.toFile().listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                if ((prefix == null || name.startsWith(prefix)) && name.endsWith(".zip")) {
-                    name = name.substring(0, name.lastIndexOf('.'));
-                    result.add(PatchId.fromString(name));
-                }
-                return false;
-            }
-        });
-        Collections.sort(result);
-        return Collections.unmodifiableList(result);
+        return Parser.getAvailable(rootPath, prefix, false);
     }
 
     @Override
     public PatchId getLatestAvailable(String prefix) {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
-        List<PatchId> list = queryAvailable(prefix);
-        return list.isEmpty() ? null : list.get(list.size() - 1);
+        List<PatchId> list = Parser.getAvailable(rootPath, prefix, true);
+        return list.isEmpty() ? null : list.get(0);
     }
 
     @Override
-    public PatchId addArchive(Path filePath) throws IOException {
-        IllegalArgumentAssertion.assertNotNull(filePath, "filePath");
-        Path fileName = filePath.getFileName();
-        PatchId result = PatchId.fromString(fileName.toString());
-        Path targetPath = rootPath.resolve(fileName);
-        Files.copy(filePath, targetPath);
-        return result;
+    public PatchSet getPatchSet(PatchId patchId) {
+        IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
+        try {
+            return Parser.readPatchSet(rootPath, patchId);
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
+    @Override
+    public PatchId addArchive(URL fileUrl) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(fileUrl, "fileUrl");
+        IllegalArgumentAssertion.assertTrue(fileUrl.getPath().endsWith(".zip"), "Unsupported file extension: " + fileUrl);
+        Path sourcePath = Paths.get(fileUrl.getPath());
+        PatchId patchId = PatchId.fromFile(sourcePath.toFile());
+        LOG.info("Add to repository: {}", patchId);
+        PatchSet patchSet = Parser.buildPatchSetFromZip(patchId, Action.INFO, sourcePath.toFile());
+        File targetFile = getPatchFile(patchId);
+        targetFile.getParentFile().mkdirs();
+        Files.copy(sourcePath, targetFile.toPath());
+        Parser.writePatchSet(rootPath, patchSet);
+        
+        // Remove the source file when it was placed in the repo 
+        if (sourcePath.startsWith(rootPath)) {
+            sourcePath.toFile().delete();
+        }
+        
+        return patchId;
     }
 
     @Override
     public void addPostCommand(PatchId patchId, String cmd) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         IllegalArgumentAssertion.assertNotNull(cmd, "cmd");
-        SmartPatch.Metadata metadata = parseMetadata(patchId);
-        metadata.addPostCommand(cmd);
-        writeMetadata(patchId, metadata);
+        LOG.info("Add post install command to: {}", patchId);
+        PatchSet patchSet = getPatchSet(patchId);
+        List<String> commands = new ArrayList<>(patchSet.getPostCommands());
+        commands.add(cmd);
+        patchSet = PatchSet.create(patchId, patchSet.getRecords(), commands);
+        try {
+            Parser.writePatchSet(rootPath, patchSet);
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 
     @Override
@@ -116,100 +125,12 @@ public final class DefaultPatchRepository implements PatchRepository {
         }
 
         // Get the patch zip file
-        File zipfile = rootPath.resolve(patchId.getCanonicalForm() + ".zip").toFile();
+        File zipfile = getPatchFile(patchId);
         IllegalStateAssertion.assertTrue(zipfile.isFile(), "Cannot obtain patch file: " + zipfile);
 
-        Map<Path, ArtefactId> removeMap = new HashMap<>();
-        Set<ArtefactId> replaceSet = new HashSet<>();
-        Set<ArtefactId> addSet = new HashSet<>();
-
-        // All seed patch artefacts are remove candidates
-        if (seedPatch != null) {
-            for (ArtefactId artefactId : seedPatch.getArtefacts()) {
-                removeMap.put(artefactId.getPath(), artefactId);
-            }
-        }
-
-        try {
-            Parser.Metadata metadata = new Parser().buildMetadata(zipfile);
-            for (Entry<String, Long> entry : metadata.getEntries().entrySet()) {
-                String path = entry.getKey();
-                Long checksum = entry.getValue();
-                ArtefactId artefactId = ArtefactId.create(Paths.get(path), checksum);
-                if (removeMap.containsValue(artefactId)) {
-                    removeMap.remove(artefactId.getPath());
-                } else {
-                    if (removeMap.containsKey(artefactId.getPath())) {
-                        removeMap.remove(artefactId.getPath());
-                        replaceSet.add(artefactId);
-                    } else {
-                        addSet.add(artefactId);
-                    }
-                }
-            }
-        } catch (IOException ex) {
-            throw new IllegalStateException(ex);
-        }
-        Set<ArtefactId> removeSet = new HashSet<>(removeMap.values());
-        
-        SmartPatch.Metadata metadata = parseMetadata(patchId);
-        return new SmartPatch(zipfile, patchId, removeSet, replaceSet, addSet, metadata);
-    }
-
-    public SmartPatch.Metadata parseMetadata(PatchId patchId) {
-        Path metadataPath = rootPath.resolve(patchId + ".metadata");
-        return parseMetadata(metadataPath);
-    }
-
-    public SmartPatch.Metadata parseMetadata(Path metadataPath) {
-        SmartPatch.Metadata metadata = new SmartPatch.Metadata();
-        if (metadataPath.toFile().exists()) {
-            try{
-                String mode = null;
-                BufferedReader br = new BufferedReader(new FileReader(metadataPath.toFile()));
-                try {
-                    String line = br.readLine();
-                    while (line != null) {
-                        line = line.trim();
-                        if (line.length() == 0 || line.startsWith("#")) {
-                            line = br.readLine();
-                            continue;
-                        }
-                        if (line.startsWith("[") && line.endsWith("]")) {
-                            mode = line;
-                            line = br.readLine();
-                            continue;
-                        }
-                        if ("[post-install-commands]".equals(mode)) {
-                            metadata.addPostCommand(line);
-                        }
-                        line = br.readLine();
-                    }
-                } finally {
-                    br.close();
-                }
-            } catch (IOException ex) {
-                throw new IllegalStateException(ex);
-            }
-        }
-        return metadata;
-    }
-
-    private void writeMetadata(PatchId patchId, Metadata metadata) {
-        Path metadataPath = rootPath.resolve(patchId + ".metadata");
-        try{
-            PrintWriter pw = new PrintWriter(new FileWriter(metadataPath.toFile()));
-            try {
-                pw.println("[post-install-commands]");
-                for (String cmd : metadata.getPostCommands()) {
-                    pw.println(cmd);
-                }
-            } finally {
-                pw.close();
-            }
-        } catch (IOException ex) {
-            throw new IllegalStateException(ex);
-        }
+        PatchSet targetSet = getPatchSet(patchId);
+        PatchSet smartSet = PatchSet.smartSet(seedPatch, targetSet);
+        return new SmartPatch(smartSet, zipfile);
     }
 
     static URL getConfiguredUrl() {
@@ -225,5 +146,9 @@ public final class DefaultPatchRepository implements PatchRepository {
             }
         }
         return null;
+    }
+
+    private File getPatchFile(PatchId patchId) {
+        return rootPath.resolve(Paths.get(patchId.getSymbolicName(), patchId.getVersion().toString(), patchId + ".zip")).toFile();
     }
 }

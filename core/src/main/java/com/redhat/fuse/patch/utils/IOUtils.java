@@ -19,7 +19,6 @@
  */
 package com.redhat.fuse.patch.utils;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.FileVisitResult;
@@ -28,13 +27,8 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class IOUtils {
 
-    private static Logger LOG = LoggerFactory.getLogger(IOUtils.class);
-    
     /**
      * Writing the specified contents to the specified OutputStream. Flushing the stream when
      * completed. Caller is responsible for opening and closing the specified stream.
@@ -55,7 +49,7 @@ public class IOUtils {
         output.write(content, offset, content.length - offset);
         output.flush();
     }
-    
+
     public static void copydirs(final Path targetDir, final Path sourceDir) throws IOException {
         IllegalArgumentAssertion.assertNotNull(targetDir, "targetDir");
         IllegalArgumentAssertion.assertNotNull(sourceDir, "sourceDir");
@@ -66,13 +60,14 @@ public class IOUtils {
                 targetdir.toFile().mkdirs();
                 return FileVisitResult.CONTINUE;
             }
+
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 return FileVisitResult.CONTINUE;
             }
         });
     }
-    
+
     public static void rmdirs(final Path targetDir) throws IOException {
         IllegalArgumentAssertion.assertNotNull(targetDir, "targetDir");
         if (targetDir.toFile().exists()) {
@@ -82,6 +77,7 @@ public class IOUtils {
                     Files.delete(dir);
                     return FileVisitResult.CONTINUE;
                 }
+
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     Files.delete(file);
@@ -89,15 +85,5 @@ public class IOUtils {
                 }
             });
         }
-    }
-    
-    public static void safeClose (Closeable item) {
-    	if (item != null) {
-    		try {
-				item.close();
-			} catch (IOException ex) {
-				LOG.warn("Cannot close: " + item);
-			}
-    	}
     }
 }

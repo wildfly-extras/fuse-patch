@@ -57,8 +57,8 @@ public final class DefaultPatchTool implements PatchTool {
 	}
 
     @Override
-    public PatchId add(Path filePath) throws IOException {
-        return getPatchRepository().addArchive(filePath);
+    public PatchId add(URL fileUrl) throws IOException {
+        return getPatchRepository().addArchive(fileUrl);
     }
 
     @Override
@@ -76,7 +76,7 @@ public final class DefaultPatchTool implements PatchTool {
                 latestId = pid;
             }
         }
-        PatchSet latest = latestId != null ? getServerInstance().getAppliedPatchSet(latestId) : null;
+        PatchSet latest = latestId != null ? getServerInstance().getPatchSet(latestId) : null;
         SmartPatch smartPatch = getPatchRepository().getSmartPatch(latest, patchId);
         return getServerInstance().applySmartPatch(smartPatch);
     }
@@ -91,12 +91,13 @@ public final class DefaultPatchTool implements PatchTool {
             }
         }
         
-        PatchId repoId = null;
+        PatchId patchId = null;
         for (PatchId pid : getPatchRepository().queryAvailable(prefix)) {
-            repoId = pid;
+            patchId = pid;
         }
-        PatchSet latest = latestId != null ? getServerInstance().getAppliedPatchSet(latestId) : null;
-        SmartPatch smartPatch = getPatchRepository().getSmartPatch(latest, repoId);
+        
+        PatchSet seedPatch = latestId != null ? getServerInstance().getPatchSet(latestId) : null;
+        SmartPatch smartPatch = getPatchRepository().getSmartPatch(seedPatch, patchId);
         return getServerInstance().applySmartPatch(smartPatch);
     }
 

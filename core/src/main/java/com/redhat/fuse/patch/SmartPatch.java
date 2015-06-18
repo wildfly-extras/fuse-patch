@@ -21,7 +21,6 @@ package com.redhat.fuse.patch;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,8 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.redhat.fuse.patch.PatchSet.Action;
+import com.redhat.fuse.patch.PatchSet.Record;
 import com.redhat.fuse.patch.utils.IllegalArgumentAssertion;
-import com.redhat.fuse.patch.utils.IllegalStateAssertion;
 
 
 /**
@@ -46,92 +46,63 @@ import com.redhat.fuse.patch.utils.IllegalStateAssertion;
 public final class SmartPatch {
 
     private final File patchFile;
-    private final PatchId patchId;
-    private final Map<Path, ArtefactId> removeMap = new HashMap<>();
-    private final Map<Path, ArtefactId> replaceMap = new HashMap<>();
-    private final Map<Path, ArtefactId> addMap = new HashMap<>();
-    private final Metadata metadata;
-
-    public static class Metadata {
-        private List<String> postCommands = new ArrayList<>();
-        private boolean immutable;
-        
-        public Metadata() {
-        }
-
-        private Metadata(Metadata other) {
-            this.postCommands.addAll(other.postCommands); 
-        }
-
-        public List<String> getPostCommands() {
-            return Collections.unmodifiableList(postCommands);
-        }
-
-        public void addPostCommand(String cmd) {
-            assertMutable();
-            this.postCommands.add(cmd);
-        }
-        
-        Metadata immutable() {
-            immutable = true;
-            return this;
-        }
-        
-        private void assertMutable() {
-            IllegalStateAssertion.assertFalse(immutable, "Metadata not mutable");
-        }
-    }
+    private final PatchSet patchSet;
+    private final Map<Path, Record> delMap = new HashMap<>();
+    private final Map<Path, Record> updMap = new HashMap<>();
+    private final Map<Path, Record> addMap = new HashMap<>();
     
-    public SmartPatch(File patchFile, PatchId patchId, Set<ArtefactId> removeSet, Set<ArtefactId> replaceSet, Set<ArtefactId> addSet, Metadata metadata) {
+    public SmartPatch(PatchSet patchSet, File patchFile) {
         IllegalArgumentAssertion.assertNotNull(patchFile, "patchFile");
-        IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
-        IllegalArgumentAssertion.assertNotNull(removeSet, "removeSet");
-        IllegalArgumentAssertion.assertNotNull(replaceSet, "replaceSet");
-        IllegalArgumentAssertion.assertNotNull(addSet, "addSet");
-        IllegalArgumentAssertion.assertNotNull(metadata, "metadata");
-        this.patchId = patchId;
+        IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
+        this.patchSet = patchSet;
         this.patchFile = patchFile;
-        this.metadata = new Metadata(metadata);
-        for (ArtefactId aid : removeSet) {
-            removeMap.put(aid.getPath(), aid);
-        }
-        for (ArtefactId aid : replaceSet) {
-            replaceMap.put(aid.getPath(), aid);
-        }
-        for (ArtefactId aid : addSet) {
-            addMap.put(aid.getPath(), aid);
+        for (Record rec : patchSet.getRecords()) {
+            Action action = rec.getAction();
+            switch (rec.getAction()) {
+                case ADD:
+                    addMap.put(rec.getPath(), rec);
+                    break;
+                case UPD:
+                    updMap.put(rec.getPath(), rec);
+                    break;
+                case DEL:
+                    delMap.put(rec.getPath(), rec);
+                    break;
+                default:
+                    throw new IllegalStateException(action + " no supported");
+            }
         }
     }
 
     public PatchId getPatchId() {
-        return patchId;
+        return patchSet.getPatchId();
     }
 
     public File getPatchFile() {
         return patchFile;
     }
 
-    public Metadata getMetadata() {
-        return metadata.immutable();
+    public List<Record> getRecords() {
+        return patchSet.getRecords();
     }
-
-    public Set<ArtefactId> getRemoveSet() {
-        return Collections.unmodifiableSet(new HashSet<>(removeMap.values()));
+    
+    public Set<Record> getRemoveSet() {
+        return Collections.unmodifiableSet(new HashSet<>(delMap.values()));
     }
 
     public boolean isRemovePath(Path path) {
-        return removeMap.containsKey(path);
+        return delMap.containsKey(path);
     }
 
-	public Set<ArtefactId> getReplaceSet() {
-        return Collections.unmodifiableSet(new HashSet<>(replaceMap.values()));
+	public Set<Record> getReplaceSet() {
+        return Collections.unmodifiableSet(new HashSet<>(updMap.values()));
 	}
 
     public boolean isReplacePath(Path path) {
-        return replaceMap.containsKey(path);
+        return updMap.containsKey(path);
     }
 
-	public Set<ArtefactId> getAddSet() {
+	public Set<Record> getAddSet() {
         return Collections.unmodifiableSet(new HashSet<>(addMap.values()));
 	}
 
@@ -139,8 +110,12 @@ public final class SmartPatch {
         return addMap.containsKey(path);
     }
 
+    public List<String> getPostCommands() {
+        return patchSet.getPostCommands();
+    }
+    
     @Override
     public String toString() {
-        return "SmartPatch[id=" + patchId + ",file=" + patchFile + ",rem=" + removeMap.size() + ",rep=" + replaceMap.size() + ",add=" + addMap.size() + "]";
+        return "SmartPatch[id=" + patchSet.getPatchId() + ",file=" + patchFile + ",add=" + addMap.size() + ",upd=" + updMap.size() + ",del=" + delMap.size() + "]";
     }
 }

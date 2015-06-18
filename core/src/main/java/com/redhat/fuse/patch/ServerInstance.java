@@ -47,15 +47,15 @@ public interface ServerInstance {
 	List<PatchId> queryAppliedPatches();
 
     /**
-     * Get an applied patch set
-     */
-    PatchSet getAppliedPatchSet(PatchId patchId);
-    
-    /**
      * Get the latest applied patch
      */
-    PatchSet getLatestPatch();
+	PatchId getLatestApplied(String prefix);
 
+    /**
+     * Get an applied patch set
+     */
+    PatchSet getPatchSet(PatchId patchId);
+    
 	/**
 	 * Apply a smart patch and return the result
 	 */

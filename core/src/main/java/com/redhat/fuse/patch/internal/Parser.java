@@ -20,7 +20,6 @@
 package com.redhat.fuse.patch.internal;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -28,81 +27,57 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.redhat.fuse.patch.PatchId;
+import com.redhat.fuse.patch.PatchSet;
+import com.redhat.fuse.patch.PatchSet.Action;
+import com.redhat.fuse.patch.PatchSet.Record;
 import com.redhat.fuse.patch.SmartPatch;
 import com.redhat.fuse.patch.Version;
-import com.redhat.fuse.patch.utils.IOUtils;
 import com.redhat.fuse.patch.utils.IllegalArgumentAssertion;
 import com.redhat.fuse.patch.utils.IllegalStateAssertion;
 
-public final class Parser {
+final class Parser {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Parser.class);
-    
-    public static Version VERSION;
+    static Version VERSION;
     static {
-        InputStream input = SmartPatch.class.getResourceAsStream("version.properties");
-        try {
+        try (InputStream input = SmartPatch.class.getResourceAsStream("version.properties")) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(input));
             VERSION = Version.parseVersion(reader.readLine());
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
-        } finally {
-            IOUtils.safeClose(input);
         }
     }
     
     static final String VERSION_PREFIX = "# fusepatch:";
+    static final String PATCHID_PREFIX = "# patch id:";
     
-    public static Metadata parseMetadata(File infile) throws IOException {
-        IllegalArgumentAssertion.assertNotNull(infile, "infile");
-        IllegalArgumentAssertion.assertTrue(infile.isFile(), "Cannot find file: " + infile);
+    static PatchSet buildPatchSetFromZip(PatchId patchId, Action action, File zipfile) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(zipfile, "zipfile");
+        IllegalArgumentAssertion.assertTrue(zipfile.isFile(), "Zip file does not exist: " + zipfile);
         
-        Metadata result;
-    	BufferedReader br = new BufferedReader(new FileReader(infile));
-    	try {
-    		String line = br.readLine();
-    		IllegalStateAssertion.assertTrue(line.startsWith(VERSION_PREFIX), "Cannot obtain version info");
-    		result = new Metadata(line.substring(VERSION_PREFIX.length()).trim());
-    		while (line != null) {
-    			line = line.trim();
-    			if (line.length() > 0 && !line.startsWith("#")) {
-         			String[] toks = line.split("[\\s]");
-        	        IllegalStateAssertion.assertEquals(2, toks.length, "Invalid line: " + line);
-        			result.entries.put(toks[0], new Long(toks[1]));
-    			}
-    			line = br.readLine();
-    		} 
-    	} finally {
-    		br.close();
-    	}
-    	return result;
-    }
-
-    /**
-     * Build metadata from the given zip input
-     * @param infile The required zip input file
-     */
-    public Metadata buildMetadata(File infile) throws IOException {
-        IllegalArgumentAssertion.assertNotNull(infile, "infile");
-        IllegalArgumentAssertion.assertTrue(infile.isFile(), "Cannot find file: " + infile);
-        
-        List<String> lines = new ArrayList<>();
-        ZipInputStream zip = new ZipInputStream(new FileInputStream(infile));
-        try {
+        Set<Record> records = new HashSet<>();
+        try (ZipInputStream zip = new ZipInputStream(new FileInputStream(zipfile))) {
             byte[] buffer = new byte[1024];
             ZipEntry entry = zip.getNextEntry();
             while (entry != null) {
@@ -113,138 +88,151 @@ public final class Parser {
                         read = zip.read(buffer);
                     }
                     long crc = entry.getCrc();
-                    lines.add(name + " " + crc);
+                    records.add(Record.create(action, Paths.get(name), crc));
                 }
                 entry = zip.getNextEntry();
             }
-        } finally {
-            zip.close();
         }
-        Collections.sort(lines);
-
-        Metadata metadata = new Metadata(VERSION.toString());
-        for (String line : lines) {
-            String[] toks = line.split(" ");
-            
-            metadata.entries.put(toks[0], Long.parseLong(toks[1]));
-        }
-        
-        return metadata;
+        return PatchSet.create(patchId, records);
     }
 
-    /**
-     * Builds a metadata file
-     * 
-     * @param infile The required zip input file
-     * @param outfile The optional target metadata file
-     */
-	public File buildMetadataFile(File infile, File outfile) throws IOException {
-        Metadata metadata = buildMetadata(infile);
-        if (outfile == null) {
-            String inpath = infile.getPath();
-            int dotindex = inpath.lastIndexOf(".");
-            String prefix = inpath.substring(0, dotindex);
-            String outpath = prefix + ".metadata";
-            outfile = new File(outpath);
-        }
-		return buildMetadataFile(metadata, outfile);
-	}
+    static PatchSet readPatchSet(Path rootPath, PatchId patchId) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
+        IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
+        File metdataFile = getMetadataFile(rootPath, patchId);
+        IllegalStateAssertion.assertTrue(metdataFile.exists(), "Cannot obtain metadata file: " + metdataFile);
+        return readPatchSet(metdataFile);
+    }
 
-    /**
-     * Builds a metadata file
-     * 
-     * @param metadata The required metadata
-     * @param outfile The required target metadata file
-     */
-    public File buildMetadataFile(Metadata metadata, File outfile) throws IOException {
-        IllegalArgumentAssertion.assertNotNull(outfile, "outfile");
-        
-        outfile.getParentFile().mkdirs();
-        PrintWriter pw = new PrintWriter(outfile);
-        try {
-            pw.println(VERSION_PREFIX + " " + VERSION);
-            for (Entry<String, Long> entry : metadata.entries.entrySet()) {
-                pw.println(entry.getKey() + " " + entry.getValue());
-            }
-        } finally {
-            pw.close();
-        }
-        
-        LOG.info("Patch metadata generated: " + outfile);
-        return outfile;
-    }
-    
-    public File buildPatch(File metaRef, File infile) throws IOException {
-        IllegalArgumentAssertion.assertNotNull(metaRef, "metaRef");
-        Metadata metadata = parseMetadata(metaRef);
-        return buildPatch(metadata, infile);
-    }
-    
-	public File buildPatch(Metadata metadata, File infile) throws IOException {
-        IllegalArgumentAssertion.assertNotNull(metadata, "metadata");
-        IllegalArgumentAssertion.assertNotNull(infile, "infile");
-        IllegalArgumentAssertion.assertTrue(infile.isFile(), "Cannot find file: " + infile);
-        
-    	// Compute outpath
-    	String inpath = infile.getPath();
-    	int dotindex = inpath.lastIndexOf(".");
-    	String suffix = inpath.substring(dotindex);
-		String outpath = inpath.substring(0, dotindex) + "-fusepatch" + suffix;
-		
-		File outfile = new File(outpath);
-		ZipOutputStream outzip = new ZipOutputStream(new FileOutputStream(outfile));
-    	try {
-    		ZipInputStream inzip = new ZipInputStream(new FileInputStream(infile));
-    		try {
-    			byte[] buffer = new byte[1024];
-    			ZipEntry entry = inzip.getNextEntry();
-    			while (entry != null) {
-    				if (!entry.isDirectory()) {
-    					ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
-    					String name = entry.getName();
-    					int read = inzip.read(buffer);
-    					while (read > 0) {
-    						baos.write(buffer, 0, read);
-    						read = inzip.read(buffer);
-    					}
-    					long crc = entry.getCrc();
-    					
-    					Long checksum = metadata.entries.get(name);
-    					if (checksum == null || !checksum.equals(crc)) {
-    						outzip.putNextEntry(entry);
-    						IOUtils.writeWithFlush(outzip, baos.toByteArray());
-    					} else {
-    						LOG.debug("Skip entry: {}", name);
-    					}
-    				}
-    				entry = inzip.getNextEntry();
+    static PatchSet readPatchSet(File metdataFile) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(metdataFile, "metdataFile");
+        IllegalArgumentAssertion.assertTrue(metdataFile.isFile(), "Cannot find metadata file: " + metdataFile);
+
+        Set<Record> records = new HashSet<>();
+        List<String> commands = new ArrayList<>();
+    	try (BufferedReader br = new BufferedReader(new FileReader(metdataFile))) {
+    		String line = br.readLine();
+    		IllegalStateAssertion.assertTrue(line.startsWith(VERSION_PREFIX), "Cannot obtain version info");
+            line = br.readLine();
+            IllegalStateAssertion.assertTrue(line.startsWith(PATCHID_PREFIX), "Cannot obtain patch id");
+            PatchId patchId = PatchId.fromString(line.substring(PATCHID_PREFIX.length()));
+            String mode = null;
+    		while (line != null) {
+    			line = line.trim();
+    			if (line.length() == 0 || line.startsWith("#")) {
+                    line = br.readLine();
+                    continue;
     			}
-    		} finally {
-    			inzip.close();
-    		}
-    	} finally {
-    		outzip.close();
+                if (line.startsWith("[") && line.endsWith("]")) {
+                    mode = line;
+                    line = br.readLine();
+                    continue;
+                }
+                if ("[content]".equals(mode)) {
+                    records.add(Record.fromString(line));
+                }
+                if ("[post-install-commands]".equals(mode)) {
+                    commands.add(line);
+                }
+    			line = br.readLine();
+    		} 
+            return PatchSet.create(patchId, records, commands);
     	}
-    	
-		LOG.info("Patch generated: " + outfile);
-		
-    	return outfile;
-	}
-	
-	public static class Metadata {
-		private final String version;
-		private final Map<String, Long> entries = new LinkedHashMap<>();
-		
-		Metadata(String version) {
-			this.version = version;
-		}
+    }
 
-		public String getVersion() {
-			return version;
-		}
-		
-		public Map<String, Long> getEntries() {
-			return Collections.unmodifiableMap(entries);
-		}
-	}
+    static List<PatchId> getAvailable(Path rootPath, final String prefix, boolean latest) {
+        IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
+        final Map<String, TreeSet<PatchId>> auxmap = new HashMap<>();
+        if (rootPath.toFile().exists()) {
+            try {
+                Files.walkFileTree(rootPath, new SimpleFileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                        String name = file.getFileName().toString();
+                        if ((prefix == null || name.startsWith(prefix)) && name.endsWith(".metadata")) {
+                            PatchId patchId = PatchId.fromFile(file.toFile());
+                            TreeSet<PatchId> idset = auxmap.get(patchId.getSymbolicName());
+                            if (idset == null) {
+                                idset = new TreeSet<>();
+                                auxmap.put(patchId.getSymbolicName(), idset);
+                            }
+                            idset.add(patchId);
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
+        Set<PatchId> sortedSet = new TreeSet<>();
+        for (TreeSet<PatchId> set : auxmap.values()) {
+            if (latest) {
+                sortedSet.add(set.last());
+            } else {
+                sortedSet.addAll(set);
+            }
+        }
+        List<PatchId> result = new ArrayList<>(sortedSet);
+        Collections.reverse(result);
+        return Collections.unmodifiableList(result);
+    }
+    
+    static void writeAuditLog(Path rootPath, String message, SmartPatch smartPatch) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(smartPatch, "smartPatch");
+        try (FileOutputStream fos = new FileOutputStream(rootPath.resolve("audit.log").toFile(), true)) {
+            PrintStream pw = new PrintStream(fos);
+            pw.println();
+            String date = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss").format(new Date());
+            pw.println("# " + date);
+            pw.println("# " + 
+            message);
+            PatchSet patchSet = PatchSet.create(smartPatch.getPatchId(), smartPatch.getRecords(), smartPatch.getPostCommands());
+            writePatchSet(patchSet, fos, false);
+        }
+    }
+    
+    static void writePatchSet(Path rootPath, PatchSet patchSet) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
+        IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
+        File metadataFile = getMetadataFile(rootPath, patchSet.getPatchId());
+        metadataFile.getParentFile().mkdirs();
+        try (FileOutputStream fos = new FileOutputStream(metadataFile)) {
+            writePatchSet(patchSet, fos, true);
+        }
+    }
+    
+    static void writePatchSet(PatchSet patchSet, OutputStream outstream) throws IOException {
+        writePatchSet(patchSet, outstream, true);
+    }
+    
+    private static void writePatchSet(PatchSet patchSet, OutputStream outstream, boolean versions) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
+        IllegalArgumentAssertion.assertNotNull(outstream, "outstream");
+        try (PrintStream pw = new PrintStream(outstream)) {
+            if (versions) {
+                pw.println(VERSION_PREFIX + " " + VERSION);
+                pw.println(PATCHID_PREFIX + " " + patchSet.getPatchId());
+            }
+            
+            pw.println();
+            pw.println("[content]");
+            for (Record rec : patchSet.getRecords()) {
+                pw.println(rec.toString());
+            }
+            
+            List<String> commands = patchSet.getPostCommands();
+            if (!commands.isEmpty()) {
+                pw.println();
+                pw.println("[post-install-commands]");
+                for (String cmd : commands) {
+                    pw.println(cmd);
+                }
+            }
+        }
+    }
+    
+    private static File getMetadataFile(Path rootPath, PatchId patchId) {
+        return rootPath.resolve(Paths.get(patchId.getSymbolicName(), patchId.getVersion().toString(), patchId + ".metadata")).toFile();
+    }
 }

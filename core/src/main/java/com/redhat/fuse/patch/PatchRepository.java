@@ -20,10 +20,8 @@
 package com.redhat.fuse.patch;
 
 import java.io.IOException;
-import java.nio.file.Path;
+import java.net.URL;
 import java.util.List;
-
-
 
 /**
  * A patch repository.
@@ -46,9 +44,14 @@ public interface PatchRepository {
     PatchId getLatestAvailable(String prefix);
 
     /**
+     * Get the patch set for the given id
+     */
+    PatchSet getPatchSet(PatchId patchId);
+    
+    /**
      * Add the given patch archive
      */
-    PatchId addArchive(Path filePath) throws IOException;
+    PatchId addArchive(URL fileUrl) throws IOException;
     
     /**
      * Add a post-install command for the given patch id

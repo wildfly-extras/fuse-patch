@@ -22,19 +22,14 @@ package com.redhat.fuse.patch.internal;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -42,21 +37,17 @@ import java.util.zip.ZipInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.redhat.fuse.patch.ArtefactId;
 import com.redhat.fuse.patch.PatchId;
 import com.redhat.fuse.patch.PatchSet;
+import com.redhat.fuse.patch.PatchSet.Record;
 import com.redhat.fuse.patch.ServerInstance;
 import com.redhat.fuse.patch.SmartPatch;
-import com.redhat.fuse.patch.utils.IOUtils;
 import com.redhat.fuse.patch.utils.IllegalArgumentAssertion;
 import com.redhat.fuse.patch.utils.IllegalStateAssertion;
 
 public final class WildFlyServerInstance implements ServerInstance {
 
     private static final Logger LOG = LoggerFactory.getLogger(WildFlyServerInstance.class);
-
-    private static final String FUSEPATCH_LATEST = "fusepatch.latest";
-    private static final String FUSEPATCH_PREFIX = "fpatch-";
 
     private final Path homePath;
 
@@ -81,79 +72,134 @@ public final class WildFlyServerInstance implements ServerInstance {
 
     @Override
     public List<PatchId> queryAppliedPatches() {
-        final List<PatchId> result = new ArrayList<>();
-        getWorkspace().toFile().listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                if (name.startsWith(FUSEPATCH_PREFIX)) {
-                    String idspec = name.substring(FUSEPATCH_PREFIX.length());
-                    result.add(PatchId.fromString(idspec));
-                }
-                return false;
-            }
-        });
-        Collections.sort(result);
-        return Collections.unmodifiableList(result);
+        return Parser.getAvailable(getWorkspace(), null, true);
     }
 
     @Override
-    public PatchSet getAppliedPatchSet(PatchId patchId) {
+    public PatchId getLatestApplied(String prefix) {
+        IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
+        List<PatchId> list = Parser.getAvailable(getWorkspace(), prefix, true);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
+    @Override
+    public PatchSet getPatchSet(PatchId patchId) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
-
-        Path patchdir = getPatchDir(patchId);
-        IllegalStateAssertion.assertTrue(patchdir.toFile().exists(), "Path does not exist: " + patchdir);
-
-        Parser.Metadata metadata;
         try {
-            File mdfile = patchdir.resolve(patchId + ".metadata").toFile();
-            metadata = Parser.parseMetadata(mdfile);
+            return Parser.readPatchSet(getWorkspace(), patchId);
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         }
-
-        Set<ArtefactId> artefacts = new LinkedHashSet<>();
-        for (Entry<String, Long> entry : metadata.getEntries().entrySet()) {
-            Path path = Paths.get(entry.getKey());
-            Long checksum = entry.getValue();
-            artefacts.add(ArtefactId.create(path, checksum));
-        }
-
-        return new PatchSet(patchId, artefacts);
-    }
-
-    @Override
-    public PatchSet getLatestPatch() {
-
-        List<PatchId> pids = queryAppliedPatches();
-        if (pids.isEmpty())
-            return null;
-
-        PatchId latestId = pids.get(pids.size() - 1);
-        return getAppliedPatchSet(latestId);
     }
 
     @Override
     public PatchSet applySmartPatch(SmartPatch smartPatch) throws IOException {
         IllegalArgumentAssertion.assertNotNull(smartPatch, "smartPatch");
 
+        // Do nothing on empty smart patch (i.e. if a patch is applied again)
         if (smartPatch.getRemoveSet().isEmpty() && smartPatch.getReplaceSet().isEmpty() && smartPatch.getAddSet().isEmpty()) {
-            LOG.warn("Nothing to do on empty smart patch: {}", smartPatch);
+            LOG.warn("Nothing to do with: {}", smartPatch.getPatchId());
             return null;
         }
 
-        // Remove all files in the remove set
-        for (ArtefactId artefactId : smartPatch.getRemoveSet()) {
-            Path path = getServerHome().resolve(artefactId.getPath());
-            IllegalStateAssertion.assertTrue(path.toFile().exists(), "Path does not exist: " + path);
-            Files.delete(path);
+        PatchId patchId = smartPatch.getPatchId();
+        PatchId latestId = getLatestApplied(patchId.getSymbolicName());
+        
+        String message;
+        if (latestId == null) {
+            message = "Install: " + patchId;
+        } else {
+            if (latestId.compareTo(patchId) < 0) {
+                message = "Upgrade from " + latestId + " to " + patchId;
+            } else if (latestId.compareTo(patchId) == 0) {
+                message = "Reinstall: " + patchId;
+            } else {
+                message = "Downgrade from " + latestId + " to " + patchId;
+            }
+        }
+        LOG.info(message);
+        
+        // Get the latest applied records
+        Map<Path, Record> records = new HashMap<>();
+        if (latestId != null) {
+            PatchSet patchSet = getPatchSet(latestId);
+            for (Record rec : patchSet.getRecords()) {
+                records.put(rec.getPath(), rec);
+            }
+        }
+        
+        // Remove all records in the remove set
+        for (Record rec : smartPatch.getRemoveSet()) {
+            Path path = getServerHome().resolve(rec.getPath());
+            if (!path.toFile().exists()) {
+                LOG.warn("Attempt to delete non existing file: {}", path);
+            }
+            records.remove(rec.getPath());
+        }
+        
+        // Mark files in the replace set
+        for (Record rec : smartPatch.getReplaceSet()) {
+            Path path = getServerHome().resolve(rec.getPath());
+            if (!path.toFile().exists()) {
+                LOG.warn("Attempt to replace non existing file: {}", path);
+            }
+            records.put(rec.getPath(), rec);
         }
 
-        Set<ArtefactId> artefacts = new HashSet<>();
+        // Add files in the add set
+        for (Record rec : smartPatch.getAddSet()) {
+            Path path = getServerHome().resolve(rec.getPath());
+            if (path.toFile().exists()) {
+                LOG.warn("Attempt to add already existing file: {}", path);
+            }
+            records.put(rec.getPath(), rec);
+        }
 
+        // Update the server files
+        updateServerFiles(smartPatch);
+
+        // Update server side metadata
+        Set<Record> inforecs = new HashSet<>();
+        for (Record rec : records.values()) {
+            inforecs.add(Record.create(rec.getPath(), rec.getChecksum()));
+        }
+        PatchSet infoset = PatchSet.create(patchId, inforecs);
+        Parser.writePatchSet(getWorkspace(), infoset);
+
+        // Write audit log
+        Parser.writeAuditLog(getWorkspace(), message, smartPatch);
+       
+        // Run post install commands
+        Runtime runtime = Runtime.getRuntime();
+        File procdir = homePath.toFile();
+        for (String cmd : smartPatch.getPostCommands()) {
+            String[] envarr = {};
+            String[] cmdarr = cmd.split("\\s") ;
+            Process proc = runtime.exec(cmdarr, envarr, procdir);
+            try {
+                if (proc.waitFor() != 0) {
+                    LOG.error("Command did not terminate normally: " + cmd);
+                    break;
+                }
+            } catch (InterruptedException ex) {
+                // ignore
+            }
+        }
+        
+        return infoset;
+    }
+
+    private void updateServerFiles(SmartPatch smartPatch) throws IOException {
+        
+        // Remove all files in the remove set
+        for (Record rec : smartPatch.getRemoveSet()) {
+            Path path = getServerHome().resolve(rec.getPath());
+            Files.delete(path);
+        }
+        
         // Handle replace and add sets
         File patchFile = smartPatch.getPatchFile();
-        ZipInputStream zip = new ZipInputStream(new FileInputStream(patchFile));
-        try {
+        try (ZipInputStream zip = new ZipInputStream(new FileInputStream(patchFile))) {
             byte[] buffer = new byte[1024];
             ZipEntry entry = zip.getNextEntry();
             while (entry != null) {
@@ -161,97 +207,26 @@ public final class WildFlyServerInstance implements ServerInstance {
                     Path path = Paths.get(entry.getName());
                     if (smartPatch.isReplacePath(path) || smartPatch.isAddPath(path)) {
                         File file = homePath.resolve(path).toFile();
-                        if (smartPatch.isReplacePath(path)) {
-                            IllegalStateAssertion.assertTrue(file.exists(), "Path does not exist: " + path);
-                        }
                         file.getParentFile().mkdirs();
-                        FileOutputStream fos = new FileOutputStream(file);
-                        try {
+                        try (FileOutputStream fos = new FileOutputStream(file)) {
                             int read = zip.read(buffer);
                             while (read > 0) {
                                 fos.write(buffer, 0, read);
                                 read = zip.read(buffer);
                             }
-                            long checksum = entry.getCrc();
-                            artefacts.add(ArtefactId.create(path, checksum));
-                        } finally {
-                            fos.close();
                         }
-                        if (file.getName().endsWith(".sh")) {
+                        if (file.getName().endsWith(".sh") || file.getName().endsWith(".bat")) {
                             file.setExecutable(true);
                         }
                     }
                 }
                 entry = zip.getNextEntry();
             }
-        } finally {
-            zip.close();
-        }
-
-        // Update server side metadata
-        PatchSet result = new PatchSet(smartPatch.getPatchId(), artefacts);
-        updatePatchSet(result);
-
-        // Run post install commands
-        SmartPatch.Metadata metadata = smartPatch.getMetadata();
-        for (String cmd : metadata.getPostCommands()) {
-            String[] envarr = {};
-            String[] cmdarr = cmd.split("\\s") ;
-            Runtime.getRuntime().exec(cmdarr, envarr, homePath.toFile());
-        }
-        
-        return result;
-    }
-
-    public void updatePatchSet(PatchSet patchSet) throws IOException {
-        IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
-
-        // Create the patch directory
-        PatchId patchId = patchSet.getPatchId();
-        File patchdir = getPatchDir(patchId).toFile();
-        IllegalStateAssertion.assertFalse(patchdir.exists(), "Patch directory already exists: " + patchdir);
-        patchdir.mkdirs();
-
-        // Write marker file
-        File markerFile = getMarkerFile();
-        PrintWriter pw = new PrintWriter(new FileWriter(markerFile));
-        try {
-            pw.println(patchId.getCanonicalForm());
-        } finally {
-            IOUtils.safeClose(pw);
-        }
-
-        // Write metadata file
-        File mdfile = patchdir.toPath().resolve(patchId + ".metadata").toFile();
-        pw = new PrintWriter(new FileWriter(mdfile));
-        try {
-
-            List<String> lines = new ArrayList<>();
-            Collections.sort(lines);
-            for (ArtefactId entry : patchSet.getArtefacts()) {
-                lines.add(entry.getPath() + " " + entry.getChecksum());
-            }
-            Collections.sort(lines);
-
-            pw.println(Parser.VERSION_PREFIX + " " + Parser.VERSION);
-            for (String line : lines) {
-                pw.println(line);
-            }
-        } finally {
-            IOUtils.safeClose(pw);
         }
     }
 
     private Path getWorkspace() {
         return homePath.resolve(Paths.get("fusepatch", "workspace"));
-    }
-
-    private File getMarkerFile() {
-        return getWorkspace().resolve(FUSEPATCH_LATEST).toFile();
-    }
-
-    private Path getPatchDir(PatchId patchId) {
-        return getWorkspace().resolve(FUSEPATCH_PREFIX + patchId.getCanonicalForm());
     }
 
     static Path getConfiguredHomePath() {

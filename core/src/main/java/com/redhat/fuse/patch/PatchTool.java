@@ -1,7 +1,7 @@
 package com.redhat.fuse.patch;
 
 import java.io.IOException;
-import java.nio.file.Path;
+import java.net.URL;
 import java.util.List;
 
 /**
@@ -25,7 +25,7 @@ public interface PatchTool {
     /**
      * Add the given archive to the repository
      */
-    PatchId add(Path archivePath) throws IOException;
+    PatchId add(URL archiveUrl) throws IOException;
     
     /**
      * Add a post install command for the given patch id

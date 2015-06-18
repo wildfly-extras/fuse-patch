@@ -42,9 +42,9 @@ final class Options {
 	boolean queryRepository;
 
     @Option(name = "--add", usage = "Add the given archive to the repository")
-    Path addPath;
+    URL addUrl;
     
-    @Option(name = "--add-cmd", usage = "Add a post-install command for a given patch id (i.e. foo-1.0.0:ls -l)")
+    @Option(name = "--add-cmd", usage = "Add a post-install command for a given patch id")
     String addCmd;
     
     @Option(name = "--install", usage = "Install the given patch id to the server")

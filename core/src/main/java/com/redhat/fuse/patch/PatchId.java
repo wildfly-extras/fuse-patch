@@ -19,6 +19,8 @@
  */
 package com.redhat.fuse.patch;
 
+import java.io.File;
+
 import com.redhat.fuse.patch.utils.IllegalArgumentAssertion;
 
 
@@ -64,6 +66,11 @@ public final class PatchId implements Comparable<PatchId> {
         return new PatchId(identity, Version.emptyVersion);
     }
 
+    public static PatchId fromFile(File file) {
+        String name = file.getName();
+        return PatchId.fromString(name.substring(0, name.lastIndexOf('.')));
+    }
+    
     private PatchId(String symbolicName, Version version) {
         IllegalArgumentAssertion.assertNotNull(symbolicName, "symbolicName");
         this.symbolicName = symbolicName.trim();

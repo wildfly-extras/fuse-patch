@@ -74,10 +74,9 @@ public class Main {
 		} 
         
         // Add to repository
-        if (options.addPath != null) {
+        if (options.addUrl != null) {
             PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
-            PatchId patchId = patchTool.add(options.addPath);
-            System.out.println("Patch archive added: " + patchId);
+            patchTool.add(options.addUrl);
             opfound = true;
         }
         
@@ -88,7 +87,6 @@ public class Main {
             PatchId patchId = index > 0 ? PatchId.fromString(options.addCmd.substring(0, index)) : null;
             String cmd = index > 0 ? options.addCmd.substring(index + 1) : options.addCmd;
             patchTool.addPostCommand(patchId, cmd);
-            System.out.println("Added post install cmd '" + cmd + "' to: " + patchId);
             opfound = true;
         }
         
@@ -119,7 +117,7 @@ public class Main {
 
     private static void printPatches(List<PatchId> patches) {
         for (PatchId patchId : patches) {
-            System.out.println(patchId);
+            LOG.info(patchId.toString());
         }
     }
 }
