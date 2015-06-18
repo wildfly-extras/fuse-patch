@@ -31,9 +31,9 @@
 	<!-- Dependency Sets -->
 	<dependencySets>
 		<dependencySet>
-			<outputDirectory>/modules/system/layers/fuse/com/redhat/fuse/patch/main</outputDirectory>
+			<outputDirectory>/modules/system/layers/fuse/org/wildfly/extras/patch/main</outputDirectory>
             <includes>
-                <include>com.redhat.fuse.patch:fuse-patch-core:jar</include>
+                <include>org.wildfly.extras.patch:fuse-patch-core:jar</include>
                 <include>args4j:args4j:jar</include>
             </includes>
 			<useStrictFiltering>true</useStrictFiltering>

@@ -84,8 +84,8 @@ fi
 
 LOG_CONF=`echo $JAVA_OPTS | grep "log4j.configuration"`
 if [ "x$LOG_CONF" = "x" ]; then
-    eval \"$JAVA\" $JAVA_OPTS \"-Dlog4j.configuration=file:"$JBOSS_HOME"/bin/fusepatch-logging.properties\" -jar \""$JBOSS_HOME"/jboss-modules.jar\" -mp \""${JBOSS_MODULEPATH}"\" com.redhat.fuse.patch "$OPTS"
+    eval \"$JAVA\" $JAVA_OPTS \"-Dlog4j.configuration=file:"$JBOSS_HOME"/bin/fusepatch-logging.properties\" -jar \""$JBOSS_HOME"/jboss-modules.jar\" -mp \""${JBOSS_MODULEPATH}"\" org.wildfly.extras.patch "$OPTS"
 else
     echo "log4j.configuration already set in JAVA_OPTS"
-    eval \"$JAVA\" $JAVA_OPTS -jar \""$JBOSS_HOME"/jboss-modules.jar\" -mp \""${JBOSS_MODULEPATH}"\" com.redhat.fuse.patch "$OPTS"
+    eval \"$JAVA\" $JAVA_OPTS -jar \""$JBOSS_HOME"/jboss-modules.jar\" -mp \""${JBOSS_MODULEPATH}"\" org.wildfly.extras.patch "$OPTS"
 fi
