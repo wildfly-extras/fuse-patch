@@ -1,6 +1,6 @@
 /*
  * #%L
- * Fuse Patch :: Parser
+ * Fuse Patch :: Core
  * %%
  * Copyright (C) 2015 Private
  * %%
@@ -62,8 +62,16 @@ final class Parser {
     static Version VERSION;
     static {
         try (InputStream input = SmartPatch.class.getResourceAsStream("version.properties")) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-            VERSION = Version.parseVersion(reader.readLine());
+            BufferedReader br = new BufferedReader(new InputStreamReader(input));
+            String line = br.readLine();
+            while (line != null) {
+                line = line.trim();
+                if (line.length() > 0 && !line.startsWith("#")) {
+                    VERSION = Version.parseVersion(line);
+                    break;
+                }
+                line = br.readLine();
+            }
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         }

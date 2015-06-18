@@ -44,9 +44,11 @@
         <version.wildfly.camel>2.3.0</version.wildfly.camel>
 
         <!-- Plugin versions -->
+        <version-exec-maven-plugin>1.4.0</version-exec-maven-plugin>
         <version-license-maven-plugin>1.8</version-license-maven-plugin>
         <version-maven-compiler-plugin>3.1</version-maven-compiler-plugin>
         <version-maven-jar-plugin>2.6</version-maven-jar-plugin>
+        <version-maven-javadoc-plugin>2.9.1</version-maven-javadoc-plugin>
         <version-maven-release-plugin>2.5</version-maven-release-plugin>
         <version-maven-source-plugin>2.3</version-maven-source-plugin>
         <version-maven-surefire-plugin>2.18.1</version-maven-surefire-plugin>
@@ -137,6 +139,15 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>${version-maven-javadoc-plugin}</version>
+                    <configuration>
+                        <excludePackageNames>org.wildfly.extras.patch.internal</excludePackageNames>
+                        <quiet>true</quiet>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
                     <version>${version-maven-source-plugin}</version>
                 </plugin>
@@ -155,6 +166,11 @@
                     <configuration>
                         <failIfNoTests>false</failIfNoTests>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>${version-exec-maven-plugin}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
