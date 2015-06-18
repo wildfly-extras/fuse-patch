@@ -27,15 +27,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchRepository;
 import org.wildfly.extras.patch.PatchSet;
-import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.PatchSet.Action;
+import org.wildfly.extras.patch.PatchSet.Record;
+import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 
@@ -81,16 +86,40 @@ public final class DefaultPatchRepository implements PatchRepository {
     public PatchId addArchive(URL fileUrl) throws IOException {
         IllegalArgumentAssertion.assertNotNull(fileUrl, "fileUrl");
         IllegalArgumentAssertion.assertTrue(fileUrl.getPath().endsWith(".zip"), "Unsupported file extension: " + fileUrl);
+        
         Path sourcePath = Paths.get(fileUrl.getPath());
         PatchId patchId = PatchId.fromFile(sourcePath.toFile());
-        LOG.info("Add to repository: {}", patchId);
+        
+        // Collect the paths from the latest other patch sets
+        Map<Path, PatchId> pathMap = new HashMap<>();
+        for (PatchId auxid : Parser.getAvailable(rootPath, null, false)) {
+            if (!patchId.getSymbolicName().equals(auxid.getSymbolicName())) {
+                for (Record rec : getPatchSet(auxid).getRecords()) {
+                    pathMap.put(rec.getPath(), auxid);
+                }
+            }
+        }
+        
+        // Assert no duplicate paths
+        Set<PatchId> duplicates = new HashSet<>();
         PatchSet patchSet = Parser.buildPatchSetFromZip(patchId, Action.INFO, sourcePath.toFile());
+        for (Record rec : patchSet.getRecords()) {
+            PatchId otherId = pathMap.get(rec.getPath());
+            if (otherId != null) {
+                LOG.error("Path '{}' already contained in: {}", rec.getPath(), otherId);
+                duplicates.add(otherId);
+            }
+        }
+        IllegalStateAssertion.assertTrue(duplicates.isEmpty(), "Cannot add " + patchId + " because of duplicate paths in " + duplicates);
+        
+        // Add to repository
+        LOG.info("Add to repository: {}", patchId);
         File targetFile = getPatchFile(patchId);
         targetFile.getParentFile().mkdirs();
         Files.copy(sourcePath, targetFile.toPath());
         Parser.writePatchSet(rootPath, patchSet);
         
-        // Remove the source file when it was placed in the repo 
+        // Remove the source file when it was placed in the repository 
         if (sourcePath.startsWith(rootPath)) {
             sourcePath.toFile().delete();
         }

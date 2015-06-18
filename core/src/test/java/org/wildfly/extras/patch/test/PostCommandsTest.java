@@ -53,7 +53,7 @@ public class PostCommandsTest {
 
         WildFlyServerInstance server = new WildFlyServerInstance(serverPath);
         PatchRepository repo = new DefaultPatchRepository(repoPath.toUri().toURL());
-        repo.addArchive(Archives.getZipFileA().toURI().toURL());
+        repo.addArchive(Archives.getZipUrlA());
         repo.addPostCommand(PatchId.fromString("foo-1.0.0"), "echo Do first");
         repo.addPostCommand(PatchId.fromString("foo-1.0.0"), "echo Do after");
 

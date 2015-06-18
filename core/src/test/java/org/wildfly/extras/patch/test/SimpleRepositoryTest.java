@@ -19,6 +19,8 @@
  */
 package org.wildfly.extras.patch.test;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Files;
@@ -38,15 +40,18 @@ import org.wildfly.extras.patch.utils.IOUtils;
 
 public class SimpleRepositoryTest {
 
-    final static Path repoPathA = Paths.get("target/repos/" + SimpleRepositoryTest.class.getSimpleName() + "/repoA");
-    final static Path repoPathB = Paths.get("target/repos/" + SimpleRepositoryTest.class.getSimpleName() + "/repoB");
+    final static Path repoPathA = Paths.get("target/repos/SimpleRepositoryTest/repoA");
+    final static Path repoPathB = Paths.get("target/repos/SimpleRepositoryTest/repoB");
+    final static Path repoPathC = Paths.get("target/repos/SimpleRepositoryTest/repoC");
 
     @BeforeClass
     public static void setUp() throws Exception {
         IOUtils.rmdirs(repoPathA);
         IOUtils.rmdirs(repoPathB);
+        IOUtils.rmdirs(repoPathC);
         repoPathA.toFile().mkdirs();
         repoPathB.toFile().mkdirs();
+        repoPathC.toFile().mkdirs();
     }
 
     @Test
@@ -54,12 +59,12 @@ public class SimpleRepositoryTest {
         
         PatchRepository repo = new DefaultPatchRepository(new URL("file:./target/repos/SimpleRepositoryTest/repoA"));
         
-        PatchId patchId = repo.addArchive(Archives.getZipFileA().toURI().toURL());
+        PatchId patchId = repo.addArchive(Archives.getZipUrlA());
         PatchSet patchSet = repo.getPatchSet(patchId);
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patchSet.getPatchId());
         Assert.assertEquals(3, patchSet.getRecords().size());
         
-        patchId = repo.addArchive(Archives.getZipFileB().toURI().toURL());
+        patchId = repo.addArchive(Archives.getZipUrlB());
         repo.addPostCommand(patchId, "bin/fusepatch.sh --query-server");
         patchSet = repo.getPatchSet(patchId);
         Assert.assertEquals(PatchId.fromString("foo-1.1.0"), patchSet.getPatchId());
@@ -93,5 +98,21 @@ public class SimpleRepositoryTest {
 
         // Verify that the file got removed
         Assert.assertFalse("File got removed", targetFile.exists());
+    }
+
+    @Test
+    public void testOverlappingPaths() throws Exception {
+        
+        PatchRepository repo = new DefaultPatchRepository(repoPathC.toUri().toURL());
+        
+        repo.addArchive(Archives.getZipUrlA());
+        Path copyPath = Paths.get("target/foo-copy-1.1.0.zip");
+        Files.copy(Archives.getZipFileB().toPath(), copyPath, REPLACE_EXISTING);
+        try {
+            repo.addArchive(copyPath.toUri().toURL());
+            Assert.fail("RuntimeException expected");
+        } catch (RuntimeException ex) {
+            Assert.assertTrue(ex.getMessage().contains("duplicate paths in [foo-1.0.0]"));
+        }
     }
 }

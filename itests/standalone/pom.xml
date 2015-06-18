@@ -161,6 +161,7 @@
                         <configuration>
                             <executable>${fusepatch.home}/bin/fusepatch.sh</executable>
                             <arguments>
+                                <argument>--query-repository</argument>
                                 <argument>--add=file:target/fuse-patch-distro-wildfly-${project.version}.zip</argument>
                             </arguments>
                         </configuration>
