@@ -178,6 +178,9 @@
                 <inherited>true</inherited>
             </plugin>
             <plugin>
+                <!-- 
+                    http://www.mojohaus.org/license-maven-plugin 
+                -->
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>license-maven-plugin</artifactId>
                 <configuration>
