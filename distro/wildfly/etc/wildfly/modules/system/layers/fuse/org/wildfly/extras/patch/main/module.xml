@@ -34,6 +34,7 @@
 
     <dependencies>
         <module name="javax.api"/>
+        <module name="org.jboss.logmanager" services="import"/>
         <module name="org.slf4j"/>
     </dependencies>
 

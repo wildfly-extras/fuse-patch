@@ -102,9 +102,9 @@ fi
 # Sample JPDA settings for remote socket debugging
 #JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=n"
 
-LOG_CONF=`echo $JAVA_OPTS | grep "log4j.configuration"`
+LOG_CONF=`echo $JAVA_OPTS | grep "logging.configuration"`
 if [ "x$LOG_CONF" = "x" ]; then
-    eval \"$JAVA\" $JAVA_OPTS \"-Dlog4j.configuration=file:"$JBOSS_HOME"/bin/fusepatch-logging.properties\" -jar \""$JBOSS_HOME"/jboss-modules.jar\" -mp \""${JBOSS_MODULEPATH}"\" org.wildfly.extras.patch "$OPTS"
+    eval \"$JAVA\" $JAVA_OPTS \"-Dlogging.configuration=file:"$JBOSS_HOME"/bin/fusepatch-logging.properties\" -jar \""$JBOSS_HOME"/jboss-modules.jar\" -mp \""${JBOSS_MODULEPATH}"\" org.wildfly.extras.patch "$OPTS"
 else
     echo "log4j.configuration already set in JAVA_OPTS"
     eval \"$JAVA\" $JAVA_OPTS -jar \""$JBOSS_HOME"/jboss-modules.jar\" -mp \""${JBOSS_MODULEPATH}"\" org.wildfly.extras.patch "$OPTS"

@@ -155,10 +155,10 @@ final class Parser {
             try {
                 Files.walkFileTree(rootPath, new SimpleFileVisitor<Path>() {
                     @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                        String name = file.getFileName().toString();
+                    public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+                        String name = path.getFileName().toString();
                         if ((prefix == null || name.startsWith(prefix)) && name.endsWith(".metadata")) {
-                            PatchId patchId = PatchId.fromFile(file.toFile());
+                            PatchId patchId = PatchId.fromFile(path.toFile());
                             TreeSet<PatchId> idset = auxmap.get(patchId.getSymbolicName());
                             if (idset == null) {
                                 idset = new TreeSet<>();

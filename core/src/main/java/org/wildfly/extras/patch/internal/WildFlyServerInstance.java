@@ -106,14 +106,14 @@ public final class WildFlyServerInstance implements ServerInstance {
         
         String message;
         if (latestId == null) {
-            message = "Install: " + patchId;
+            message = "Installing " + patchId;
         } else {
             if (latestId.compareTo(patchId) < 0) {
-                message = "Upgrade from " + latestId + " to " + patchId;
+                message = "Upgrading from " + latestId + " to " + patchId;
             } else if (latestId.compareTo(patchId) == 0) {
-                message = "Reinstall: " + patchId;
+                message = "Reinstalling " + patchId;
             } else {
-                message = "Downgrade from " + latestId + " to " + patchId;
+                message = "Downgrading from " + latestId + " to " + patchId;
             }
         }
         LOG.info(message);
