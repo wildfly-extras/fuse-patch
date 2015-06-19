@@ -41,6 +41,11 @@ public interface ServerInstance {
 	 */
     Path getDefaultRepositoryPath();
     
+    /**
+     * Get the audit log
+     */
+    List<String> getAuditLog();
+    
 	/**
 	 * Get the list of applied patches
 	 */

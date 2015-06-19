@@ -42,6 +42,11 @@ public interface PatchTool {
     List<PatchId> queryRepository();
 
     /**
+     * Get the server's audit log
+     */
+    List<String> getAuditLog();
+    
+    /**
      * Add the given archive to the repository
      */
     PatchId add(URL archiveUrl) throws IOException;

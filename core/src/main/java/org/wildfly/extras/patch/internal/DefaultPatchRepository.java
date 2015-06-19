@@ -114,7 +114,7 @@ public final class DefaultPatchRepository implements PatchRepository {
         IllegalStateAssertion.assertTrue(duplicates.isEmpty(), "Cannot add " + patchId + " because of duplicate paths in " + duplicates);
         
         // Add to repository
-        LOG.info("Add to repository: {}", patchId);
+        LOG.info("Adding {}", patchId);
         File targetFile = getPatchFile(patchId);
         targetFile.getParentFile().mkdirs();
         Files.copy(sourcePath, targetFile.toPath());
@@ -132,7 +132,7 @@ public final class DefaultPatchRepository implements PatchRepository {
     public void addPostCommand(PatchId patchId, String cmd) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         IllegalArgumentAssertion.assertNotNull(cmd, "cmd");
-        LOG.info("Add post install command to: {}", patchId);
+        LOG.info("Adding post install command to {}", patchId);
         PatchSet patchSet = getPatchSet(patchId);
         List<String> commands = new ArrayList<>(patchSet.getPostCommands());
         commands.add(cmd);

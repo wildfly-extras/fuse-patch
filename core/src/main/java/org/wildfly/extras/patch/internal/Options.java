@@ -38,8 +38,11 @@ final class Options {
 	@Option(name = "--query-server", usage = "Query the server for installed patches")
 	boolean queryServer;
 
-	@Option(name = "--query-repository", usage = "Query the repository for available patches")
-	boolean queryRepository;
+    @Option(name = "--query-repository", usage = "Query the repository for available patches")
+    boolean queryRepository;
+    
+    @Option(name = "--audit-log", usage = "Print the audit log")
+    boolean auditLog;
 
     @Option(name = "--add", usage = "Add the given archive to the repository")
     URL addUrl;

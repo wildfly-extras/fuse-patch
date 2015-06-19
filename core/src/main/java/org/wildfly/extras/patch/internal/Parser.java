@@ -50,10 +50,10 @@ import java.util.zip.ZipInputStream;
 
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchSet;
-import org.wildfly.extras.patch.SmartPatch;
-import org.wildfly.extras.patch.Version;
 import org.wildfly.extras.patch.PatchSet.Action;
 import org.wildfly.extras.patch.PatchSet.Record;
+import org.wildfly.extras.patch.SmartPatch;
+import org.wildfly.extras.patch.Version;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 
@@ -187,17 +187,34 @@ final class Parser {
     }
     
     static void writeAuditLog(Path rootPath, String message, SmartPatch smartPatch) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
+        IllegalArgumentAssertion.assertNotNull(message, "message");
         IllegalArgumentAssertion.assertNotNull(smartPatch, "smartPatch");
         try (FileOutputStream fos = new FileOutputStream(rootPath.resolve("audit.log").toFile(), true)) {
             PrintStream pw = new PrintStream(fos);
             pw.println();
             String date = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss").format(new Date());
             pw.println("# " + date);
-            pw.println("# " + 
-            message);
+            pw.println("# " + message);
             PatchSet patchSet = PatchSet.create(smartPatch.getPatchId(), smartPatch.getRecords(), smartPatch.getPostCommands());
             writePatchSet(patchSet, fos, false);
         }
+    }
+    
+    static List<String> readAuditLog(Path rootPath) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
+        List<String> lines = new ArrayList<>();
+        File auditFile = rootPath.resolve("audit.log").toFile();
+        if (auditFile.exists()) {
+            try (BufferedReader br = new BufferedReader(new FileReader(auditFile))) {
+                String line = br.readLine();
+                while (line != null) {
+                    lines.add(line);
+                    line = br.readLine();
+                }
+            }
+        }
+        return Collections.unmodifiableList(lines);
     }
     
     static void writePatchSet(Path rootPath, PatchSet patchSet) throws IOException {

@@ -38,9 +38,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchSet;
+import org.wildfly.extras.patch.PatchSet.Record;
 import org.wildfly.extras.patch.ServerInstance;
 import org.wildfly.extras.patch.SmartPatch;
-import org.wildfly.extras.patch.PatchSet.Record;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 
@@ -79,6 +79,15 @@ public final class WildFlyServerInstance implements ServerInstance {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
         List<PatchId> list = Parser.getAvailable(getWorkspace(), prefix, true);
         return list.isEmpty() ? null : list.get(0);
+    }
+
+    @Override
+    public List<String> getAuditLog() {
+        try {
+            return Parser.readAuditLog(getWorkspace());
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 
     @Override

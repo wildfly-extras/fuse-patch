@@ -48,7 +48,7 @@ public class Main {
         try {
         	run(parser, options);
         } catch (Exception ex) {
-            LOG.error("Execution error", ex);
+            LOG.error(ex.getMessage(), ex);
         	Runtime.getRuntime().exit(1);
         }
     }
@@ -64,12 +64,19 @@ public class Main {
 		    opfound = true;
 		} 
 		
-		// Query the repository
-		if (options.queryRepository) {
+        // Query the repository
+        if (options.queryRepository) {
             PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
-		    printPatches(patchTool.queryRepository());
+            printPatches(patchTool.queryRepository());
             opfound = true;
-		} 
+        } 
+        
+        // Print the audit log
+        if (options.auditLog) {
+            PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).build();
+            printLines(patchTool.getAuditLog());
+            opfound = true;
+        } 
         
         // Add to repository
         if (options.addUrl != null) {
@@ -108,14 +115,20 @@ public class Main {
 		}
 	}
 
-	private static void helpScreen(CmdLineParser cmdParser) {
+	private static void printLines(List<String> lines) {
+	    for (String line : lines) {
+	        System.out.println(line);
+	    }
+    }
+
+    private static void helpScreen(CmdLineParser cmdParser) {
 		System.err.println("fusepatch [options...]");
 		cmdParser.printUsage(System.err);
 	}
 
     private static void printPatches(List<PatchId> patches) {
         for (PatchId patchId : patches) {
-            LOG.info(patchId.toString());
+            System.out.println(patchId.toString());
         }
     }
 }
