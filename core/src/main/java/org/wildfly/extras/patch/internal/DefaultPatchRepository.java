@@ -57,6 +57,7 @@ public final class DefaultPatchRepository implements PatchRepository {
         IllegalStateAssertion.assertNotNull(repoUrl, "Cannot obtain repository URL");
         Path path = Paths.get(repoUrl.getPath());
         IllegalStateAssertion.assertTrue(path.toFile().isDirectory(), "Repository root does not exist: " + path);
+        LOG.info("Repository location: {}", path);
         this.rootPath = path.toAbsolutePath();
     }
 

@@ -47,9 +47,8 @@ public class Main {
 
         try {
         	run(parser, options);
-        } catch (Exception rte) {
-        	LOG.error("Cannot run fusepatch", rte);
-        	rte.printStackTrace(System.err);
+        } catch (Exception ex) {
+            LOG.error("Execution error", ex);
         	Runtime.getRuntime().exit(1);
         }
     }

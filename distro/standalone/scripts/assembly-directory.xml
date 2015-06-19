@@ -22,17 +22,27 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
 
-    <id>assembly-artifacts</id>
     <formats>
-        <format>zip</format>
+        <format>dir</format>
     </formats>
-    <baseDirectory>fuse-patch-${project.version}</baseDirectory>
-    <includeBaseDirectory>true</includeBaseDirectory>
+    <includeBaseDirectory>false</includeBaseDirectory>
 
     <dependencySets>
         <dependencySet>
             <outputDirectory>lib</outputDirectory>
             <useStrictFiltering>true</useStrictFiltering>
+            <excludes>
+                <exclude>*:fuse-patch-distro-wildfly</exclude>
+            </excludes>
+            <scope>provided</scope>
+            <unpack>false</unpack>
+        </dependencySet>
+        <dependencySet>
+            <outputDirectory>repository</outputDirectory>
+            <useStrictFiltering>true</useStrictFiltering>
+            <includes>
+                <include>*:fuse-patch-distro-wildfly</include>
+            </includes>
             <scope>provided</scope>
             <unpack>false</unpack>
         </dependencySet>

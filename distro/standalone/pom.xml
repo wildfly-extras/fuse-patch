@@ -31,6 +31,12 @@
     <artifactId>fuse-patch-distro-standalone</artifactId>
     <packaging>pom</packaging>
 
+    <!-- Properties -->
+    <properties>
+        <fusepatch.home>${project.build.directory}/fuse-patch-${project.version}</fusepatch.home>
+    </properties>
+    
+    <!-- Dependencies -->
     <dependencies>
         <dependency>
             <groupId>org.wildfly.extras.patch</groupId>
@@ -38,8 +44,16 @@
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.wildfly.extras.patch</groupId>
+            <artifactId>fuse-patch-distro-wildfly</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
+    <!-- Build -->
     <build>
         <plugins>
             <plugin>
@@ -47,17 +61,49 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>deploy-artifacts</id>
+                        <id>assembly-directory</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>fuse-patch-${project.version}</finalName>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <descriptors>
+                                <descriptor>scripts/assembly-directory.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>assembly-distro</id>
                         <phase>package</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>
                         <configuration>
-                            <ignoreDirFormatExtensions>true</ignoreDirFormatExtensions>
                             <appendAssemblyId>false</appendAssemblyId>
                             <descriptors>
-                                <descriptor>scripts/assembly-artifacts.xml</descriptor>
+                                <descriptor>scripts/assembly-distro.xml</descriptor>
                             </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-fuse-patch</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${fusepatch.home}/bin/fusepatch.sh</executable>
+                            <arguments>
+                                <argument>--add=file:${fusepatch.home}/repository/fuse-patch-distro-wildfly-${project.version}.zip</argument>
+                            </arguments>
                         </configuration>
                     </execution>
                 </executions>

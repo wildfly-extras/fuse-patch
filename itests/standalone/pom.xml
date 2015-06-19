@@ -46,13 +46,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.wildfly.extras.patch</groupId>
-            <artifactId>fuse-patch-distro-wildfly</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-            <type>zip</type>
-        </dependency>
-        <dependency>
             <groupId>org.jboss.arquillian.junit</groupId>
             <artifactId>arquillian-junit-container</artifactId>
             <scope>test</scope>
@@ -109,25 +102,6 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>fuse-patch-wildfly</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.wildfly.extras.patch</groupId>
-                                    <artifactId>fuse-patch-distro-wildfly</artifactId>
-                                    <version>${project.version}</version>
-                                    <type>zip</type>
-                                    <outputDirectory>${project.build.directory}</outputDirectory>
-                                    <overWrite>false</overWrite>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>unpack-fuse-patch</id>
                         <phase>generate-resources</phase>
                         <goals>
@@ -152,20 +126,6 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
-                    <execution>
-                        <id>add-fuse-patch</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>${fusepatch.home}/bin/fusepatch.sh</executable>
-                            <arguments>
-                                <argument>--query-repository</argument>
-                                <argument>--add=file:target/fuse-patch-distro-wildfly-${project.version}.zip</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
                     <execution>
                         <id>install-fuse-patch</id>
                         <phase>generate-resources</phase>
