@@ -43,6 +43,7 @@ import org.wildfly.extras.patch.PatchSet.Record;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.IllegalStateAssertion;
+import org.wildfly.extras.patch.utils.PatchAssertion;
 
 public final class DefaultPatchRepository implements PatchRepository {
 
@@ -56,7 +57,7 @@ public final class DefaultPatchRepository implements PatchRepository {
         }
         IllegalStateAssertion.assertNotNull(repoUrl, "Cannot obtain repository URL");
         Path path = Paths.get(repoUrl.getPath());
-        IllegalStateAssertion.assertTrue(path.toFile().isDirectory(), "Repository root does not exist: " + path);
+        PatchAssertion.assertTrue(path.toFile().isDirectory(), "Repository root does not exist: " + path);
         LOG.debug("Repository location: {}", path);
         this.rootPath = path.toAbsolutePath();
     }
@@ -107,14 +108,14 @@ public final class DefaultPatchRepository implements PatchRepository {
         for (Record rec : patchSet.getRecords()) {
             PatchId otherId = pathMap.get(rec.getPath());
             if (otherId != null) {
-                LOG.error("Path '{}' already contained in: {}", rec.getPath(), otherId);
+                PatchLogger.error("Path '" + rec.getPath() + "' already contained in: " + otherId);
                 duplicates.add(otherId);
             }
         }
-        IllegalStateAssertion.assertTrue(duplicates.isEmpty(), "Cannot add " + patchId + " because of duplicate paths in " + duplicates);
+        PatchAssertion.assertTrue(duplicates.isEmpty(), "Cannot add " + patchId + " because of duplicate paths in " + duplicates);
         
         // Add to repository
-        LOG.info("Adding {}", patchId);
+        PatchLogger.info("Adding " + patchId);
         File targetFile = getPatchFile(patchId);
         targetFile.getParentFile().mkdirs();
         Files.copy(sourcePath, targetFile.toPath());
@@ -132,7 +133,7 @@ public final class DefaultPatchRepository implements PatchRepository {
     public void addPostCommand(PatchId patchId, String cmd) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         IllegalArgumentAssertion.assertNotNull(cmd, "cmd");
-        LOG.info("Adding post install command to {}", patchId);
+        PatchLogger.info("Adding post install command to " + patchId);
         PatchSet patchSet = getPatchSet(patchId);
         List<String> commands = new ArrayList<>(patchSet.getPostCommands());
         commands.add(cmd);
@@ -155,7 +156,7 @@ public final class DefaultPatchRepository implements PatchRepository {
 
         // Get the patch zip file
         File zipfile = getPatchFile(patchId);
-        IllegalStateAssertion.assertTrue(zipfile.isFile(), "Cannot obtain patch file: " + zipfile);
+        PatchAssertion.assertTrue(zipfile.isFile(), "Cannot obtain patch file: " + zipfile);
 
         PatchSet targetSet = getPatchSet(patchId);
         PatchSet smartSet = PatchSet.smartSet(seedPatch, targetSet);

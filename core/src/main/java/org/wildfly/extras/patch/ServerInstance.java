@@ -63,7 +63,8 @@ public interface ServerInstance {
     
 	/**
 	 * Apply a smart patch and return the result
+	 * @param force TODO
 	 */
-	PatchSet applySmartPatch(SmartPatch smartPatch) throws IOException;
+	PatchSet applySmartPatch(SmartPatch smartPatch, boolean force) throws IOException;
 
 }

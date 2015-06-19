@@ -19,6 +19,7 @@
  */
 package org.wildfly.extras.patch.utils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.FileVisitResult;
@@ -26,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.zip.CRC32;
 
 public class IOUtils {
 
@@ -86,4 +88,14 @@ public class IOUtils {
             });
         }
     }
+    
+    public static long getCRC32 (Path path) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(path, "path");
+        IllegalStateAssertion.assertTrue(path.toFile().isFile(), "Invalid file path: " + path);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Files.copy(path, baos);
+        CRC32 crc32 = new CRC32();
+        crc32.update(baos.toByteArray());
+        return crc32.getValue();
+    } 
 }

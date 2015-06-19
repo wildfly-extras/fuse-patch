@@ -59,10 +59,10 @@ public interface PatchTool {
     /**
      * Install the given patch id to the server
      */
-    PatchSet install(PatchId patchId) throws IOException;
+    PatchSet install(PatchId patchId, boolean force) throws IOException;
 
     /**
      * Update the server for the given patch name
      */
-    PatchSet update(String symbolicName) throws IOException;
+    PatchSet update(String symbolicName, boolean force) throws IOException;
 }

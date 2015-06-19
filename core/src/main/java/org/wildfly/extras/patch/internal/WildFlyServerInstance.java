@@ -41,8 +41,10 @@ import org.wildfly.extras.patch.PatchSet;
 import org.wildfly.extras.patch.PatchSet.Record;
 import org.wildfly.extras.patch.ServerInstance;
 import org.wildfly.extras.patch.SmartPatch;
+import org.wildfly.extras.patch.utils.IOUtils;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.IllegalStateAssertion;
+import org.wildfly.extras.patch.utils.PatchAssertion;
 
 public final class WildFlyServerInstance implements ServerInstance {
 
@@ -101,19 +103,19 @@ public final class WildFlyServerInstance implements ServerInstance {
     }
 
     @Override
-    public PatchSet applySmartPatch(SmartPatch smartPatch) throws IOException {
+    public PatchSet applySmartPatch(SmartPatch smartPatch, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(smartPatch, "smartPatch");
 
-        // Do nothing on empty smart patch (i.e. if a patch is applied again)
-        if (smartPatch.getRemoveSet().isEmpty() && smartPatch.getReplaceSet().isEmpty() && smartPatch.getAddSet().isEmpty()) {
-            LOG.warn("Nothing to do with: {}", smartPatch.getPatchId());
+        // Do nothing on empty smart patch
+        if (smartPatch.getRecords().isEmpty()) {
+            PatchLogger.warn("Patch " + smartPatch.getPatchId() + " has already been applied");
             return null;
         }
 
         PatchId patchId = smartPatch.getPatchId();
         PatchId latestId = getLatestApplied(patchId.getSymbolicName());
         
-        String message;
+        final String message;
         if (latestId == null) {
             message = "Installing " + patchId;
         } else {
@@ -125,7 +127,7 @@ public final class WildFlyServerInstance implements ServerInstance {
                 message = "Downgrading from " + latestId + " to " + patchId;
             }
         }
-        LOG.info(message);
+        PatchLogger.info(message);
         
         // Get the latest applied records
         Map<Path, Record> records = new HashMap<>();
@@ -140,25 +142,35 @@ public final class WildFlyServerInstance implements ServerInstance {
         for (Record rec : smartPatch.getRemoveSet()) {
             Path path = getServerHome().resolve(rec.getPath());
             if (!path.toFile().exists()) {
-                LOG.warn("Attempt to delete non existing file: {}", path);
+                PatchLogger.warn("Attempt to delete a non existing file " + rec.getPath());
             }
             records.remove(rec.getPath());
         }
         
-        // Mark files in the replace set
+        // Replace records in the replace set
         for (Record rec : smartPatch.getReplaceSet()) {
             Path path = getServerHome().resolve(rec.getPath());
+            String filename = path.getFileName().toString();
             if (!path.toFile().exists()) {
-                LOG.warn("Attempt to replace non existing file: {}", path);
+                PatchLogger.warn("Attempt to replace a non existing file " + rec.getPath());
+            } else if (filename.endsWith(".xml") || filename.endsWith(".properties")) {
+                Record exprec = records.get(rec.getPath());
+                Long expcheck = exprec != null ? exprec.getChecksum() : 0L;
+                Long wasCheck = IOUtils.getCRC32(path);
+                if (!expcheck.equals(wasCheck)) {
+                    PatchAssertion.assertTrue(force, "Attempt to override an already modified file " + rec.getPath());
+                    PatchLogger.warn("Overriding an already modified file " + rec.getPath());
+                }
             }
             records.put(rec.getPath(), rec);
         }
 
-        // Add files in the add set
+        // Add records in the add set
         for (Record rec : smartPatch.getAddSet()) {
             Path path = getServerHome().resolve(rec.getPath());
             if (path.toFile().exists()) {
-                LOG.warn("Attempt to add already existing file: {}", path);
+                PatchAssertion.assertTrue(force, "Attempt to add an already existing file " + rec.getPath());
+                PatchLogger.warn("Overriding an already existing file " + rec.getPath());
             }
             records.put(rec.getPath(), rec);
         }
@@ -202,7 +214,7 @@ public final class WildFlyServerInstance implements ServerInstance {
         // Remove all files in the remove set
         for (Record rec : smartPatch.getRemoveSet()) {
             Path path = getServerHome().resolve(rec.getPath());
-            Files.delete(path);
+            Files.deleteIfExists(path);
         }
         
         // Handle replace and add sets

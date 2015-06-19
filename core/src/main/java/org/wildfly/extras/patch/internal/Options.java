@@ -55,4 +55,7 @@ final class Options {
     
     @Option(name = "--update", usage = "Update the server for the given patch name")
     String updateName;
+
+    @Option(name = "--force", usage = "Force an install/update operation")
+    boolean force;
 }

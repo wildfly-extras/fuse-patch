@@ -31,6 +31,7 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.wildfly.extras.patch.PatchException;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchRepository;
 import org.wildfly.extras.patch.PatchSet;
@@ -110,8 +111,8 @@ public class SimpleRepositoryTest {
         Files.copy(Archives.getZipFileB().toPath(), copyPath, REPLACE_EXISTING);
         try {
             repo.addArchive(copyPath.toUri().toURL());
-            Assert.fail("RuntimeException expected");
-        } catch (RuntimeException ex) {
+            Assert.fail("PatchException expected");
+        } catch (PatchException ex) {
             Assert.assertTrue(ex.getMessage().contains("duplicate paths in [foo-1.0.0]"));
         }
     }

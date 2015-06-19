@@ -32,7 +32,7 @@ import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.ServerInstance;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
-import org.wildfly.extras.patch.utils.IllegalStateAssertion;
+import org.wildfly.extras.patch.utils.PatchAssertion;
 
 
 public final class DefaultPatchTool implements PatchTool {
@@ -73,22 +73,22 @@ public final class DefaultPatchTool implements PatchTool {
     }
 
     @Override
-    public PatchSet install(PatchId patchId) throws IOException {
+    public PatchSet install(PatchId patchId, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
-        return installInternal(patchId);
+        return installInternal(patchId, force);
     }
 
     @Override
-    public PatchSet update(String prefix) throws IOException {
+    public PatchSet update(String prefix, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
         
         PatchId latestId = getPatchRepository().getLatestAvailable(prefix);
-        IllegalStateAssertion.assertNotNull(latestId, "Cannot obtain patch id for prefix: " + prefix);
+        PatchAssertion.assertNotNull(latestId, "Cannot obtain patch id for prefix: " + prefix);
         
-        return installInternal(latestId);
+        return installInternal(latestId, force);
     }
     
-    private PatchSet installInternal(PatchId patchId) throws IOException {
+    private PatchSet installInternal(PatchId patchId, boolean force) throws IOException {
         
         PatchId serverId = null;
         String prefix = patchId.getSymbolicName();
@@ -101,7 +101,7 @@ public final class DefaultPatchTool implements PatchTool {
         
         PatchSet seedPatch = serverId != null ? getServerInstance().getPatchSet(serverId) : null;
         SmartPatch smartPatch = getPatchRepository().getSmartPatch(seedPatch, patchId);
-        return getServerInstance().applySmartPatch(smartPatch);
+        return getServerInstance().applySmartPatch(smartPatch, force);
     }
 
     private ServerInstance getServerInstance() {

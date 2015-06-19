@@ -72,7 +72,7 @@ public class PostCommandsTest {
         Assert.assertEquals("echo Do after", cmds.get(1));
         
         // Update the server with a known patch
-        PatchSet patch = server.applySmartPatch(smartPatch);
+        PatchSet patch = server.applySmartPatch(smartPatch, false);
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patch.getPatchId());
     }
 }

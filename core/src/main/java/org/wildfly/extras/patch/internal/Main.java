@@ -26,6 +26,7 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wildfly.extras.patch.PatchException;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
@@ -47,9 +48,12 @@ public class Main {
 
         try {
         	run(parser, options);
-        } catch (Exception ex) {
-            LOG.error(ex.getMessage(), ex);
-        	Runtime.getRuntime().exit(1);
+        } catch (PatchException ex) {
+            PatchLogger.error(ex);
+            Runtime.getRuntime().exit(1);
+        } catch (Throwable th) {
+            LOG.error("Error executing command", th);
+            Runtime.getRuntime().exit(1);
         }
     }
 
@@ -98,14 +102,14 @@ public class Main {
         // Install to server
         if (options.installId != null) {
             PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).repositoryUrl(options.repositoryUrl).build();
-            patchTool.install(PatchId.fromString(options.installId));
+            patchTool.install(PatchId.fromString(options.installId), options.force);
             opfound = true;
         }
         
         // Update the server
         if (options.updateName != null) {
             PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).repositoryUrl(options.repositoryUrl).build();
-            patchTool.update(options.updateName);
+            patchTool.update(options.updateName, options.force);
             opfound = true;
         } 
         
@@ -115,16 +119,16 @@ public class Main {
 		}
 	}
 
+    private static void helpScreen(CmdLineParser cmdParser) {
+        System.err.println("fusepatch [options...]");
+        cmdParser.printUsage(System.err);
+    }
+
 	private static void printLines(List<String> lines) {
 	    for (String line : lines) {
 	        System.out.println(line);
 	    }
     }
-
-    private static void helpScreen(CmdLineParser cmdParser) {
-		System.err.println("fusepatch [options...]");
-		cmdParser.printUsage(System.err);
-	}
 
     private static void printPatches(List<PatchId> patches) {
         for (PatchId patchId : patches) {
