@@ -113,28 +113,14 @@ public final class WildFlyServerInstance implements ServerInstance {
         }
 
         PatchId patchId = smartPatch.getPatchId();
-        PatchId latestId = getLatestApplied(patchId.getSymbolicName());
-        
-        final String message;
-        if (latestId == null) {
-            message = "Installing " + patchId;
-        } else {
-            if (latestId.compareTo(patchId) < 0) {
-                message = "Upgrading from " + latestId + " to " + patchId;
-            } else if (latestId.compareTo(patchId) == 0) {
-                message = "Reinstalling " + patchId;
-            } else {
-                message = "Downgrading from " + latestId + " to " + patchId;
-            }
-        }
-        PatchLogger.info(message);
+        PatchId serverId = getLatestApplied(patchId.getName());
         
         // Get the latest applied records
-        Map<Path, Record> records = new HashMap<>();
-        if (latestId != null) {
-            PatchSet patchSet = getPatchSet(latestId);
+        Map<Path, Record> serverRecords = new HashMap<>();
+        if (serverId != null) {
+            PatchSet patchSet = getPatchSet(serverId);
             for (Record rec : patchSet.getRecords()) {
-                records.put(rec.getPath(), rec);
+                serverRecords.put(rec.getPath(), rec);
             }
         }
         
@@ -144,7 +130,7 @@ public final class WildFlyServerInstance implements ServerInstance {
             if (!path.toFile().exists()) {
                 PatchLogger.warn("Attempt to delete a non existing file " + rec.getPath());
             }
-            records.remove(rec.getPath());
+            serverRecords.remove(rec.getPath());
         }
         
         // Replace records in the replace set
@@ -154,7 +140,7 @@ public final class WildFlyServerInstance implements ServerInstance {
             if (!path.toFile().exists()) {
                 PatchLogger.warn("Attempt to replace a non existing file " + rec.getPath());
             } else if (filename.endsWith(".xml") || filename.endsWith(".properties")) {
-                Record exprec = records.get(rec.getPath());
+                Record exprec = serverRecords.get(rec.getPath());
                 Long expcheck = exprec != null ? exprec.getChecksum() : 0L;
                 Long wasCheck = IOUtils.getCRC32(path);
                 if (!expcheck.equals(wasCheck)) {
@@ -162,7 +148,7 @@ public final class WildFlyServerInstance implements ServerInstance {
                     PatchLogger.warn("Overriding an already modified file " + rec.getPath());
                 }
             }
-            records.put(rec.getPath(), rec);
+            serverRecords.put(rec.getPath(), rec);
         }
 
         // Add records in the add set
@@ -172,7 +158,7 @@ public final class WildFlyServerInstance implements ServerInstance {
                 PatchAssertion.assertTrue(force, "Attempt to add an already existing file " + rec.getPath());
                 PatchLogger.warn("Overriding an already existing file " + rec.getPath());
             }
-            records.put(rec.getPath(), rec);
+            serverRecords.put(rec.getPath(), rec);
         }
 
         // Update the server files
@@ -180,12 +166,27 @@ public final class WildFlyServerInstance implements ServerInstance {
 
         // Update server side metadata
         Set<Record> inforecs = new HashSet<>();
-        for (Record rec : records.values()) {
+        for (Record rec : serverRecords.values()) {
             inforecs.add(Record.create(rec.getPath(), rec.getChecksum()));
         }
         PatchSet infoset = PatchSet.create(patchId, inforecs);
         Parser.writePatchSet(getWorkspace(), infoset);
 
+        // Write the log message
+        final String message;
+        if (serverId == null) {
+            message = "Installed " + patchId;
+        } else {
+            if (serverId.compareTo(patchId) < 0) {
+                message = "Upgraded from " + serverId + " to " + patchId;
+            } else if (serverId.compareTo(patchId) == 0) {
+                message = "Reinstalled " + patchId;
+            } else {
+                message = "Downgraded from " + serverId + " to " + patchId;
+            }
+        }
+        PatchLogger.info(message);
+        
         // Write audit log
         Parser.writeAuditLog(getWorkspace(), message, smartPatch);
        
@@ -193,6 +194,7 @@ public final class WildFlyServerInstance implements ServerInstance {
         Runtime runtime = Runtime.getRuntime();
         File procdir = homePath.toFile();
         for (String cmd : smartPatch.getPostCommands()) {
+            PatchLogger.info("Run: " + cmd);
             String[] envarr = {};
             String[] cmdarr = cmd.split("\\s") ;
             Process proc = runtime.exec(cmdarr, envarr, procdir);

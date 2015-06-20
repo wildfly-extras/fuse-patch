@@ -56,7 +56,7 @@ public class SimpleRepositoryTest {
     }
 
     @Test
-    public void testRepository() throws Exception {
+    public void testSimpleAccess() throws Exception {
         
         PatchRepository repo = new DefaultPatchRepository(new URL("file:./target/repos/SimpleRepositoryTest/repoA"));
         
@@ -66,7 +66,7 @@ public class SimpleRepositoryTest {
         Assert.assertEquals(3, patchSet.getRecords().size());
         
         patchId = repo.addArchive(Archives.getZipUrlB());
-        repo.addPostCommand(patchId, "bin/fusepatch.sh --query-server");
+        repo.addPostCommand(patchId, new String[]{"bin/fusepatch.sh", "--query-server" });
         patchSet = repo.getPatchSet(patchId);
         Assert.assertEquals(PatchId.fromString("foo-1.1.0"), patchSet.getPatchId());
         Assert.assertEquals(2, patchSet.getRecords().size());

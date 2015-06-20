@@ -23,6 +23,7 @@ import java.net.URL;
 import java.nio.file.Path;
 
 import org.kohsuke.args4j.Option;
+import org.kohsuke.args4j.spi.StringArrayOptionHandler;
 
 final class Options {
 
@@ -47,8 +48,8 @@ final class Options {
     @Option(name = "--add", usage = "Add the given archive to the repository")
     URL addUrl;
     
-    @Option(name = "--add-cmd", usage = "Add a post-install command for a given patch id")
-    String addCmd;
+    @Option(name = "--add-cmd", handler = StringArrayOptionHandler.class, usage = "Add a post-install command for a given patch id")
+    String[] addCmd;
     
     @Option(name = "--install", usage = "Install the given patch id to the server")
     String installId;

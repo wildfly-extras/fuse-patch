@@ -119,11 +119,11 @@ final class Parser {
         Set<Record> records = new HashSet<>();
         List<String> commands = new ArrayList<>();
     	try (BufferedReader br = new BufferedReader(new FileReader(metdataFile))) {
-    		String line = br.readLine();
+    		String line = br.readLine().trim();
     		IllegalStateAssertion.assertTrue(line.startsWith(VERSION_PREFIX), "Cannot obtain version info");
-            line = br.readLine();
+            line = br.readLine().trim();
             IllegalStateAssertion.assertTrue(line.startsWith(PATCHID_PREFIX), "Cannot obtain patch id");
-            PatchId patchId = PatchId.fromString(line.substring(PATCHID_PREFIX.length()));
+            PatchId patchId = PatchId.fromString(line.substring(PATCHID_PREFIX.length()).trim());
             String mode = null;
     		while (line != null) {
     			line = line.trim();
@@ -159,10 +159,10 @@ final class Parser {
                         String name = path.getFileName().toString();
                         if ((prefix == null || name.startsWith(prefix)) && name.endsWith(".metadata")) {
                             PatchId patchId = PatchId.fromFile(path.toFile());
-                            TreeSet<PatchId> idset = auxmap.get(patchId.getSymbolicName());
+                            TreeSet<PatchId> idset = auxmap.get(patchId.getName());
                             if (idset == null) {
                                 idset = new TreeSet<>();
-                                auxmap.put(patchId.getSymbolicName(), idset);
+                                auxmap.put(patchId.getName(), idset);
                             }
                             idset.add(patchId);
                         }
@@ -258,6 +258,6 @@ final class Parser {
     }
     
     private static File getMetadataFile(Path rootPath, PatchId patchId) {
-        return rootPath.resolve(Paths.get(patchId.getSymbolicName(), patchId.getVersion().toString(), patchId + ".metadata")).toFile();
+        return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString(), patchId + ".metadata")).toFile();
     }
 }

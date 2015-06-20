@@ -14,13 +14,13 @@ The server and the repository can be queried like this respectively
 The main function of the patch tool however is to install a distribution from the repository like this
 
 ```
-> fusepatch --install=fuse-eap-distro-6.2.1-redhat
+> fusepatch --install fuse-eap-distro-6.2.1-redhat
 ```
 
 or update the server to the the latest like this
 
 ```
-> fusepatch --update=fuse-eap-distro
+> fusepatch --update fuse-eap-distro
 ```
 
 Please see the [User Guide](docs/UserGuide.md) for details.

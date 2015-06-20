@@ -36,7 +36,7 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
  */
 public final class PatchId implements Comparable<PatchId> {
 
-    private final String symbolicName;
+    private final String name;
     private final Version version;
     private final String canonicalForm;
 
@@ -71,15 +71,16 @@ public final class PatchId implements Comparable<PatchId> {
         return PatchId.fromString(name.substring(0, name.lastIndexOf('.')));
     }
     
-    private PatchId(String symbolicName, Version version) {
-        IllegalArgumentAssertion.assertNotNull(symbolicName, "symbolicName");
-        this.symbolicName = symbolicName.trim();
+    private PatchId(String name, Version version) {
+        IllegalArgumentAssertion.assertNotNull(name, "name");
+        IllegalArgumentAssertion.assertTrue(1 == name.split("\\s").length, "Invalid name part: " + name);
+        this.name = name.trim();
         this.version = version != null ? version : Version.emptyVersion;
-        this.canonicalForm = this.symbolicName + "-" + this.version;
+        this.canonicalForm = this.name + "-" + this.version;
     }
 
-    public String getSymbolicName() {
-        return symbolicName;
+    public String getName() {
+        return name;
     }
 
     public Version getVersion() {
@@ -105,7 +106,7 @@ public final class PatchId implements Comparable<PatchId> {
 
     @Override
     public int compareTo(PatchId other) {
-        int result = symbolicName.compareTo(other.symbolicName);
+        int result = name.compareTo(other.name);
         if (result == 0) {
             result = version.compareTo(other.version);
         }

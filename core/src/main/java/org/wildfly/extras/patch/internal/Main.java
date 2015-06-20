@@ -19,7 +19,9 @@
  */
 package org.wildfly.extras.patch.internal;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import org.kohsuke.args4j.CmdLineException;
@@ -36,7 +38,15 @@ public class Main {
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 	
     public static void main(String[] args) {
+        try {
+            mainInternal(args);
+        } catch (Throwable th) {
+            Runtime.getRuntime().exit(1);
+        }
+    }
 
+    // Entry point with no system exit
+    public static void mainInternal(String[] args) {
         Options options = new Options();
         CmdLineParser parser = new CmdLineParser(options);
         try {
@@ -53,7 +63,6 @@ public class Main {
             Runtime.getRuntime().exit(1);
         } catch (Throwable th) {
             LOG.error("Error executing command", th);
-            Runtime.getRuntime().exit(1);
         }
     }
 
@@ -64,38 +73,37 @@ public class Main {
 		// Query the server
 		if (options.queryServer) {
 	        PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).build();
-		    printPatches(patchTool.queryServer());
+		    printPatches(patchTool.getServerInstance().queryAppliedPatches());
 		    opfound = true;
 		} 
 		
         // Query the repository
         if (options.queryRepository) {
             PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
-            printPatches(patchTool.queryRepository());
-            opfound = true;
-        } 
-        
-        // Print the audit log
-        if (options.auditLog) {
-            PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).build();
-            printLines(patchTool.getAuditLog());
+            printPatches(patchTool.getPatchRepository().queryAvailable(null));
             opfound = true;
         } 
         
         // Add to repository
         if (options.addUrl != null) {
             PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
-            patchTool.add(options.addUrl);
+            patchTool.getPatchRepository().addArchive(options.addUrl);
             opfound = true;
         }
         
         // Add post install command
         if (options.addCmd != null) {
             PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
-            int index = options.addCmd.indexOf(":");
-            PatchId patchId = index > 0 ? PatchId.fromString(options.addCmd.substring(0, index)) : null;
-            String cmd = index > 0 ? options.addCmd.substring(index + 1) : options.addCmd;
-            patchTool.addPostCommand(patchId, cmd);
+            PatchId patchId;
+            String[] cmdarr;
+            if (options.addUrl != null) {
+                patchId = PatchId.fromFile(new File(options.addUrl.getPath()));
+                cmdarr = options.addCmd;
+            } else {
+                patchId = PatchId.fromString(options.addCmd[0]);
+                cmdarr = Arrays.copyOfRange(options.addCmd, 1, options.addCmd.length);
+            }
+            patchTool.getPatchRepository().addPostCommand(patchId, cmdarr);
             opfound = true;
         }
         
@@ -110,6 +118,13 @@ public class Main {
         if (options.updateName != null) {
             PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).repositoryUrl(options.repositoryUrl).build();
             patchTool.update(options.updateName, options.force);
+            opfound = true;
+        } 
+        
+        // Print the audit log
+        if (options.auditLog) {
+            PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).build();
+            printLines(patchTool.getServerInstance().getAuditLog());
             opfound = true;
         } 
         

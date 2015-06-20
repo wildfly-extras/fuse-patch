@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.List;
 
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchRepository;
@@ -48,30 +47,31 @@ public final class DefaultPatchTool implements PatchTool {
     }
 
     @Override
-    public List<PatchId> queryServer() {
-		return getServerInstance().queryAppliedPatches();
-	}
-
-    @Override
-    public List<PatchId> queryRepository() {
-		return getPatchRepository().queryAvailable(null);
-	}
-
-    @Override
-    public List<String> getAuditLog() {
-        return getServerInstance().getAuditLog();
+    public ServerInstance getServerInstance() {
+        if (serverInstance == null) {
+            serverInstance = new WildFlyServerInstance(serverPath);
+        }
+        return serverInstance;
     }
 
     @Override
-    public PatchId add(URL fileUrl) throws IOException {
-        return getPatchRepository().addArchive(fileUrl);
+    public PatchRepository getPatchRepository() {
+        if (patchRepository == null) {
+            if (repoUrl == null) {
+                repoUrl = DefaultPatchRepository.getConfiguredUrl();
+                if (repoUrl == null) {
+                    try {
+                        repoUrl = getServerInstance().getDefaultRepositoryPath().toUri().toURL();
+                    } catch (MalformedURLException ex) {
+                        throw new IllegalStateException(ex);
+                    }
+                }
+            }
+            patchRepository = new DefaultPatchRepository(repoUrl);
+        }
+        return patchRepository;
     }
-
-    @Override
-    public void addPostCommand(PatchId patchId, String cmd) {
-        getPatchRepository().addPostCommand(patchId, cmd);
-    }
-
+    
     @Override
     public PatchSet install(PatchId patchId, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
@@ -91,9 +91,9 @@ public final class DefaultPatchTool implements PatchTool {
     private PatchSet installInternal(PatchId patchId, boolean force) throws IOException {
         
         PatchId serverId = null;
-        String prefix = patchId.getSymbolicName();
+        String prefix = patchId.getName();
         for (PatchId pid : getServerInstance().queryAppliedPatches()) {
-            if (pid.getSymbolicName().equals(prefix)) {
+            if (pid.getName().equals(prefix)) {
                 serverId = pid;
                 break;
             }
@@ -102,29 +102,5 @@ public final class DefaultPatchTool implements PatchTool {
         PatchSet seedPatch = serverId != null ? getServerInstance().getPatchSet(serverId) : null;
         SmartPatch smartPatch = getPatchRepository().getSmartPatch(seedPatch, patchId);
         return getServerInstance().applySmartPatch(smartPatch, force);
-    }
-
-    private ServerInstance getServerInstance() {
-        if (serverInstance == null) {
-            serverInstance = new WildFlyServerInstance(serverPath);
-        }
-        return serverInstance;
-    }
-
-    private PatchRepository getPatchRepository() {
-        if (patchRepository == null) {
-            if (repoUrl == null) {
-                repoUrl = DefaultPatchRepository.getConfiguredUrl();
-                if (repoUrl == null) {
-                    try {
-                        repoUrl = getServerInstance().getDefaultRepositoryPath().toUri().toURL();
-                    } catch (MalformedURLException ex) {
-                        throw new IllegalStateException(ex);
-                    }
-                }
-            }
-            patchRepository = new DefaultPatchRepository(repoUrl);
-        }
-        return patchRepository;
     }
 }
