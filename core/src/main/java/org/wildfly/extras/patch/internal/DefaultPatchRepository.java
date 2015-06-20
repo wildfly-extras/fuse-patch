@@ -91,11 +91,12 @@ public final class DefaultPatchRepository implements PatchRepository {
         
         Path sourcePath = Paths.get(fileUrl.getPath());
         PatchId patchId = PatchId.fromFile(sourcePath.toFile());
+        PatchAssertion.assertFalse(queryAvailable(null).contains(patchId), "Repository already contains " + patchId);
         
         // Collect the paths from the latest other patch sets
         Map<Path, PatchId> pathMap = new HashMap<>();
         for (PatchId auxid : Parser.getAvailable(rootPath, null, false)) {
-            if (!patchId.getSymbolicName().equals(auxid.getSymbolicName())) {
+            if (!patchId.getName().equals(auxid.getName())) {
                 for (Record rec : getPatchSet(auxid).getRecords()) {
                     pathMap.put(rec.getPath(), auxid);
                 }
@@ -115,7 +116,6 @@ public final class DefaultPatchRepository implements PatchRepository {
         PatchAssertion.assertTrue(duplicates.isEmpty(), "Cannot add " + patchId + " because of duplicate paths in " + duplicates);
         
         // Add to repository
-        PatchLogger.info("Adding " + patchId);
         File targetFile = getPatchFile(patchId);
         targetFile.getParentFile().mkdirs();
         Files.copy(sourcePath, targetFile.toPath());
@@ -126,23 +126,33 @@ public final class DefaultPatchRepository implements PatchRepository {
             sourcePath.toFile().delete();
         }
         
+        PatchLogger.info("Added " + patchId);
+        
         return patchId;
     }
 
     @Override
-    public void addPostCommand(PatchId patchId, String cmd) {
+    public void addPostCommand(PatchId patchId, String[] cmdarr) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
-        IllegalArgumentAssertion.assertNotNull(cmd, "cmd");
-        PatchLogger.info("Adding post install command to " + patchId);
+        IllegalArgumentAssertion.assertNotNull(cmdarr, "cmdarr");
         PatchSet patchSet = getPatchSet(patchId);
         List<String> commands = new ArrayList<>(patchSet.getPostCommands());
-        commands.add(cmd);
+        commands.add(asCommandString(cmdarr));
         patchSet = PatchSet.create(patchId, patchSet.getRecords(), commands);
         try {
             Parser.writePatchSet(rootPath, patchSet);
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         }
+        PatchLogger.info("Added post install command to " + patchId);
+    }
+
+    private String asCommandString(String[] cmdarr) {
+        StringBuffer result = new StringBuffer();
+        for (String tok : cmdarr) {
+            result.append(tok + " ");
+        }
+        return result.toString().trim();
     }
 
     @Override
@@ -151,7 +161,7 @@ public final class DefaultPatchRepository implements PatchRepository {
         // Derive the target patch id from the seed patch id
         if (patchId == null) {
             IllegalArgumentAssertion.assertNotNull(seedPatch, "seedPatch");
-            patchId = getLatestAvailable(seedPatch.getPatchId().getSymbolicName());
+            patchId = getLatestAvailable(seedPatch.getPatchId().getName());
         }
 
         // Get the patch zip file
@@ -179,6 +189,6 @@ public final class DefaultPatchRepository implements PatchRepository {
     }
 
     private File getPatchFile(PatchId patchId) {
-        return rootPath.resolve(Paths.get(patchId.getSymbolicName(), patchId.getVersion().toString(), patchId + ".zip")).toFile();
+        return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString(), patchId + ".zip")).toFile();
     }
 }

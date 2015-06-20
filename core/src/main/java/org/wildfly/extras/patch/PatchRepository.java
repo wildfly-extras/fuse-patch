@@ -56,7 +56,7 @@ public interface PatchRepository {
     /**
      * Add a post-install command for the given patch id
      */
-    void addPostCommand(PatchId patchId, String cmd);
+    void addPostCommand(PatchId patchId, String[] cmdarr);
     
 	/**
 	 * Get the smart patch for the given seed.

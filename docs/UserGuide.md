@@ -8,17 +8,17 @@ Here we describe typical workflows and some advanced use cases
 
 ### Contents
 
-1. [Downloading and Installing](#downloading-and-installing)
-2. [Installing a package](#installing-a-package)
-3. [Loading the Repository](#loading-the-repository)
-4. [Updating the Server](#updating-the-server)
-5. [Downgrading the Server](#downgrading-the-server)
-6. [Conflicting Packages](#conflicting-packages)
-7. [Conflicting Server Paths](#conflicting-server-paths)
-8. [Running Post-Install Commands](#running-post-install-commands)
-9. [Support for One-Off Patches](#support-for-one-off-patches)
+1. [Downloading and Installed](UserGuide.md#downloading-and-installing)
+2. [Installed a package](UserGuide.md#installing-a-package)
+3. [Loading the Repository](UserGuide.md#loading-the-repository)
+4. [Updating the Server](UserGuide.md#updating-the-server)
+5. [Downgrading the Server](UserGuide.md#downgrading-the-server)
+6. [Conflicting Packages](UserGuide.md#conflicting-packages)
+7. [Conflicting Server Paths](UserGuide.md#conflicting-server-paths)
+8. [Running Post-Install Commands](UserGuide.md#running-post-install-commands)
+9. [Support for One-Off Patches](UserGuide.md#support-for-one-off-patches)
 
-### Downloading and Installing
+### Downloading and Installed
 
 You can download the latest fuse-patch binary from the [releases tab](../../../releases).
 
@@ -46,13 +46,13 @@ $ bin/fusepatch.sh --query-repository
 fuse-patch-distro-wildfly-1.3.0
 ```
 
-### Installing a package
+### Installed a package
 
 Lets assume we work with WildFly and want to use fusepatch from within WildFly.
 
 ```
-$ bin/fusepatch.sh --server=../wildfly-8.2.0.Final --update=fuse-patch-distro-wildfly
-Installing fuse-patch-distro-wildfly-1.3.0
+$ bin/fusepatch.sh --server ../wildfly-8.2.0.Final --update fuse-patch-distro-wildfly
+Installed fuse-patch-distro-wildfly-1.3.0
 ```
 
 Now we can switch to WildFly and query the server
@@ -71,11 +71,11 @@ The repository contains packages identified by symbolic-name and version.
 Lets add two versions of a given package to the repository.
 
 ```
-$ bin/fusepatch.sh --add=file:foo-1.0.0.zip 
-Adding foo-1.0.0
+$ bin/fusepatch.sh --add file:foo-1.0.0.zip 
+Added foo-1.0.0
 
-$ bin/fusepatch.sh --add=file:foo-1.1.0.zip 
-Adding foo-1.1.0
+$ bin/fusepatch.sh --add file:foo-1.1.0.zip 
+Added foo-1.1.0
 
 $ bin/fusepatch.sh --query-repository
 foo-1.1.0
@@ -89,11 +89,11 @@ The server can be updated with packages from the repository.
 Lets first install the initial version `foo-1.0.0` and then update it to version `foo-1.1.0`
 
 ```
-$ bin/fusepatch.sh --install=foo-1.0.0
-Installing foo-1.0.0
+$ bin/fusepatch.sh --install foo-1.0.0
+Installed foo-1.0.0
 
-$ bin/fusepatch.sh --update=foo
-Upgrading from foo-1.0.0 to foo-1.1.0
+$ bin/fusepatch.sh --update foo
+Upgraded from foo-1.0.0 to foo-1.1.0
 ```
 
 The server side maintains an audit log 
@@ -102,7 +102,7 @@ The server side maintains an audit log
 $ bin/fusepatch.sh --audit-log
 
 # 19-Jun-2015 12:22:04
-# Installing foo-1.0.0
+# Installed foo-1.0.0
 
 [content]
 ADD config/propsA.properties 1684822571
@@ -124,8 +124,8 @@ ADD lib/foo-1.1.0.jar 2509787836
 The server can be reset to any given version
 
 ```
-$ bin/fusepatch.sh --install=foo-1.0.0
-Downgrading from foo-1.1.0 to foo-1.0.0
+$ bin/fusepatch.sh --install foo-1.0.0
+Downgraded from foo-1.1.0 to foo-1.0.0
 ```
 
 The audit log shows that the changes were reversed
@@ -155,11 +155,11 @@ For example: `bar-1.0.0` can only be installed after `foo-1.1.0`
 Lets test this on clean repository
 
 ```
-$ bin/fusepatch.sh --add=file:foo-1.0.0.zip 
+$ bin/fusepatch.sh --add file:foo-1.0.0.zip 
 Adding foo-1.0.0
 
 $ cp foo-1.1.0.zip bar-1.0.0.zip
-$ bin/fusepatch.sh --add=file:bar-1.0.0.zip 
+$ bin/fusepatch.sh --add file:bar-1.0.0.zip 
 ERROR Path 'config/propsA.properties' already contained in: foo-1.0.0
 ERROR Cannot add bar-1.0.0 because of duplicate paths in [foo-1.0.0]
 
@@ -182,17 +182,16 @@ By default, the install/update operation fails if the target file already exists
 ```
 $ mkdir config; touch config/propsA.properties
 
-$ bin/fusepatch.sh --update=foo
-Installing foo-1.0.0
+$ bin/fusepatch.sh --update foo
 Error: Attempt to add an already existing file config/propsA.properties
 ```
 
 The `--force` option can be used to override the target file anyway
 
 ```
-$ bin/fusepatch.sh --update=foo --force
-Installing foo-1.0.0
+$ bin/fusepatch.sh --update foo --force
 Warning: Overriding an already existing file config/propsA.properties
+Installed foo-1.0.0
 ```
 
 #### Modifying a file that has been changed
@@ -202,17 +201,16 @@ By default, the update operation fails if the target file had been modified. Thi
 ```
 $ echo x >> config/propsA.properties 
 
-$ bin/fusepatch.sh --update=foo
-Upgrading from foo-1.0.0 to foo-1.1.0
+$ bin/fusepatch.sh --update foo
 Error: Attempt to override an already modified file config/propsA.properties
 ```
 
 Again, the `--force` option can be used to override the target file anyway
 
 ```
-$ bin/fusepatch.sh --update=foo --force
-Upgrading from foo-1.0.0 to foo-1.1.0
+$ bin/fusepatch.sh --update foo --force
 Warning: Overriding an already modified file config/propsA.properties
+Upgraded from foo-1.0.0 to foo-1.1.0
 ```
 
 #### Removing a file that has already been removed
@@ -222,14 +220,36 @@ In this case, we only issue a warming because the file would be deleted anyway.
 ```
 $ rm config/removeme.properties 
 
-$ bin/fusepatch.sh --update=foo
-Upgrading from foo-1.0.0 to foo-1.1.0
+$ bin/fusepatch.sh --update foo
 Warning: Attempt to delete a non existing file config/removeme.properties
+Upgraded from foo-1.0.0 to foo-1.1.0
 ```
 
 ### Running Post-Install Commands
 
-[TODO] Document what is implemented
+Post install commands can be associated with a package when it is added to the repository
+
+```
+$ bin/fusepatch.sh --add file:foo-1.0.0.zip --add-cmd "echo hello world"
+Added foo-1.0.0
+Added post install command to foo-1.0.0
+```
+
+Multiple post install commads can be added later like this
+
+```
+$ bin/fusepatch.sh --add-cmd foo-1.0.0 "echo hello new world"
+Added post install command to foo-1.0.0
+```
+
+Commands are then executed on install or update
+
+```
+$ bin/fusepatch.sh --install foo-1.0.0
+Installed foo-1.0.0
+Run: echo hello world
+Run: echo hello new world
+```
 
 ### Support for One-Off Patches
 

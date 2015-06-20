@@ -20,8 +20,6 @@
 package org.wildfly.extras.patch;
 
 import java.io.IOException;
-import java.net.URL;
-import java.util.List;
 
 /**
  * The patch tool.
@@ -32,29 +30,14 @@ import java.util.List;
 public interface PatchTool {
 
     /**
-     * Query the server for installed patches
+     * Get the server instance
      */
-    List<PatchId> queryServer();
-
-    /**
-     * Query the repository for available patches
-     */
-    List<PatchId> queryRepository();
-
-    /**
-     * Get the server's audit log
-     */
-    List<String> getAuditLog();
+    ServerInstance getServerInstance();
     
     /**
-     * Add the given archive to the repository
+     * Get the patch repository
      */
-    PatchId add(URL archiveUrl) throws IOException;
-    
-    /**
-     * Add a post install command for the given patch id
-     */
-    void addPostCommand(PatchId patchId, String cmd);
+    PatchRepository getPatchRepository();
     
     /**
      * Install the given patch id to the server

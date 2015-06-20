@@ -56,15 +56,15 @@ public class SimpleAccessTest {
     @Test
     public void testQueryServer() throws Exception {
         PatchTool patchTool = new PatchToolBuilder().build();
-        List<PatchId> pids = patchTool.queryServer();
+        List<PatchId> pids = patchTool.getServerInstance().queryAppliedPatches();
         Assert.assertEquals(1, pids.size());
-        Assert.assertEquals("fuse-patch-distro-wildfly", pids.get(0).getSymbolicName());
+        Assert.assertEquals("fuse-patch-distro-wildfly", pids.get(0).getName());
     }
 
     @Test
     public void testQueryRepository() throws Exception {
         PatchTool patchTool = new PatchToolBuilder().build();
-        List<PatchId> pids = patchTool.queryRepository();
+        List<PatchId> pids = patchTool.getPatchRepository().queryAvailable(null);
         Assert.assertEquals(0, pids.size());
     }
 }
