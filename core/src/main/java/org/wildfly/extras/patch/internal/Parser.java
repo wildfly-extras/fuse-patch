@@ -231,6 +231,10 @@ final class Parser {
         writePatchSet(patchSet, outstream, true);
     }
     
+    static File getMetadataFile(Path rootPath, PatchId patchId) {
+        return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString(), patchId + ".metadata")).toFile();
+    }
+    
     private static void writePatchSet(PatchSet patchSet, OutputStream outstream, boolean versions) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
         IllegalArgumentAssertion.assertNotNull(outstream, "outstream");
@@ -255,9 +259,5 @@ final class Parser {
                 }
             }
         }
-    }
-    
-    private static File getMetadataFile(Path rootPath, PatchId patchId) {
-        return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString(), patchId + ".metadata")).toFile();
     }
 }

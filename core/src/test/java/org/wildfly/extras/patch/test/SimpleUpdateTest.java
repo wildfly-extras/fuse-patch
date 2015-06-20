@@ -104,7 +104,7 @@ public class SimpleUpdateTest {
         patches = server.queryAppliedPatches();
         Assert.assertEquals(1, patches.size());
         Assert.assertEquals(patchId, patches.get(0));
-        Assert.assertEquals(patchId, server.getLatestApplied("foo"));
+        Assert.assertEquals(curSet, server.getPatchSet("foo"));
     }
     
     @Test

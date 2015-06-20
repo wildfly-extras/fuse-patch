@@ -21,6 +21,7 @@ package org.wildfly.extras.patch.utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -31,17 +32,9 @@ import java.util.zip.CRC32;
 
 public class IOUtils {
 
-    /**
-     * Writing the specified contents to the specified OutputStream. Flushing the stream when
-     * completed. Caller is responsible for opening and closing the specified stream.
-     *
-     * @param output The OutputStream
-     * @param content The content to write to the specified stream
-     * @throws IOException If a problem occured during any I/O operations
-     */
-    public static void writeWithFlush(final OutputStream output, final byte[] content) throws IOException {
-        IllegalArgumentAssertion.assertNotNull(output, "output");
+    public static void writeWithFlush(final byte[] content, final OutputStream output) throws IOException {
         IllegalArgumentAssertion.assertNotNull(content, "content");
+        IllegalArgumentAssertion.assertNotNull(output, "output");
         final int size = 4096;
         int offset = 0;
         while (content.length - offset > size) {
@@ -49,6 +42,18 @@ public class IOUtils {
             offset += size;
         }
         output.write(content, offset, content.length - offset);
+        output.flush();
+    }
+
+    public static void copy(final InputStream input, final OutputStream output) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(input, "input");
+        IllegalArgumentAssertion.assertNotNull(output, "output");
+        byte[] bytes = new byte[4096];
+        int read = input.read(bytes);
+        while (read > 0) {
+            output.write(bytes, 0, read);
+            read = input.read(bytes);
+        }
         output.flush();
     }
 

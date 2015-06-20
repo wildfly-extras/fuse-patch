@@ -23,6 +23,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -77,10 +79,10 @@ public final class WildFlyServerInstance implements ServerInstance {
     }
 
     @Override
-    public PatchId getLatestApplied(String prefix) {
+    public PatchSet getPatchSet(String prefix) {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
         List<PatchId> list = Parser.getAvailable(getWorkspace(), prefix, true);
-        return list.isEmpty() ? null : list.get(0);
+        return list.isEmpty() ? null : getPatchSet(list.get(0));
     }
 
     @Override
@@ -113,13 +115,12 @@ public final class WildFlyServerInstance implements ServerInstance {
         }
 
         PatchId patchId = smartPatch.getPatchId();
-        PatchId serverId = getLatestApplied(patchId.getName());
+        PatchSet serverSet = getPatchSet(patchId.getName());
         
         // Get the latest applied records
         Map<Path, Record> serverRecords = new HashMap<>();
-        if (serverId != null) {
-            PatchSet patchSet = getPatchSet(serverId);
-            for (Record rec : patchSet.getRecords()) {
+        if (serverSet != null) {
+            for (Record rec : serverSet.getRecords()) {
                 serverRecords.put(rec.getPath(), rec);
             }
         }
@@ -174,9 +175,15 @@ public final class WildFlyServerInstance implements ServerInstance {
 
         // Write the log message
         final String message;
-        if (serverId == null) {
+        if (serverSet == null) {
             message = "Installed " + patchId;
         } else {
+            PatchId serverId = serverSet.getPatchId();
+            
+            // Remove the outdated metadata
+            File outdated = Parser.getMetadataFile(getWorkspace(), serverId);
+            IOUtils.rmdirs(outdated.getParentFile().toPath());
+            
             if (serverId.compareTo(patchId) < 0) {
                 message = "Upgraded from " + serverId + " to " + patchId;
             } else if (serverId.compareTo(patchId) == 0) {
@@ -199,6 +206,8 @@ public final class WildFlyServerInstance implements ServerInstance {
             String[] cmdarr = cmd.split("\\s") ;
             Process proc = runtime.exec(cmdarr, envarr, procdir);
             try {
+                startStreaming(proc.getInputStream(), System.out);
+                startStreaming(proc.getErrorStream(), System.err);
                 if (proc.waitFor() != 0) {
                     LOG.error("Command did not terminate normally: " + cmd);
                     break;
@@ -211,6 +220,20 @@ public final class WildFlyServerInstance implements ServerInstance {
         return infoset;
     }
 
+    private Thread startStreaming(final InputStream input, final OutputStream output) {
+        Thread thread = new Thread("io") {
+            @Override
+            public void run() {
+                try {
+                    IOUtils.copy(input, output);
+                } catch (IOException e) {
+                }
+            }
+        };
+        thread.start();
+        return thread;
+    }
+    
     private void updateServerFiles(SmartPatch smartPatch) throws IOException {
         
         // Remove all files in the remove set

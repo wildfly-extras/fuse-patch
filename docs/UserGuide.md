@@ -248,7 +248,9 @@ Commands are then executed on install or update
 $ bin/fusepatch.sh --install foo-1.0.0
 Installed foo-1.0.0
 Run: echo hello world
+hello world
 Run: echo hello new world
+hello new world
 ```
 
 ### Support for One-Off Patches

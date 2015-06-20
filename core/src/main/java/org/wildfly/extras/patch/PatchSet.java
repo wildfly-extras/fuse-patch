@@ -54,6 +54,7 @@ public final class PatchSet {
     private final PatchId patchId;
     private final Map<Path, Record> recordsMap = new LinkedHashMap<>();
     private final List<String> commands = new ArrayList<>();
+    private int hashCache;
 
     public static enum Action {
         INFO, ADD, UPD, DEL
@@ -135,6 +136,22 @@ public final class PatchSet {
 
     public List<String> getPostCommands() {
         return Collections.unmodifiableList(commands);
+    }
+
+    @Override
+    public int hashCode() {
+        if (hashCache == 0) {
+            hashCache = ("" + patchId + recordsMap + commands).hashCode();
+        }
+        return hashCache;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof PatchSet)) return false;
+        PatchSet other = (PatchSet) obj;
+        return patchId.equals(other.patchId) && recordsMap.equals(other.recordsMap) && commands.equals(other.commands);
     }
 
     @Override

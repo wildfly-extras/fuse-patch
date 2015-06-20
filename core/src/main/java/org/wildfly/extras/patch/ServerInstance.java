@@ -47,23 +47,22 @@ public interface ServerInstance {
     List<String> getAuditLog();
     
 	/**
-	 * Get the list of applied patches
+	 * Get the list of applied packages
 	 */
 	List<PatchId> queryAppliedPatches();
 
     /**
-     * Get the latest applied patch
+     * Get the latest applied patch for a given prefix
      */
-	PatchId getLatestApplied(String prefix);
+	PatchSet getPatchSet(String prefix);
 
     /**
-     * Get an applied patch set
+     * Get the latest applied patch for a given id
      */
     PatchSet getPatchSet(PatchId patchId);
     
 	/**
 	 * Apply a smart patch and return the result
-	 * @param force TODO
 	 */
 	PatchSet applySmartPatch(SmartPatch smartPatch, boolean force) throws IOException;
 
