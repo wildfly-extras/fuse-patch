@@ -64,23 +64,36 @@ public final class DefaultPatchRepository implements PatchRepository {
 
     @Override
     public List<PatchId> queryAvailable(final String prefix) {
-        return Parser.getAvailable(rootPath, prefix, false);
+        Lock.tryLock();
+        try {
+            return Parser.getAvailable(rootPath, prefix, false);
+        } finally {
+            Lock.unlock();
+        }
     }
 
     @Override
     public PatchId getLatestAvailable(String prefix) {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
-        List<PatchId> list = Parser.getAvailable(rootPath, prefix, true);
-        return list.isEmpty() ? null : list.get(0);
+        Lock.tryLock();
+        try {
+            List<PatchId> list = Parser.getAvailable(rootPath, prefix, true);
+            return list.isEmpty() ? null : list.get(0);
+        } finally {
+            Lock.unlock();
+        }
     }
 
     @Override
     public PatchSet getPatchSet(PatchId patchId) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
+        Lock.tryLock();
         try {
             return Parser.readPatchSet(rootPath, patchId);
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
+        } finally {
+            Lock.unlock();
         }
     }
 
@@ -88,89 +101,94 @@ public final class DefaultPatchRepository implements PatchRepository {
     public PatchId addArchive(URL fileUrl) throws IOException {
         IllegalArgumentAssertion.assertNotNull(fileUrl, "fileUrl");
         IllegalArgumentAssertion.assertTrue(fileUrl.getPath().endsWith(".zip"), "Unsupported file extension: " + fileUrl);
-        
-        Path sourcePath = Paths.get(fileUrl.getPath());
-        PatchId patchId = PatchId.fromFile(sourcePath.toFile());
-        PatchAssertion.assertFalse(queryAvailable(null).contains(patchId), "Repository already contains " + patchId);
-        
-        // Collect the paths from the latest other patch sets
-        Map<Path, PatchId> pathMap = new HashMap<>();
-        for (PatchId auxid : Parser.getAvailable(rootPath, null, false)) {
-            if (!patchId.getName().equals(auxid.getName())) {
-                for (Record rec : getPatchSet(auxid).getRecords()) {
-                    pathMap.put(rec.getPath(), auxid);
+        Lock.tryLock();
+        try {
+            Path sourcePath = Paths.get(fileUrl.getPath());
+            PatchId patchId = PatchId.fromFile(sourcePath.toFile());
+            PatchAssertion.assertFalse(queryAvailable(null).contains(patchId), "Repository already contains " + patchId);
+            
+            // Collect the paths from the latest other patch sets
+            Map<Path, PatchId> pathMap = new HashMap<>();
+            for (PatchId auxid : Parser.getAvailable(rootPath, null, false)) {
+                if (!patchId.getName().equals(auxid.getName())) {
+                    for (Record rec : getPatchSet(auxid).getRecords()) {
+                        pathMap.put(rec.getPath(), auxid);
+                    }
                 }
             }
-        }
-        
-        // Assert no duplicate paths
-        Set<PatchId> duplicates = new HashSet<>();
-        PatchSet patchSet = Parser.buildPatchSetFromZip(patchId, Action.INFO, sourcePath.toFile());
-        for (Record rec : patchSet.getRecords()) {
-            PatchId otherId = pathMap.get(rec.getPath());
-            if (otherId != null) {
-                PatchLogger.error("Path '" + rec.getPath() + "' already contained in: " + otherId);
-                duplicates.add(otherId);
+            
+            // Assert no duplicate paths
+            Set<PatchId> duplicates = new HashSet<>();
+            PatchSet patchSet = Parser.buildPatchSetFromZip(patchId, Action.INFO, sourcePath.toFile());
+            for (Record rec : patchSet.getRecords()) {
+                PatchId otherId = pathMap.get(rec.getPath());
+                if (otherId != null) {
+                    PatchLogger.error("Path '" + rec.getPath() + "' already contained in: " + otherId);
+                    duplicates.add(otherId);
+                }
             }
+            PatchAssertion.assertTrue(duplicates.isEmpty(), "Cannot add " + patchId + " because of duplicate paths in " + duplicates);
+            
+            // Add to repository
+            File targetFile = getPatchFile(patchId);
+            targetFile.getParentFile().mkdirs();
+            Files.copy(sourcePath, targetFile.toPath());
+            Parser.writePatchSet(rootPath, patchSet);
+            
+            // Remove the source file when it was placed in the repository 
+            if (sourcePath.startsWith(rootPath)) {
+                sourcePath.toFile().delete();
+            }
+            
+            PatchLogger.info("Added " + patchId);
+            
+            return patchId;
+        } finally {
+            Lock.unlock();
         }
-        PatchAssertion.assertTrue(duplicates.isEmpty(), "Cannot add " + patchId + " because of duplicate paths in " + duplicates);
-        
-        // Add to repository
-        File targetFile = getPatchFile(patchId);
-        targetFile.getParentFile().mkdirs();
-        Files.copy(sourcePath, targetFile.toPath());
-        Parser.writePatchSet(rootPath, patchSet);
-        
-        // Remove the source file when it was placed in the repository 
-        if (sourcePath.startsWith(rootPath)) {
-            sourcePath.toFile().delete();
-        }
-        
-        PatchLogger.info("Added " + patchId);
-        
-        return patchId;
     }
 
     @Override
     public void addPostCommand(PatchId patchId, String[] cmdarr) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         IllegalArgumentAssertion.assertNotNull(cmdarr, "cmdarr");
-        PatchSet patchSet = getPatchSet(patchId);
-        List<String> commands = new ArrayList<>(patchSet.getPostCommands());
-        commands.add(asCommandString(cmdarr));
-        patchSet = PatchSet.create(patchId, patchSet.getRecords(), commands);
+        Lock.tryLock();
         try {
-            Parser.writePatchSet(rootPath, patchSet);
-        } catch (IOException ex) {
-            throw new IllegalStateException(ex);
+            PatchSet patchSet = getPatchSet(patchId);
+            List<String> commands = new ArrayList<>(patchSet.getPostCommands());
+            commands.add(commandString(cmdarr));
+            patchSet = PatchSet.create(patchId, patchSet.getRecords(), commands);
+            try {
+                Parser.writePatchSet(rootPath, patchSet);
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+            PatchLogger.info("Added post install command to " + patchId);
+        } finally {
+            Lock.unlock();
         }
-        PatchLogger.info("Added post install command to " + patchId);
-    }
-
-    private String asCommandString(String[] cmdarr) {
-        StringBuffer result = new StringBuffer();
-        for (String tok : cmdarr) {
-            result.append(tok + " ");
-        }
-        return result.toString().trim();
     }
 
     @Override
     public SmartPatch getSmartPatch(PatchSet seedPatch, PatchId patchId) {
+        Lock.tryLock();
+        try {
+            // Derive the target patch id from the seed patch id
+            if (patchId == null) {
+                IllegalArgumentAssertion.assertNotNull(seedPatch, "seedPatch");
+                patchId = getLatestAvailable(seedPatch.getPatchId().getName());
+            }
 
-        // Derive the target patch id from the seed patch id
-        if (patchId == null) {
-            IllegalArgumentAssertion.assertNotNull(seedPatch, "seedPatch");
-            patchId = getLatestAvailable(seedPatch.getPatchId().getName());
+            // Get the patch zip file
+            File zipfile = getPatchFile(patchId);
+            PatchAssertion.assertTrue(zipfile.isFile(), "Cannot obtain patch file: " + zipfile);
+
+            PatchSet targetSet = getPatchSet(patchId);
+            PatchSet smartSet = PatchSet.smartSet(seedPatch, targetSet);
+            return new SmartPatch(smartSet, zipfile);
+        } finally {
+            Lock.unlock();
         }
-
-        // Get the patch zip file
-        File zipfile = getPatchFile(patchId);
-        PatchAssertion.assertTrue(zipfile.isFile(), "Cannot obtain patch file: " + zipfile);
-
-        PatchSet targetSet = getPatchSet(patchId);
-        PatchSet smartSet = PatchSet.smartSet(seedPatch, targetSet);
-        return new SmartPatch(smartSet, zipfile);
     }
 
     static URL getConfiguredUrl() {
@@ -186,6 +204,14 @@ public final class DefaultPatchRepository implements PatchRepository {
             }
         }
         return null;
+    }
+
+    private String commandString(String[] cmdarr) {
+        StringBuffer result = new StringBuffer();
+        for (String tok : cmdarr) {
+            result.append(tok + " ");
+        }
+        return result.toString().trim();
     }
 
     private File getPatchFile(PatchId patchId) {

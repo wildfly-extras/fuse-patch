@@ -75,17 +75,25 @@ public final class DefaultPatchTool implements PatchTool {
     @Override
     public PatchSet install(PatchId patchId, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
-        return installInternal(patchId, force);
+        Lock.tryLock();
+        try {
+            return installInternal(patchId, force);
+        } finally {
+            Lock.unlock();
+        }
     }
 
     @Override
     public PatchSet update(String prefix, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
-        
-        PatchId latestId = getPatchRepository().getLatestAvailable(prefix);
-        PatchAssertion.assertNotNull(latestId, "Cannot obtain patch id for prefix: " + prefix);
-        
-        return installInternal(latestId, force);
+        Lock.tryLock();
+        try {
+            PatchId latestId = getPatchRepository().getLatestAvailable(prefix);
+            PatchAssertion.assertNotNull(latestId, "Cannot obtain patch id for prefix: " + prefix);
+            return installInternal(latestId, force);
+        } finally {
+            Lock.unlock();
+        }
     }
     
     private PatchSet installInternal(PatchId patchId, boolean force) throws IOException {

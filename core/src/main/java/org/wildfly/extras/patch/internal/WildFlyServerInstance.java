@@ -75,149 +75,172 @@ public final class WildFlyServerInstance implements ServerInstance {
 
     @Override
     public List<PatchId> queryAppliedPatches() {
-        return Parser.getAvailable(getWorkspace(), null, true);
+        Lock.tryLock();
+        try {
+            return Parser.getAvailable(getWorkspace(), null, true);
+        } finally {
+            Lock.unlock();
+        }
     }
 
     @Override
     public PatchSet getPatchSet(String prefix) {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
-        List<PatchId> list = Parser.getAvailable(getWorkspace(), prefix, true);
-        return list.isEmpty() ? null : getPatchSet(list.get(0));
+        Lock.tryLock();
+        try {
+            List<PatchId> list = Parser.getAvailable(getWorkspace(), prefix, true);
+            return list.isEmpty() ? null : getPatchSet(list.get(0));
+        } finally {
+            Lock.unlock();
+        }
     }
 
     @Override
     public List<String> getAuditLog() {
+        Lock.tryLock();
         try {
             return Parser.readAuditLog(getWorkspace());
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
+        } finally {
+            Lock.unlock();
         }
     }
 
     @Override
     public PatchSet getPatchSet(PatchId patchId) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
+        Lock.tryLock();
         try {
             return Parser.readPatchSet(getWorkspace(), patchId);
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
+        } finally {
+            Lock.unlock();
         }
     }
 
     @Override
     public PatchSet applySmartPatch(SmartPatch smartPatch, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(smartPatch, "smartPatch");
-
+        
         // Do nothing on empty smart patch
         if (smartPatch.getRecords().isEmpty()) {
             PatchLogger.warn("Patch " + smartPatch.getPatchId() + " has already been applied");
             return null;
         }
-
-        PatchId patchId = smartPatch.getPatchId();
-        PatchSet serverSet = getPatchSet(patchId.getName());
         
-        // Get the latest applied records
-        Map<Path, Record> serverRecords = new HashMap<>();
-        if (serverSet != null) {
-            for (Record rec : serverSet.getRecords()) {
+        Lock.tryLock();
+        try {
+            PatchId patchId = smartPatch.getPatchId();
+            PatchSet serverSet = getPatchSet(patchId.getName());
+            
+            // Get the latest applied records
+            Map<Path, Record> serverRecords = new HashMap<>();
+            if (serverSet != null) {
+                for (Record rec : serverSet.getRecords()) {
+                    serverRecords.put(rec.getPath(), rec);
+                }
+            }
+            
+            // Remove all records in the remove set
+            for (Record rec : smartPatch.getRemoveSet()) {
+                Path path = getServerHome().resolve(rec.getPath());
+                if (!path.toFile().exists()) {
+                    PatchLogger.warn("Attempt to delete a non existing file " + rec.getPath());
+                }
+                serverRecords.remove(rec.getPath());
+            }
+            
+            // Replace records in the replace set
+            for (Record rec : smartPatch.getReplaceSet()) {
+                Path path = getServerHome().resolve(rec.getPath());
+                String filename = path.getFileName().toString();
+                if (!path.toFile().exists()) {
+                    PatchLogger.warn("Attempt to replace a non existing file " + rec.getPath());
+                } else if (filename.endsWith(".xml") || filename.endsWith(".properties")) {
+                    Record exprec = serverRecords.get(rec.getPath());
+                    Long expcheck = exprec != null ? exprec.getChecksum() : 0L;
+                    Long wasCheck = IOUtils.getCRC32(path);
+                    if (!expcheck.equals(wasCheck)) {
+                        PatchAssertion.assertTrue(force, "Attempt to override an already modified file " + rec.getPath());
+                        PatchLogger.warn("Overriding an already modified file " + rec.getPath());
+                    }
+                }
                 serverRecords.put(rec.getPath(), rec);
             }
-        }
-        
-        // Remove all records in the remove set
-        for (Record rec : smartPatch.getRemoveSet()) {
-            Path path = getServerHome().resolve(rec.getPath());
-            if (!path.toFile().exists()) {
-                PatchLogger.warn("Attempt to delete a non existing file " + rec.getPath());
-            }
-            serverRecords.remove(rec.getPath());
-        }
-        
-        // Replace records in the replace set
-        for (Record rec : smartPatch.getReplaceSet()) {
-            Path path = getServerHome().resolve(rec.getPath());
-            String filename = path.getFileName().toString();
-            if (!path.toFile().exists()) {
-                PatchLogger.warn("Attempt to replace a non existing file " + rec.getPath());
-            } else if (filename.endsWith(".xml") || filename.endsWith(".properties")) {
-                Record exprec = serverRecords.get(rec.getPath());
-                Long expcheck = exprec != null ? exprec.getChecksum() : 0L;
-                Long wasCheck = IOUtils.getCRC32(path);
-                if (!expcheck.equals(wasCheck)) {
-                    PatchAssertion.assertTrue(force, "Attempt to override an already modified file " + rec.getPath());
-                    PatchLogger.warn("Overriding an already modified file " + rec.getPath());
+
+            // Add records in the add set
+            for (Record rec : smartPatch.getAddSet()) {
+                Path path = getServerHome().resolve(rec.getPath());
+                if (path.toFile().exists()) {
+                    PatchAssertion.assertTrue(force, "Attempt to add an already existing file " + rec.getPath());
+                    PatchLogger.warn("Overriding an already existing file " + rec.getPath());
                 }
+                serverRecords.put(rec.getPath(), rec);
             }
-            serverRecords.put(rec.getPath(), rec);
-        }
 
-        // Add records in the add set
-        for (Record rec : smartPatch.getAddSet()) {
-            Path path = getServerHome().resolve(rec.getPath());
-            if (path.toFile().exists()) {
-                PatchAssertion.assertTrue(force, "Attempt to add an already existing file " + rec.getPath());
-                PatchLogger.warn("Overriding an already existing file " + rec.getPath());
+            // Update the server files
+            updateServerFiles(smartPatch);
+
+            // Update server side metadata
+            Set<Record> inforecs = new HashSet<>();
+            for (Record rec : serverRecords.values()) {
+                inforecs.add(Record.create(rec.getPath(), rec.getChecksum()));
             }
-            serverRecords.put(rec.getPath(), rec);
-        }
+            PatchSet infoset = PatchSet.create(patchId, inforecs);
+            Parser.writePatchSet(getWorkspace(), infoset);
 
-        // Update the server files
-        updateServerFiles(smartPatch);
-
-        // Update server side metadata
-        Set<Record> inforecs = new HashSet<>();
-        for (Record rec : serverRecords.values()) {
-            inforecs.add(Record.create(rec.getPath(), rec.getChecksum()));
-        }
-        PatchSet infoset = PatchSet.create(patchId, inforecs);
-        Parser.writePatchSet(getWorkspace(), infoset);
-
-        // Write the log message
-        final String message;
-        if (serverSet == null) {
-            message = "Installed " + patchId;
-        } else {
-            PatchId serverId = serverSet.getPatchId();
-            
             // Remove the outdated metadata
-            File outdated = Parser.getMetadataFile(getWorkspace(), serverId);
-            IOUtils.rmdirs(outdated.getParentFile().toPath());
+            if (serverSet != null) {
+                PatchId serverId = serverSet.getPatchId();
+                File outdated = Parser.getMetadataFile(getWorkspace(), serverId);
+                IOUtils.rmdirs(outdated.getParentFile().toPath());
+            }
             
-            if (serverId.compareTo(patchId) < 0) {
-                message = "Upgraded from " + serverId + " to " + patchId;
-            } else if (serverId.compareTo(patchId) == 0) {
-                message = "Reinstalled " + patchId;
+            // Write the log message
+            final String message;
+            if (serverSet == null) {
+                message = "Installed " + patchId;
             } else {
-                message = "Downgraded from " + serverId + " to " + patchId;
-            }
-        }
-        PatchLogger.info(message);
-        
-        // Write audit log
-        Parser.writeAuditLog(getWorkspace(), message, smartPatch);
-       
-        // Run post install commands
-        Runtime runtime = Runtime.getRuntime();
-        File procdir = homePath.toFile();
-        for (String cmd : smartPatch.getPostCommands()) {
-            PatchLogger.info("Run: " + cmd);
-            String[] envarr = {};
-            String[] cmdarr = cmd.split("\\s") ;
-            Process proc = runtime.exec(cmdarr, envarr, procdir);
-            try {
-                startStreaming(proc.getInputStream(), System.out);
-                startStreaming(proc.getErrorStream(), System.err);
-                if (proc.waitFor() != 0) {
-                    LOG.error("Command did not terminate normally: " + cmd);
-                    break;
+                PatchId serverId = serverSet.getPatchId();
+                if (serverId.compareTo(patchId) < 0) {
+                    message = "Upgraded from " + serverId + " to " + patchId;
+                } else if (serverId.compareTo(patchId) == 0) {
+                    message = "Reinstalled " + patchId;
+                } else {
+                    message = "Downgraded from " + serverId + " to " + patchId;
                 }
-            } catch (InterruptedException ex) {
-                // ignore
             }
+            PatchLogger.info(message);
+            
+            // Write audit log
+            Parser.writeAuditLog(getWorkspace(), message, smartPatch);
+           
+            // Run post install commands
+            Runtime runtime = Runtime.getRuntime();
+            File procdir = homePath.toFile();
+            for (String cmd : smartPatch.getPostCommands()) {
+                PatchLogger.info("Run: " + cmd);
+                String[] envarr = {};
+                String[] cmdarr = cmd.split("\\s") ;
+                Process proc = runtime.exec(cmdarr, envarr, procdir);
+                try {
+                    startStreaming(proc.getInputStream(), System.out);
+                    startStreaming(proc.getErrorStream(), System.err);
+                    if (proc.waitFor() != 0) {
+                        LOG.error("Command did not terminate normally: " + cmd);
+                        break;
+                    }
+                } catch (InterruptedException ex) {
+                    // ignore
+                }
+            }
+            
+            return infoset;
+        } finally {
+            Lock.unlock();
         }
-        
-        return infoset;
     }
 
     private Thread startStreaming(final InputStream input, final OutputStream output) {
