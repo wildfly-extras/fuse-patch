@@ -135,9 +135,17 @@ public class SimpleUpdateTest {
             Assert.assertTrue(ex.getMessage().contains("existing file config/propsA.properties"));
         }
         
-        // force the the override
+        // Force the the override
         server.applySmartPatch(smartPatch, true);
         assertFileContent("some.prop = A1", targetPath);
+        
+        // Delete the workspace
+        IOUtils.rmdirs(serverPathB.resolve("fusepatch"));
+        Assert.assertTrue("No patches applied", server.queryAppliedPatches().isEmpty());
+        
+        // Verify that the files can be added if they have the same checksum
+        server.applySmartPatch(smartPatch, false);
+        Assert.assertEquals(1, server.queryAppliedPatches().size());
     }
 
     @Test

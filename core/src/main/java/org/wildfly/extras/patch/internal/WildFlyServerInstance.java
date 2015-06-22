@@ -187,8 +187,12 @@ final class WildFlyServerInstance implements ServerInstance {
             for (Record rec : smartPatch.getAddSet()) {
                 Path path = getServerHome().resolve(rec.getPath());
                 if (path.toFile().exists()) {
-                    PatchAssertion.assertTrue(force, "Attempt to add an already existing file " + rec.getPath());
-                    PatchLogger.warn("Overriding an already existing file " + rec.getPath());
+                    Long expcheck = rec.getChecksum();
+                    Long wasCheck = IOUtils.getCRC32(path);
+                    if (!expcheck.equals(wasCheck)) {
+                        PatchAssertion.assertTrue(force, "Attempt to add an already existing file " + rec.getPath());
+                        PatchLogger.warn("Overriding an already existing file " + rec.getPath());
+                    }
                 }
                 serverRecords.put(rec.getPath(), rec);
             }
