@@ -142,7 +142,7 @@ final class WildFlyServerInstance implements ServerInstance {
                     unsatisfied.add(depId);
                 }
             }
-            IllegalStateAssertion.assertTrue(unsatisfied.isEmpty(), "Unsatisfied dependencies: " + unsatisfied);
+            PatchAssertion.assertTrue(unsatisfied.isEmpty(), "Unsatisfied dependencies: " + unsatisfied);
             
             
             PatchId patchId = smartPatch.getPatchId();

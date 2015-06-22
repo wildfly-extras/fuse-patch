@@ -22,7 +22,9 @@ package org.wildfly.extras.patch.internal;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -89,8 +91,18 @@ public class Main {
         // Add to repository
         if (options.addUrl != null) {
             PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
-            PatchId oneoffId = options.patchId != null ? PatchId.fromString(options.patchId) : null;
-            patchTool.getPatchRepository().addArchive(options.addUrl, oneoffId);
+            PatchId oneoffId = null;
+            Set<PatchId> dependencies = new LinkedHashSet<>();
+            if (options.patchId != null) {
+                oneoffId = PatchId.fromString(options.patchId);
+                dependencies.add(oneoffId);
+            }
+            if (options.depends != null) {
+                for (String depid : options.depends) {
+                    dependencies.add(PatchId.fromString(depid));
+                }
+            }
+            patchTool.getPatchRepository().addArchive(options.addUrl, oneoffId, dependencies);
             opfound = true;
         }
         

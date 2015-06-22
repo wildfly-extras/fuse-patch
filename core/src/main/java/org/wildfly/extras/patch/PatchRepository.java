@@ -22,6 +22,7 @@ package org.wildfly.extras.patch;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A patch repository.
@@ -57,9 +58,17 @@ public interface PatchRepository {
     /**
      * Add the given patch archive
      * @param fileUrl The file URL to the patch archive
-     * @param oneoffId An option patch id if the given URL is a one-off patch
+     * @param oneoffId An optional patch id if the given URL is a one-off patch
      */
     PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException;
+    
+    /**
+     * Add the given patch archive
+     * @param fileUrl The file URL to the patch archive
+     * @param oneoffId An optional patch id if the given URL is a one-off patch
+     * @param dependencies An optional set of patch dependencies
+     */
+    PatchId addArchive(URL fileUrl, PatchId oneoffId, Set<PatchId> dependencies) throws IOException;
     
     /**
      * Add a post-install command for the given patch id
