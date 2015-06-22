@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -100,11 +101,16 @@ final class DefaultPatchRepository implements PatchRepository {
 
     @Override
     public PatchId addArchive(URL fileUrl) throws IOException {
-        return addArchive(fileUrl, null);
+        return addArchive(fileUrl, null, Collections.<PatchId>emptySet());
     }
     
     @Override
     public PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException {
+        return addArchive(fileUrl, oneoffId, Collections.<PatchId>emptySet());
+    }
+    
+    @Override
+    public PatchId addArchive(URL fileUrl, PatchId oneoffId, Set<PatchId> dependencies) throws IOException {
         IllegalArgumentAssertion.assertNotNull(fileUrl, "fileUrl");
         IllegalArgumentAssertion.assertTrue(fileUrl.getPath().endsWith(".zip"), "Unsupported file extension: " + fileUrl);
         Lock.tryLock();
@@ -116,7 +122,7 @@ final class DefaultPatchRepository implements PatchRepository {
             // Verify one-off id
             if (oneoffId != null) {
                 File metadataFile = Parser.getMetadataFile(rootPath, oneoffId);
-                IllegalStateAssertion.assertTrue(metadataFile.isFile(), "Cannot obtain target patch for: " + oneoffId);
+                PatchAssertion.assertTrue(metadataFile.isFile(), "Cannot obtain target patch for: " + oneoffId);
             }
             
             // Collect the paths from the latest other patch sets
@@ -141,9 +147,12 @@ final class DefaultPatchRepository implements PatchRepository {
                 for (Record rec : sourceSet.getRecords()) {
                     records.put(rec.getPath(), rec);
                 }
-                patchSet = PatchSet.create(patchId, records.values(), Collections.singleton(oneoffId));
+                Set<PatchId> depids = new LinkedHashSet<>(dependencies);
+                depids.add(oneoffId);
+                patchSet = PatchSet.create(patchId, records.values(), depids);
             } else {
-                patchSet = Parser.buildPatchSetFromZip(patchId, Action.INFO, sourcePath.toFile());
+                PatchSet sourceSet = Parser.buildPatchSetFromZip(patchId, Action.INFO, sourcePath.toFile());
+                patchSet = PatchSet.create(patchId, sourceSet.getRecords(), dependencies);
             }
             
             // Assert no duplicate paths
@@ -171,6 +180,9 @@ final class DefaultPatchRepository implements PatchRepository {
             String message = "Added " + patchId;
             if (oneoffId != null) {
                 message += " patching " + oneoffId;
+            }
+            if (!dependencies.isEmpty()) {
+                message += " with dependencies on " + dependencies;
             }
             PatchLogger.info(message);
             

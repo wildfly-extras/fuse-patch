@@ -51,6 +51,9 @@ final class Options {
     @Option(name = "--one-off", depends = { "--add" }, usage = "A one-off target patch id")
     String patchId;
     
+    @Option(name = "--depends", depends = { "--add" }, usage = "An array of dependency ids")
+    String[]  depends;
+    
     @Option(name = "--add-cmd", handler = StringArrayOptionHandler.class, usage = "Add a post-install command for a given patch id")
     String[] addCmd;
     

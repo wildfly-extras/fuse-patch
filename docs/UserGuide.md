@@ -8,15 +8,16 @@ Here we describe typical workflows and some advanced use cases
 
 ### Contents
 
-1. [Download and Install](UserGuide.md#download-and-install)
-2. [Installed a package](UserGuide.md#installing-a-package)
-3. [Loading the Repository](UserGuide.md#loading-the-repository)
-4. [Updating the Server](UserGuide.md#updating-the-server)
-5. [Downgrading the Server](UserGuide.md#downgrading-the-server)
-6. [Conflicting Packages](UserGuide.md#conflicting-packages)
-7. [Conflicting Server Paths](UserGuide.md#conflicting-server-paths)
-8. [Running Post-Install Commands](UserGuide.md#running-post-install-commands)
-9. [Support for One-Off Patches](UserGuide.md#support-for-one-off-patches)
+ 1. [Download and Install](UserGuide.md#download-and-install)
+ 2. [Installed a package](UserGuide.md#installing-a-package)
+ 3. [Loading the Repository](UserGuide.md#loading-the-repository)
+ 4. [Updating the Server](UserGuide.md#updating-the-server)
+ 5. [Downgrading the Server](UserGuide.md#downgrading-the-server)
+ 6. [Conflicting Packages](UserGuide.md#conflicting-packages)
+ 7. [Conflicting Server Paths](UserGuide.md#conflicting-server-paths)
+ 8. [Running Post-Install Commands](UserGuide.md#running-post-install-commands)
+ 9. [Support for One-Off Patches](UserGuide.md#support-for-one-off-patches)
+10. [Support for Package dependencies](UserGuide.md#support-for-package-dependencies)
 
 ### Download and Install
 
@@ -30,6 +31,7 @@ fusepatch [options...]
  --add URL          : Add the given archive to the repository
  --add-cmd VAL      : Add a post-install command for a given patch id
  --audit-log        : Print the audit log
+ --depends VAL      : An array of dependency ids
  --force            : Force an install/update operation
  --install VAL      : Install the given patch id to the server
  --one-off VAL      : A one-off target patch id
@@ -271,3 +273,25 @@ Installed foo-1.0.0
 $ bin/fusepatch.sh --update foo
 Upgraded from foo-1.0.0 to foo-1.0.0.SP1
 ```
+
+### Support for Package dependencies
+
+A package can define dependencies on other packages. 
+
+```
+$ bin/fusepatch.sh --add file:foo-1.0.0.zip 
+Added foo-1.0.0
+
+$ bin/fusepatch.sh --add file:foo-1.1.0.zip --depends foo-1.0.0
+Added foo-1.1.0 with dependencies on [foo-1.0.0]
+
+$ bin/fusepatch.sh --install foo-1.1.0
+Error: Unsatisfied dependencies: [foo-1.0.0]
+
+$ bin/fusepatch.sh --install foo-1.0.0
+Installed foo-1.0.0
+
+$ bin/fusepatch.sh --install foo-1.1.0
+Upgraded from foo-1.0.0 to foo-1.1.0
+```
+

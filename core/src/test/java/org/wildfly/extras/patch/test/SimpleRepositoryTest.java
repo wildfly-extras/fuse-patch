@@ -133,8 +133,8 @@ public class SimpleRepositoryTest {
         PatchId oneoffId = PatchId.fromString("foo-1.0.0");
         try {
             repo.addArchive(Archives.getZipUrlFoo100SP1(), oneoffId);
-            Assert.fail("IllegalStateException expected");
-        } catch (IllegalStateException ex) {
+            Assert.fail("PatchException expected");
+        } catch (PatchException ex) {
             // expected
         }
         
