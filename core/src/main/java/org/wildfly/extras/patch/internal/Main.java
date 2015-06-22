@@ -46,7 +46,8 @@ public class Main {
     }
 
     // Entry point with no system exit
-    public static void mainInternal(String[] args) {
+    public static void mainInternal(String[] args) throws IOException {
+        
         Options options = new Options();
         CmdLineParser parser = new CmdLineParser(options);
         try {
@@ -60,9 +61,10 @@ public class Main {
         	run(parser, options);
         } catch (PatchException ex) {
             PatchLogger.error(ex);
-            Runtime.getRuntime().exit(1);
-        } catch (Throwable th) {
-            LOG.error("Error executing command", th);
+            throw ex;
+        } catch (IOException ex) {
+            LOG.error("Error executing command", ex);
+            throw ex;
         }
     }
 
@@ -87,7 +89,8 @@ public class Main {
         // Add to repository
         if (options.addUrl != null) {
             PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
-            patchTool.getPatchRepository().addArchive(options.addUrl);
+            PatchId oneoffId = options.patchId != null ? PatchId.fromString(options.patchId) : null;
+            patchTool.getPatchRepository().addArchive(options.addUrl, oneoffId);
             opfound = true;
         }
         

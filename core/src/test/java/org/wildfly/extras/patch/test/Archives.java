@@ -17,7 +17,7 @@
  * limitations under the License.
  * #L%
  */
-package org.wildfly.extras.patch.internal;
+package org.wildfly.extras.patch.test;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,38 +39,66 @@ import org.jboss.shrinkwrap.api.asset.FileAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
-import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchSet;
-import org.wildfly.extras.patch.PatchSet.Action;
 import org.wildfly.extras.patch.PatchSet.Record;
 import org.wildfly.extras.patch.test.subA.ClassA;
 
 public class Archives {
 
-    public static URL getZipUrlA() throws IOException {
+    /**
+     * foo-1.0.0.zip
+     * 
+     * config/remove-me.properties
+     * config/propsA.properties
+     * config/propsB.properties
+     * lib/foo-1.0.0.jar
+     */
+    public static URL getZipUrlFoo100() throws IOException {
         File targetFile = Paths.get("target/foo-1.0.0.zip").toFile();
         if (!targetFile.exists()) {
             JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "foo-1.0.0.jar");
             jar.addClasses(ClassA.class);
             GenericArchive archive = ShrinkWrap.create(GenericArchive.class);
             archive.add(new ArchiveAsset(jar, ZipExporter.class), "lib/" + jar.getName());
-            archive.add(new FileAsset(new File("src/test/resources/propsA1.properties")), "config/removeme.properties");
+            archive.add(new FileAsset(new File("src/test/resources/propsA1.properties")), "config/remove-me.properties");
             archive.add(new FileAsset(new File("src/test/resources/propsA1.properties")), "config/propsA.properties");
+            archive.add(new FileAsset(new File("src/test/resources/propsB.properties")), "config/propsB.properties");
             archive.as(ZipExporter.class).exportTo(targetFile, true);
         }
         return targetFile.toURI().toURL();
     }
 
-    public static File getZipFileA() throws IOException {
-        return new File(getZipUrlA().getPath());
+    public static File getZipFileFoo100() throws IOException {
+        return new File(getZipUrlFoo100().getPath());
     }
     
-    public static PatchSet getPatchSetA() throws IOException {
-        File zipFile = getZipFileA();
-        return Parser.buildPatchSetFromZip(PatchId.fromFile(zipFile), Action.ADD, zipFile);
+    /**
+     * foo-1.0.0.SP1.zip
+     * 
+     * config/propsA.properties
+     */
+    public static URL getZipUrlFoo100SP1() throws IOException {
+        File targetFile = Paths.get("target/foo-1.0.0.SP1.zip").toFile();
+        if (!targetFile.exists()) {
+            GenericArchive archive = ShrinkWrap.create(GenericArchive.class);
+            archive.add(new FileAsset(new File("src/test/resources/propsA2.properties")), "config/propsA.properties");
+            archive.as(ZipExporter.class).exportTo(targetFile, true);
+        }
+        return targetFile.toURI().toURL();
     }
-
-    public static URL getZipUrlB() throws IOException {
+    
+    public static File getZipFileFoo100SP1() throws IOException {
+        return new File(getZipUrlFoo100SP1().getPath());
+    }
+    
+    /**
+     * foo-1.1.0.zip
+     * 
+     * config/propsA.properties
+     * config/propsB.properties
+     * lib/foo-1.1.0.jar
+     */
+    public static URL getZipUrlFoo110() throws IOException {
         File targetFile = Paths.get("target/foo-1.1.0.zip").toFile();
         if (!targetFile.exists()) {
             JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "foo-1.1.0.jar");
@@ -78,20 +106,16 @@ public class Archives {
             GenericArchive archive = ShrinkWrap.create(GenericArchive.class);
             archive.add(new ArchiveAsset(jar, ZipExporter.class), "lib/" + jar.getName());
             archive.add(new FileAsset(new File("src/test/resources/propsA2.properties")), "config/propsA.properties");
+            archive.add(new FileAsset(new File("src/test/resources/propsB.properties")), "config/propsB.properties");
             archive.as(ZipExporter.class).exportTo(targetFile, true);
         }
         return targetFile.toURI().toURL();
     }
     
-    public static File getZipFileB() throws IOException {
-        return new File(getZipUrlB().getPath());
+    public static File getZipFileFoo110() throws IOException {
+        return new File(getZipUrlFoo110().getPath());
     }
     
-    public static PatchSet getPatchSetB() throws IOException {
-        File zipFile = new File(getZipUrlB().getPath());
-        return Parser.buildPatchSetFromZip(PatchId.fromFile(zipFile), Action.ADD, zipFile);
-    }
-
     public static void assertActionPathEquals(String line, Record was) {
         Record exp = Record.fromString(line + " 0");
         Assert.assertEquals(exp.getAction() + " " + exp.getPath(), was.getAction() + " " + was.getPath());

@@ -48,6 +48,9 @@ final class Options {
     @Option(name = "--add", usage = "Add the given archive to the repository")
     URL addUrl;
     
+    @Option(name = "--one-off", depends = { "--add" }, usage = "A one-off target patch id")
+    String patchId;
+    
     @Option(name = "--add-cmd", handler = StringArrayOptionHandler.class, usage = "Add a post-install command for a given patch id")
     String[] addCmd;
     

@@ -35,10 +35,11 @@ import org.junit.Test;
 import org.wildfly.extras.patch.PatchException;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchSet;
+import org.wildfly.extras.patch.PatchTool;
+import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.ServerInstance;
 import org.wildfly.extras.patch.SmartPatch;
-import org.wildfly.extras.patch.internal.Archives;
-import org.wildfly.extras.patch.internal.WildFlyServerInstance;
+import org.wildfly.extras.patch.internal.ParserAccess;
 import org.wildfly.extras.patch.utils.IOUtils;
 
 public class SimpleUpdateTest {
@@ -47,6 +48,7 @@ public class SimpleUpdateTest {
     final static Path serverPathB = Paths.get("target/servers/SimpleUpdateTest/srvB");
     final static Path serverPathC = Paths.get("target/servers/SimpleUpdateTest/srvC");
     final static Path serverPathD = Paths.get("target/servers/SimpleUpdateTest/srvD");
+    final static Path serverPathE = Paths.get("target/servers/SimpleUpdateTest/srvE");
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -54,23 +56,27 @@ public class SimpleUpdateTest {
         IOUtils.rmdirs(serverPathB);
         IOUtils.rmdirs(serverPathC);
         IOUtils.rmdirs(serverPathD);
+        IOUtils.rmdirs(serverPathE);
         serverPathA.toFile().mkdirs();
         serverPathB.toFile().mkdirs();
         serverPathC.toFile().mkdirs();
         serverPathD.toFile().mkdirs();
+        serverPathE.toFile().mkdirs();
     }
 
     @Test
     public void testSimpleUpdate() throws Exception {
 
-        ServerInstance server = new WildFlyServerInstance(serverPathA);
+        PatchTool patchTool = new PatchToolBuilder().serverPath(serverPathA).build();
+        ServerInstance server = patchTool.getServerInstance();
+        
         List<PatchId> patches = server.queryAppliedPatches();
         Assert.assertTrue("Patch set empty", patches.isEmpty());
         
         // Verify smart patch A
-        PatchSet setA = Archives.getPatchSetA();
+        PatchSet setA = ParserAccess.getPatchSet(Archives.getZipFileFoo100());
         PatchId patchId = setA.getPatchId();
-        SmartPatch smartPatch = new SmartPatch(setA, Archives.getZipFileA());
+        SmartPatch smartPatch = new SmartPatch(setA, Archives.getZipFileFoo100());
         Assert.assertEquals(patchId, smartPatch.getPatchId());
         Assert.assertEquals(setA.getRecords(), smartPatch.getRecords());
         
@@ -82,20 +88,20 @@ public class SimpleUpdateTest {
         Archives.assertPathsEqual(setA, serverPathA);
 
         // Verify smart patch B
-        PatchSet setB = Archives.getPatchSetB();
+        PatchSet setB = ParserAccess.getPatchSet(Archives.getZipFileFoo110());
         patchId = setB.getPatchId();
         PatchSet smartSet = PatchSet.smartSet(setA, setB);
-        smartPatch = new SmartPatch(smartSet, Archives.getZipFileB());
+        smartPatch = new SmartPatch(smartSet, Archives.getZipFileFoo110());
         Assert.assertEquals(4, smartPatch.getRecords().size());
         Archives.assertActionPathEquals("UPD config/propsA.properties", smartPatch.getRecords().get(0));
-        Archives.assertActionPathEquals("DEL config/removeme.properties", smartPatch.getRecords().get(1));
+        Archives.assertActionPathEquals("DEL config/remove-me.properties", smartPatch.getRecords().get(1));
         Archives.assertActionPathEquals("DEL lib/foo-1.0.0.jar", smartPatch.getRecords().get(2));
         Archives.assertActionPathEquals("ADD lib/foo-1.1.0.jar", smartPatch.getRecords().get(3));
 
         // Apply smart patch B
         curSet = server.applySmartPatch(smartPatch, false);
         Assert.assertEquals(patchId, curSet.getPatchId());
-        Assert.assertEquals(2, curSet.getRecords().size());
+        Assert.assertEquals(3, curSet.getRecords().size());
         Assert.assertEquals(setB.getRecords(), curSet.getRecords());
         Archives.assertPathsEqual(setB.getRecords(), server.getPatchSet(patchId).getRecords());
         Archives.assertPathsEqual(setB, serverPathA);
@@ -110,16 +116,18 @@ public class SimpleUpdateTest {
     @Test
     public void testAddingFileThatExists() throws Exception {
         
-        ServerInstance server = new WildFlyServerInstance(serverPathB);
+        PatchTool patchTool = new PatchToolBuilder().serverPath(serverPathB).build();
+        ServerInstance server = patchTool.getServerInstance();
+        
         Path targetPath = serverPathB.resolve("config/propsA.properties");
         
         // Copy a file to the server
         targetPath.getParent().toFile().mkdirs();
         Files.copy(Paths.get("src/test/resources/propsA2.properties"), targetPath);
-        assertFileContent("some.prop = B", targetPath);
+        assertFileContent("some.prop = A2", targetPath);
         
-        PatchSet setA = Archives.getPatchSetA();
-        SmartPatch smartPatch = new SmartPatch(setA, Archives.getZipFileA());
+        PatchSet setA = ParserAccess.getPatchSet(Archives.getZipFileFoo100());
+        SmartPatch smartPatch = new SmartPatch(setA, Archives.getZipFileFoo100());
         try {
             server.applySmartPatch(smartPatch, false);
             Assert.fail("PatchException expected");
@@ -129,26 +137,28 @@ public class SimpleUpdateTest {
         
         // force the the override
         server.applySmartPatch(smartPatch, true);
-        assertFileContent("some.prop = A", targetPath);
+        assertFileContent("some.prop = A1", targetPath);
     }
 
     @Test
     public void testOverrideModifiedFile() throws Exception {
         
-        ServerInstance server = new WildFlyServerInstance(serverPathC);
+        PatchTool patchTool = new PatchToolBuilder().serverPath(serverPathC).build();
+        ServerInstance server = patchTool.getServerInstance();
+        
         Path targetPath = serverPathC.resolve("config/propsA.properties");
         
         // Install foo-1.0.0
-        PatchSet setA = Archives.getPatchSetA();
-        SmartPatch smartPatch = new SmartPatch(setA, Archives.getZipFileA());
+        PatchSet setA = ParserAccess.getPatchSet(Archives.getZipFileFoo100());
+        SmartPatch smartPatch = new SmartPatch(setA, Archives.getZipFileFoo100());
         PatchSet seedPatch = server.applySmartPatch(smartPatch, false);
-        assertFileContent("some.prop = A", targetPath);
+        assertFileContent("some.prop = A1", targetPath);
         
         Files.copy(Paths.get("src/test/resources/propsA2.properties"), targetPath, REPLACE_EXISTING);
         
         // Install foo-1.1.0
-        PatchSet setB = Archives.getPatchSetB();
-        smartPatch = new SmartPatch(PatchSet.smartSet(seedPatch, setB), Archives.getZipFileB());
+        PatchSet setB = ParserAccess.getPatchSet(Archives.getZipFileFoo110());
+        smartPatch = new SmartPatch(PatchSet.smartSet(seedPatch, setB), Archives.getZipFileFoo110());
         try {
             server.applySmartPatch(smartPatch, false);
             Assert.fail("PatchException expected");
@@ -158,26 +168,28 @@ public class SimpleUpdateTest {
         
         // force the the override
         server.applySmartPatch(smartPatch, true);
-        assertFileContent("some.prop = B", targetPath);
+        assertFileContent("some.prop = A2", targetPath);
     }
 
     @Test
     public void testRemoveNonExistingFile() throws Exception {
         
-        ServerInstance server = new WildFlyServerInstance(serverPathD);
-        Path targetPath = serverPathD.resolve("config/removeme.properties");
+        PatchTool patchTool = new PatchToolBuilder().serverPath(serverPathD).build();
+        ServerInstance server = patchTool.getServerInstance();
+        
+        Path targetPath = serverPathD.resolve("config/remove-me.properties");
         
         // Install foo-1.0.0
-        PatchSet setA = Archives.getPatchSetA();
-        SmartPatch smartPatch = new SmartPatch(setA, Archives.getZipFileA());
+        PatchSet setA = ParserAccess.getPatchSet(Archives.getZipFileFoo100());
+        SmartPatch smartPatch = new SmartPatch(setA, Archives.getZipFileFoo100());
         PatchSet seedPatch = server.applySmartPatch(smartPatch, false);
-        assertFileContent("some.prop = A", targetPath);
+        assertFileContent("some.prop = A1", targetPath);
         
         targetPath.toFile().delete();
         
         // Install foo-1.1.0
-        PatchSet setB = Archives.getPatchSetB();
-        smartPatch = new SmartPatch(PatchSet.smartSet(seedPatch, setB), Archives.getZipFileB());
+        PatchSet setB = ParserAccess.getPatchSet(Archives.getZipFileFoo110());
+        smartPatch = new SmartPatch(PatchSet.smartSet(seedPatch, setB), Archives.getZipFileFoo110());
         server.applySmartPatch(smartPatch, false);
     }
 

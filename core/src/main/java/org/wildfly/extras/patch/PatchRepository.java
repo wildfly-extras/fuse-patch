@@ -50,8 +50,16 @@ public interface PatchRepository {
     
     /**
      * Add the given patch archive
+     * @param fileUrl The file URL to the patch archive
      */
     PatchId addArchive(URL fileUrl) throws IOException;
+    
+    /**
+     * Add the given patch archive
+     * @param fileUrl The file URL to the patch archive
+     * @param oneoffId An option patch id if the given URL is a one-off patch
+     */
+    PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException;
     
     /**
      * Add a post-install command for the given patch id

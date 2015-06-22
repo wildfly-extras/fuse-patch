@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,6 +55,7 @@ public final class PatchSet {
     private final PatchId patchId;
     private final Map<Path, Record> recordsMap = new LinkedHashMap<>();
     private final List<String> commands = new ArrayList<>();
+    private final Set<PatchId> dependencies = new LinkedHashSet<>();
     private int hashCache;
 
     public static enum Action {
@@ -61,11 +63,19 @@ public final class PatchSet {
     };
 
     public static PatchSet create(PatchId patchId, Collection<Record> records) {
-        return new PatchSet(patchId, records, Collections.<String>emptyList());
+        return new PatchSet(patchId, records, Collections.<PatchId>emptySet(), Collections.<String>emptyList());
+    }
+
+    public static PatchSet create(PatchId patchId, Collection<Record> records, Set<PatchId> dependencies) {
+        return new PatchSet(patchId, records, dependencies, Collections.<String>emptyList());
     }
 
     public static PatchSet create(PatchId patchId, Collection<Record> records, List<String> commands) {
-        return new PatchSet(patchId, records, commands);
+        return new PatchSet(patchId, records, Collections.<PatchId>emptySet(), commands);
+    }
+
+    public static PatchSet create(PatchId patchId, Collection<Record> records, Set<PatchId> dependencies, List<String> commands) {
+        return new PatchSet(patchId, records, dependencies, commands);
     }
 
     public static PatchSet smartSet(PatchSet seedPatch, PatchSet targetSet) {
@@ -96,13 +106,15 @@ public final class PatchSet {
         }
         
         records.addAll(removeMap.values());
-        return new PatchSet(targetSet.getPatchId(), records, targetSet.getPostCommands());
+        return new PatchSet(targetSet.patchId, records, targetSet.dependencies, targetSet.commands);
     }
 
-    private PatchSet(PatchId patchId, Collection<Record> records, List<String> commands) {
+    private PatchSet(PatchId patchId, Collection<Record> records, Set<PatchId> dependencies, List<String> commands) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         IllegalArgumentAssertion.assertNotNull(records, "records");
+        IllegalArgumentAssertion.assertNotNull(dependencies, "dependencies");
         IllegalArgumentAssertion.assertNotNull(commands, "commands");
+        this.dependencies.addAll(dependencies);
         this.commands.addAll(commands);
         this.patchId = patchId;
 
@@ -134,6 +146,10 @@ public final class PatchSet {
         return recordsMap.get(path);
     }
 
+    public Set<PatchId> getDependencies() {
+        return dependencies;
+    }
+
     public List<String> getPostCommands() {
         return Collections.unmodifiableList(commands);
     }
@@ -151,12 +167,16 @@ public final class PatchSet {
         if (this == obj) return true;
         if (!(obj instanceof PatchSet)) return false;
         PatchSet other = (PatchSet) obj;
-        return patchId.equals(other.patchId) && recordsMap.equals(other.recordsMap) && commands.equals(other.commands);
+        boolean result = patchId.equals(other.patchId);
+        result &= recordsMap.equals(other.recordsMap);
+        result &= dependencies.equals(other.dependencies);
+        result &= commands.equals(other.commands);
+        return result;
     }
 
     @Override
     public String toString() {
-        return "PatchSet[" + patchId + ",recs=" + recordsMap.size() + ",cmds=" + commands.size() + "]";
+        return "PatchSet[" + patchId + ",recs=" + recordsMap.size() + ",deps=" + dependencies + ",cmds=" + commands.size() + "]";
     }
 
     public final static class Record {

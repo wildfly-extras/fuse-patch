@@ -52,12 +52,13 @@ public interface ServerInstance {
 	List<PatchId> queryAppliedPatches();
 
     /**
-     * Get the latest applied patch for a given prefix
+     * Get the applied patch for a given prefix
+     * @return patch set or null
      */
 	PatchSet getPatchSet(String prefix);
 
     /**
-     * Get the latest applied patch for a given id
+     * Get the applied patch set for the given id
      */
     PatchSet getPatchSet(PatchId patchId);
     

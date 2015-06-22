@@ -32,6 +32,7 @@ fusepatch [options...]
  --audit-log        : Print the audit log
  --force            : Force an install/update operation
  --install VAL      : Install the given patch id to the server
+ --one-off VAL      : A one-off target patch id
  --query-repository : Query the repository for available patches
  --query-server     : Query the server for installed patches
  --repository URL   : URL to the patch repository
@@ -106,7 +107,7 @@ $ bin/fusepatch.sh --audit-log
 
 [content]
 ADD config/propsA.properties 1684822571
-ADD config/removeme.properties 1684822571
+ADD config/remove-me.properties 1684822571
 ADD lib/foo-1.0.0.jar 2509787836
 
 # 19-Jun-2015 12:22:13
@@ -114,7 +115,7 @@ ADD lib/foo-1.0.0.jar 2509787836
 
 [content]
 UPD config/propsA.properties 1329662440
-DEL config/removeme.properties 1684822571
+DEL config/remove-me.properties 1684822571
 DEL lib/foo-1.0.0.jar 2509787836
 ADD lib/foo-1.1.0.jar 2509787836
 ```
@@ -140,7 +141,7 @@ $ bin/fusepatch.sh --audit-log
 
 [content]
 UPD config/propsA.properties 1684822571
-ADD config/removeme.properties 1684822571
+ADD config/remove-me.properties 1684822571
 ADD lib/foo-1.0.0.jar 2509787836
 DEL lib/foo-1.1.0.jar 2509787836
 ```
@@ -218,10 +219,10 @@ Upgraded from foo-1.0.0 to foo-1.1.0
 In this case, we only issue a warming because the file would be deleted anyway.
 
 ```
-$ rm config/removeme.properties 
+$ rm config/remove-me.properties 
 
 $ bin/fusepatch.sh --update foo
-Warning: Attempt to delete a non existing file config/removeme.properties
+Warning: Attempt to delete a non existing file config/remove-me.properties
 Upgraded from foo-1.0.0 to foo-1.1.0
 ```
 
@@ -255,4 +256,18 @@ hello new world
 
 ### Support for One-Off Patches
 
-[TODO [#24](https://github.com/wildfly-extras/fuse-patch/issues/24)] Add support for one-off patches
+Already existing packages can be patched by "one-off" patches. A one-off patch does not contain the full set of paths that an ordinary package contains. Instead, it contains a set of files that need to get patched in an already existing package. A one-off patch cannot remove files on the target server.
+
+```
+$ bin/fusepatch.sh --add file:foo-1.0.0.zip 
+Added foo-1.0.0
+
+$ bin/fusepatch.sh --add file:foo-1.0.0.SP1.zip --one-off foo-1.0.0
+Added foo-1.0.0.SP1 patching foo-1.0.0
+
+$ bin/fusepatch.sh --install foo-1.0.0
+Installed foo-1.0.0
+
+$ bin/fusepatch.sh --update foo
+Upgraded from foo-1.0.0 to foo-1.0.0.SP1
+```

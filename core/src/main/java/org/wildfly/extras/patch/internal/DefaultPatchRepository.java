@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -45,13 +46,13 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 import org.wildfly.extras.patch.utils.PatchAssertion;
 
-public final class DefaultPatchRepository implements PatchRepository {
+final class DefaultPatchRepository implements PatchRepository {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultPatchRepository.class);
     
     private final Path rootPath;
 
-    public DefaultPatchRepository(URL repoUrl) {
+    DefaultPatchRepository(URL repoUrl) {
         if (repoUrl == null) {
             repoUrl = getConfiguredUrl();
         }
@@ -99,6 +100,11 @@ public final class DefaultPatchRepository implements PatchRepository {
 
     @Override
     public PatchId addArchive(URL fileUrl) throws IOException {
+        return addArchive(fileUrl, null);
+    }
+    
+    @Override
+    public PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException {
         IllegalArgumentAssertion.assertNotNull(fileUrl, "fileUrl");
         IllegalArgumentAssertion.assertTrue(fileUrl.getPath().endsWith(".zip"), "Unsupported file extension: " + fileUrl);
         Lock.tryLock();
@@ -106,6 +112,12 @@ public final class DefaultPatchRepository implements PatchRepository {
             Path sourcePath = Paths.get(fileUrl.getPath());
             PatchId patchId = PatchId.fromFile(sourcePath.toFile());
             PatchAssertion.assertFalse(queryAvailable(null).contains(patchId), "Repository already contains " + patchId);
+
+            // Verify one-off id
+            if (oneoffId != null) {
+                File metadataFile = Parser.getMetadataFile(rootPath, oneoffId);
+                IllegalStateAssertion.assertTrue(metadataFile.isFile(), "Cannot obtain target patch for: " + oneoffId);
+            }
             
             // Collect the paths from the latest other patch sets
             Map<Path, PatchId> pathMap = new HashMap<>();
@@ -117,9 +129,25 @@ public final class DefaultPatchRepository implements PatchRepository {
                 }
             }
             
+            // Build the patch set
+            PatchSet patchSet;
+            if (oneoffId != null) {
+                PatchSet oneoffSet = getPatchSet(oneoffId);
+                Map<Path, Record> records = new HashMap<>();
+                for (Record rec : oneoffSet.getRecords()) {
+                    records.put(rec.getPath(), rec);
+                }
+                PatchSet sourceSet = Parser.buildPatchSetFromZip(patchId, Action.INFO, sourcePath.toFile());
+                for (Record rec : sourceSet.getRecords()) {
+                    records.put(rec.getPath(), rec);
+                }
+                patchSet = PatchSet.create(patchId, records.values(), Collections.singleton(oneoffId));
+            } else {
+                patchSet = Parser.buildPatchSetFromZip(patchId, Action.INFO, sourcePath.toFile());
+            }
+            
             // Assert no duplicate paths
             Set<PatchId> duplicates = new HashSet<>();
-            PatchSet patchSet = Parser.buildPatchSetFromZip(patchId, Action.INFO, sourcePath.toFile());
             for (Record rec : patchSet.getRecords()) {
                 PatchId otherId = pathMap.get(rec.getPath());
                 if (otherId != null) {
@@ -140,7 +168,11 @@ public final class DefaultPatchRepository implements PatchRepository {
                 sourcePath.toFile().delete();
             }
             
-            PatchLogger.info("Added " + patchId);
+            String message = "Added " + patchId;
+            if (oneoffId != null) {
+                message += " patching " + oneoffId;
+            }
+            PatchLogger.info(message);
             
             return patchId;
         } finally {

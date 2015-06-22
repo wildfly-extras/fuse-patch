@@ -86,6 +86,10 @@ public final class SmartPatch {
         return patchSet.getRecords();
     }
     
+    public Set<PatchId> getDependencies() {
+        return patchSet.getDependencies();
+    }
+    
     public Set<Record> getRemoveSet() {
         return Collections.unmodifiableSet(new HashSet<>(delMap.values()));
     }

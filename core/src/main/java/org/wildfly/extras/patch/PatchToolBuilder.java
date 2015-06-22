@@ -19,10 +19,12 @@
  */
 package org.wildfly.extras.patch;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 
 import org.wildfly.extras.patch.internal.DefaultPatchTool;
+import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 
 
 /**
@@ -41,6 +43,16 @@ public final class PatchToolBuilder {
         return this;
     }
 
+
+    public PatchToolBuilder repositoryPath(Path repoPath) {
+        IllegalArgumentAssertion.assertNotNull(repoPath, "repoPath");
+        try {
+            this.repoUrl = repoPath.toUri().toURL();
+        } catch (MalformedURLException ex) {
+            throw new IllegalArgumentException(ex);
+        }
+        return this;
+    }
 
     public PatchToolBuilder repositoryUrl(URL repoUrl) {
         this.repoUrl = repoUrl;

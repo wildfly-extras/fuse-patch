@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -107,45 +108,7 @@ final class Parser {
     static PatchSet readPatchSet(Path rootPath, PatchId patchId) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
-        File metdataFile = getMetadataFile(rootPath, patchId);
-        IllegalStateAssertion.assertTrue(metdataFile.exists(), "Cannot obtain metadata file: " + metdataFile);
-        return readPatchSet(metdataFile);
-    }
-
-    static PatchSet readPatchSet(File metdataFile) throws IOException {
-        IllegalArgumentAssertion.assertNotNull(metdataFile, "metdataFile");
-        IllegalArgumentAssertion.assertTrue(metdataFile.isFile(), "Cannot find metadata file: " + metdataFile);
-
-        Set<Record> records = new HashSet<>();
-        List<String> commands = new ArrayList<>();
-    	try (BufferedReader br = new BufferedReader(new FileReader(metdataFile))) {
-    		String line = br.readLine().trim();
-    		IllegalStateAssertion.assertTrue(line.startsWith(VERSION_PREFIX), "Cannot obtain version info");
-            line = br.readLine().trim();
-            IllegalStateAssertion.assertTrue(line.startsWith(PATCHID_PREFIX), "Cannot obtain patch id");
-            PatchId patchId = PatchId.fromString(line.substring(PATCHID_PREFIX.length()).trim());
-            String mode = null;
-    		while (line != null) {
-    			line = line.trim();
-    			if (line.length() == 0 || line.startsWith("#")) {
-                    line = br.readLine();
-                    continue;
-    			}
-                if (line.startsWith("[") && line.endsWith("]")) {
-                    mode = line;
-                    line = br.readLine();
-                    continue;
-                }
-                if ("[content]".equals(mode)) {
-                    records.add(Record.fromString(line));
-                }
-                if ("[post-install-commands]".equals(mode)) {
-                    commands.add(line);
-                }
-    			line = br.readLine();
-    		} 
-            return PatchSet.create(patchId, records, commands);
-    	}
+        return readPatchSet(assertMetadataFile(rootPath, patchId));
     }
 
     static List<PatchId> getAvailable(Path rootPath, final String prefix, boolean latest) {
@@ -235,6 +198,12 @@ final class Parser {
         return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString(), patchId + ".metadata")).toFile();
     }
     
+    static File assertMetadataFile(Path rootPath, PatchId patchId) {
+        File metadataFile = getMetadataFile(rootPath, patchId);
+        IllegalStateAssertion.assertTrue(metadataFile.isFile(), "Cannot obtain metadata file: " + metadataFile);
+        return metadataFile;
+    }
+    
     private static void writePatchSet(PatchSet patchSet, OutputStream outstream, boolean versions) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
         IllegalArgumentAssertion.assertNotNull(outstream, "outstream");
@@ -242,6 +211,15 @@ final class Parser {
             if (versions) {
                 pw.println(VERSION_PREFIX + " " + VERSION);
                 pw.println(PATCHID_PREFIX + " " + patchSet.getPatchId());
+            }
+            
+            Set<PatchId> deps = patchSet.getDependencies();
+            if (!deps.isEmpty()) {
+                pw.println();
+                pw.println("[properties]");
+                String spec = deps.toString();
+                spec = spec.substring(1, spec.length() - 1);
+                pw.println("Dependencies: " + spec);
             }
             
             pw.println();
@@ -258,6 +236,56 @@ final class Parser {
                     pw.println(cmd);
                 }
             }
+        }
+    }
+
+    static PatchSet readPatchSet(File metadataFile) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(metadataFile, "metadataFile");
+        IllegalArgumentAssertion.assertTrue(metadataFile.isFile(), "Cannot find metadata file: " + metadataFile);
+
+        Set<Record> records = new HashSet<>();
+        List<String> commands = new ArrayList<>();
+        Set<PatchId> dependencies = new LinkedHashSet<>();
+        
+        try (BufferedReader br = new BufferedReader(new FileReader(metadataFile))) {
+            String line = br.readLine().trim();
+            IllegalStateAssertion.assertTrue(line.startsWith(VERSION_PREFIX), "Cannot obtain version info");
+            line = br.readLine().trim();
+            IllegalStateAssertion.assertTrue(line.startsWith(PATCHID_PREFIX), "Cannot obtain patch id");
+            PatchId patchId = PatchId.fromString(line.substring(PATCHID_PREFIX.length()).trim());
+            String mode = null;
+            while (line != null) {
+                line = line.trim();
+                if (line.length() == 0 || line.startsWith("#")) {
+                    line = br.readLine();
+                    continue;
+                }
+                if (line.startsWith("[") && line.endsWith("]")) {
+                    mode = line;
+                    line = br.readLine();
+                    continue;
+                }
+                if ("[properties]".equals(mode)) {
+                    String[] toks = line.split(":");
+                    IllegalStateAssertion.assertEquals(2, toks.length, "Illegal property spec: " + line);
+                    String name = toks[0].trim();
+                    String value = toks[1].trim();
+                    if ("Dependencies".equals(name)) {
+                        IllegalStateAssertion.assertTrue(dependencies.isEmpty(), "Dependencies already defined" + line);
+                        for (String tok : value.split(",")) {
+                            dependencies.add(PatchId.fromString(tok.trim()));
+                        }
+                    }
+                }
+                if ("[content]".equals(mode)) {
+                    records.add(Record.fromString(line));
+                }
+                if ("[post-install-commands]".equals(mode)) {
+                    commands.add(line);
+                }
+                line = br.readLine();
+            } 
+            return PatchSet.create(patchId, records, dependencies, commands);
         }
     }
 }

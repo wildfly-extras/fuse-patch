@@ -28,6 +28,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -48,13 +49,13 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 import org.wildfly.extras.patch.utils.PatchAssertion;
 
-public final class WildFlyServerInstance implements ServerInstance {
+final class WildFlyServerInstance implements ServerInstance {
 
     private static final Logger LOG = LoggerFactory.getLogger(WildFlyServerInstance.class);
 
     private final Path homePath;
 
-    public WildFlyServerInstance(Path homePath) {
+    WildFlyServerInstance(Path homePath) {
         if (homePath == null) {
             homePath = getConfiguredHomePath();
         }
@@ -132,6 +133,18 @@ public final class WildFlyServerInstance implements ServerInstance {
         
         Lock.tryLock();
         try {
+            
+            // Verify dependencies
+            List<PatchId> appliedPatches = queryAppliedPatches();
+            List<PatchId> unsatisfied = new ArrayList<>();
+            for (PatchId depId : smartPatch.getDependencies()) {
+                if (!appliedPatches.contains(depId)) {
+                    unsatisfied.add(depId);
+                }
+            }
+            IllegalStateAssertion.assertTrue(unsatisfied.isEmpty(), "Unsatisfied dependencies: " + unsatisfied);
+            
+            
             PatchId patchId = smartPatch.getPatchId();
             PatchSet serverSet = getPatchSet(patchId.getName());
             
@@ -191,13 +204,6 @@ public final class WildFlyServerInstance implements ServerInstance {
             PatchSet infoset = PatchSet.create(patchId, inforecs);
             Parser.writePatchSet(getWorkspace(), infoset);
 
-            // Remove the outdated metadata
-            if (serverSet != null) {
-                PatchId serverId = serverSet.getPatchId();
-                File outdated = Parser.getMetadataFile(getWorkspace(), serverId);
-                IOUtils.rmdirs(outdated.getParentFile().toPath());
-            }
-            
             // Write the log message
             final String message;
             if (serverSet == null) {
@@ -258,6 +264,27 @@ public final class WildFlyServerInstance implements ServerInstance {
     }
     
     private void updateServerFiles(SmartPatch smartPatch) throws IOException {
+
+        // Verify that the zip contains all expected add/replace paths
+        Set<Path> addupdPaths = new HashSet<>();
+        for (Record rec : smartPatch.getAddSet()) {
+            addupdPaths.add(rec.getPath());
+        }
+        for (Record rec : smartPatch.getReplaceSet()) {
+            addupdPaths.add(rec.getPath());
+        }
+        File patchFile = smartPatch.getPatchFile();
+        try (ZipInputStream zip = new ZipInputStream(new FileInputStream(patchFile))) {
+            ZipEntry entry = zip.getNextEntry();
+            while (entry != null) {
+                if (!entry.isDirectory()) {
+                    Path path = Paths.get(entry.getName());
+                    addupdPaths.remove(path);
+                }
+                entry = zip.getNextEntry();
+            }
+        }
+        IllegalStateAssertion.assertTrue(addupdPaths.isEmpty(), "Patch file does not contain expected paths: " + addupdPaths);
         
         // Remove all files in the remove set
         for (Record rec : smartPatch.getRemoveSet()) {
@@ -266,7 +293,6 @@ public final class WildFlyServerInstance implements ServerInstance {
         }
         
         // Handle replace and add sets
-        File patchFile = smartPatch.getPatchFile();
         try (ZipInputStream zip = new ZipInputStream(new FileInputStream(patchFile))) {
             byte[] buffer = new byte[1024];
             ZipEntry entry = zip.getNextEntry();
