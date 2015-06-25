@@ -48,7 +48,7 @@ public class Main {
     }
 
     // Entry point with no system exit
-    public static void mainInternal(String[] args) throws IOException {
+    public static void mainInternal(String[] args) throws Exception {
         
         Options options = new Options();
         CmdLineParser parser = new CmdLineParser(options);
@@ -64,9 +64,9 @@ public class Main {
         } catch (PatchException ex) {
             PatchLogger.error(ex);
             throw ex;
-        } catch (IOException ex) {
-            LOG.error("Error executing command", ex);
-            throw ex;
+        } catch (Throwable th) {
+            LOG.error("Error executing command", th);
+            throw th;
         }
     }
 

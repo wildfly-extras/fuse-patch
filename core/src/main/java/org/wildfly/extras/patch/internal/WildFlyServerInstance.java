@@ -335,6 +335,12 @@ final class WildFlyServerInstance implements ServerInstance {
         if (jbossHome == null) {
             jbossHome = System.getenv("JBOSS_HOME");
         }
+        if (jbossHome == null) {
+            Path currpath = Paths.get(".");
+            if (currpath.resolve("jboss-modules.jar").toFile().exists()) {
+                jbossHome = currpath.toAbsolutePath().toString();
+            }
+        }
         return jbossHome != null ? Paths.get(jbossHome) : null;
     }
 }
