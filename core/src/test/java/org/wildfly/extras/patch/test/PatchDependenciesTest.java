@@ -27,9 +27,9 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.extras.patch.PatchException;
-import org.wildfly.extras.patch.PatchId;
+import org.wildfly.extras.patch.Identity;
 import org.wildfly.extras.patch.PatchRepository;
-import org.wildfly.extras.patch.PatchSet;
+import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.utils.IOUtils;
@@ -53,10 +53,10 @@ public class PatchDependenciesTest {
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathA).serverPath(serverPathA).build();
         PatchRepository repo = patchTool.getPatchRepository();
         
-        PatchId idA = repo.addArchive(Archives.getZipUrlFoo100());
-        PatchId idB = repo.addArchive(Archives.getZipUrlFoo110(), null, Collections.singleton(PatchId.fromString("foo-1.0.0")));
+        Identity idA = repo.addArchive(Archives.getZipUrlFoo100());
+        Identity idB = repo.addArchive(Archives.getZipUrlFoo110(), null, Collections.singleton(Identity.fromString("foo-1.0.0")));
 
-        PatchSet setB;
+        Package setB;
         try {
             setB = patchTool.install(idB, false);
             Assert.fail("PatchException expected");

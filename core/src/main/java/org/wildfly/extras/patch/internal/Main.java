@@ -31,7 +31,7 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wildfly.extras.patch.PatchException;
-import org.wildfly.extras.patch.PatchId;
+import org.wildfly.extras.patch.Identity;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 
@@ -91,15 +91,15 @@ public class Main {
         // Add to repository
         if (options.addUrl != null) {
             PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
-            PatchId oneoffId = null;
-            Set<PatchId> dependencies = new LinkedHashSet<>();
+            Identity oneoffId = null;
+            Set<Identity> dependencies = new LinkedHashSet<>();
             if (options.patchId != null) {
-                oneoffId = PatchId.fromString(options.patchId);
+                oneoffId = Identity.fromString(options.patchId);
                 dependencies.add(oneoffId);
             }
             if (options.depends != null) {
                 for (String depid : options.depends) {
-                    dependencies.add(PatchId.fromString(depid));
+                    dependencies.add(Identity.fromString(depid));
                 }
             }
             patchTool.getPatchRepository().addArchive(options.addUrl, oneoffId, dependencies);
@@ -109,13 +109,13 @@ public class Main {
         // Add post install command
         if (options.addCmd != null) {
             PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
-            PatchId patchId;
+            Identity patchId;
             String[] cmdarr;
             if (options.addUrl != null) {
-                patchId = PatchId.fromFile(new File(options.addUrl.getPath()));
+                patchId = Identity.fromFile(new File(options.addUrl.getPath()));
                 cmdarr = options.addCmd;
             } else {
-                patchId = PatchId.fromString(options.addCmd[0]);
+                patchId = Identity.fromString(options.addCmd[0]);
                 cmdarr = Arrays.copyOfRange(options.addCmd, 1, options.addCmd.length);
             }
             patchTool.getPatchRepository().addPostCommand(patchId, cmdarr);
@@ -125,7 +125,7 @@ public class Main {
         // Install to server
         if (options.installId != null) {
             PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).repositoryUrl(options.repositoryUrl).build();
-            patchTool.install(PatchId.fromString(options.installId), options.force);
+            patchTool.install(Identity.fromString(options.installId), options.force);
             opfound = true;
         }
         
@@ -160,8 +160,8 @@ public class Main {
 	    }
     }
 
-    private static void printPatches(List<PatchId> patches) {
-        for (PatchId patchId : patches) {
+    private static void printPatches(List<Identity> patches) {
+        for (Identity patchId : patches) {
             System.out.println(patchId.toString());
         }
     }

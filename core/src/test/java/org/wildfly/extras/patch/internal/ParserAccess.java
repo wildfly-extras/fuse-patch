@@ -22,15 +22,15 @@ package org.wildfly.extras.patch.internal;
 import java.io.File;
 import java.io.IOException;
 
-import org.wildfly.extras.patch.PatchId;
-import org.wildfly.extras.patch.PatchSet;
-import org.wildfly.extras.patch.PatchSet.Action;
+import org.wildfly.extras.patch.Identity;
+import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.Record;
 
 public final class ParserAccess {
 
-    public static PatchSet getPatchSet(File zipFile) throws IOException {
-        PatchId patchId = PatchId.fromFile(zipFile);
-        return Parser.buildPatchSetFromZip(patchId, Action.ADD, zipFile);
+    public static Package getPatchSet(File zipFile) throws IOException {
+        Identity patchId = Identity.fromFile(zipFile);
+        return Parser.buildPatchSetFromZip(patchId, Record.Action.ADD, zipFile);
     }
 
 }

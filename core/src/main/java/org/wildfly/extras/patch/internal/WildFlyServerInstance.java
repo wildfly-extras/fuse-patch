@@ -39,9 +39,9 @@ import java.util.zip.ZipInputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wildfly.extras.patch.PatchId;
-import org.wildfly.extras.patch.PatchSet;
-import org.wildfly.extras.patch.PatchSet.Record;
+import org.wildfly.extras.patch.Identity;
+import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.Record;
 import org.wildfly.extras.patch.ServerInstance;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.utils.IOUtils;
@@ -75,7 +75,7 @@ final class WildFlyServerInstance implements ServerInstance {
     }
 
     @Override
-    public List<PatchId> queryAppliedPatches() {
+    public List<Identity> queryAppliedPatches() {
         Lock.tryLock();
         try {
             return Parser.getAvailable(getWorkspace(), null, true);
@@ -85,11 +85,11 @@ final class WildFlyServerInstance implements ServerInstance {
     }
 
     @Override
-    public PatchSet getPatchSet(String prefix) {
+    public Package getPatchSet(String prefix) {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
         Lock.tryLock();
         try {
-            List<PatchId> list = Parser.getAvailable(getWorkspace(), prefix, true);
+            List<Identity> list = Parser.getAvailable(getWorkspace(), prefix, true);
             return list.isEmpty() ? null : getPatchSet(list.get(0));
         } finally {
             Lock.unlock();
@@ -109,7 +109,7 @@ final class WildFlyServerInstance implements ServerInstance {
     }
 
     @Override
-    public PatchSet getPatchSet(PatchId patchId) {
+    public Package getPatchSet(Identity patchId) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         Lock.tryLock();
         try {
@@ -122,7 +122,7 @@ final class WildFlyServerInstance implements ServerInstance {
     }
 
     @Override
-    public PatchSet applySmartPatch(SmartPatch smartPatch, boolean force) throws IOException {
+    public Package applySmartPatch(SmartPatch smartPatch, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(smartPatch, "smartPatch");
         
         // Do nothing on empty smart patch
@@ -135,9 +135,9 @@ final class WildFlyServerInstance implements ServerInstance {
         try {
             
             // Verify dependencies
-            List<PatchId> appliedPatches = queryAppliedPatches();
-            List<PatchId> unsatisfied = new ArrayList<>();
-            for (PatchId depId : smartPatch.getDependencies()) {
+            List<Identity> appliedPatches = queryAppliedPatches();
+            List<Identity> unsatisfied = new ArrayList<>();
+            for (Identity depId : smartPatch.getDependencies()) {
                 if (!appliedPatches.contains(depId)) {
                     unsatisfied.add(depId);
                 }
@@ -145,8 +145,8 @@ final class WildFlyServerInstance implements ServerInstance {
             PatchAssertion.assertTrue(unsatisfied.isEmpty(), "Unsatisfied dependencies: " + unsatisfied);
             
             
-            PatchId patchId = smartPatch.getPatchId();
-            PatchSet serverSet = getPatchSet(patchId.getName());
+            Identity patchId = smartPatch.getPatchId();
+            Package serverSet = getPatchSet(patchId.getName());
             
             // Get the latest applied records
             Map<Path, Record> serverRecords = new HashMap<>();
@@ -205,7 +205,7 @@ final class WildFlyServerInstance implements ServerInstance {
             for (Record rec : serverRecords.values()) {
                 inforecs.add(Record.create(rec.getPath(), rec.getChecksum()));
             }
-            PatchSet infoset = PatchSet.create(patchId, inforecs);
+            Package infoset = Package.create(patchId, inforecs);
             Parser.writePatchSet(getWorkspace(), infoset);
 
             // Write the log message
@@ -213,7 +213,7 @@ final class WildFlyServerInstance implements ServerInstance {
             if (serverSet == null) {
                 message = "Installed " + patchId;
             } else {
-                PatchId serverId = serverSet.getPatchId();
+                Identity serverId = serverSet.getPatchId();
                 if (serverId.compareTo(patchId) < 0) {
                     message = "Upgraded from " + serverId + " to " + patchId;
                 } else if (serverId.compareTo(patchId) == 0) {

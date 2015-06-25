@@ -27,51 +27,51 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 /**
  * A patch identity.
  *
- * A patch is identified by its symbolic name and {@link Version}
+ * A  {@link Package} is identified by name {@link Version}
  *
- * A {@code PatchId} is immutable.
+ * A patch {@code Identity} is immutable.
  * 
  * @author thomas.diesler@jboss.com
  * @since 10-Jun-2015
  */
-public final class PatchId implements Comparable<PatchId> {
+public final class Identity implements Comparable<Identity> {
 
     private final String name;
     private final Version version;
     private final String canonicalForm;
 
-    public static PatchId create(String symbolicName, String version) {
-        return new PatchId(symbolicName, version != null ? Version.parseVersion(version) : null);
+    public static Identity create(String symbolicName, String version) {
+        return new Identity(symbolicName, version != null ? Version.parseVersion(version) : null);
     }
 
-    public static PatchId create(String symbolicName, Version version) {
-        return new PatchId(symbolicName, version);
+    public static Identity create(String symbolicName, Version version) {
+        return new Identity(symbolicName, version);
     }
 
-    public static PatchId fromString(String identity) {
+    public static Identity fromString(String identity) {
         int index = identity.indexOf('-');
         if (index < 0) {
-            return new PatchId(identity, Version.emptyVersion);
+            return new Identity(identity, Version.emptyVersion);
         }
         while (index > 0) {
             String namePart = identity.substring(0, index);
             String versionPart = identity.substring(index + 1);
             try {
                 Version version = Version.parseVersion(versionPart);
-                return new PatchId(namePart, version);
+                return new Identity(namePart, version);
             } catch (RuntimeException ex) {
                 index = identity.indexOf('-', index + 1);
             }
         }
-        return new PatchId(identity, Version.emptyVersion);
+        return new Identity(identity, Version.emptyVersion);
     }
 
-    public static PatchId fromFile(File file) {
+    public static Identity fromFile(File file) {
         String name = file.getName();
-        return PatchId.fromString(name.substring(0, name.lastIndexOf('.')));
+        return Identity.fromString(name.substring(0, name.lastIndexOf('.')));
     }
     
-    private PatchId(String name, Version version) {
+    private Identity(String name, Version version) {
         IllegalArgumentAssertion.assertNotNull(name, "name");
         IllegalArgumentAssertion.assertTrue(1 == name.split("\\s").length, "Invalid name part: " + name);
         this.name = name.trim();
@@ -99,13 +99,13 @@ public final class PatchId implements Comparable<PatchId> {
     @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
-        if (!(obj instanceof PatchId)) return false;
-        PatchId other = (PatchId) obj;
+        if (!(obj instanceof Identity)) return false;
+        Identity other = (Identity) obj;
         return canonicalForm.equals(other.canonicalForm);
     }
 
     @Override
-    public int compareTo(PatchId other) {
+    public int compareTo(Identity other) {
         int result = name.compareTo(other.name);
         if (result == 0) {
             result = version.compareTo(other.version);

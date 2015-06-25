@@ -32,9 +32,9 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.extras.patch.PatchException;
-import org.wildfly.extras.patch.PatchId;
+import org.wildfly.extras.patch.Identity;
 import org.wildfly.extras.patch.PatchRepository;
-import org.wildfly.extras.patch.PatchSet;
+import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.utils.IOUtils;
@@ -65,25 +65,25 @@ public class SimpleRepositoryTest {
         PatchTool patchTool = new PatchToolBuilder().repositoryUrl(urlA).build();
         PatchRepository repo = patchTool.getPatchRepository();
         
-        PatchId patchId = repo.addArchive(Archives.getZipUrlFoo100());
-        PatchSet patchSet = repo.getPatchSet(patchId);
-        Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patchSet.getPatchId());
+        Identity patchId = repo.addArchive(Archives.getZipUrlFoo100());
+        Package patchSet = repo.getPatchSet(patchId);
+        Assert.assertEquals(Identity.fromString("foo-1.0.0"), patchSet.getPatchId());
         Assert.assertEquals(4, patchSet.getRecords().size());
         
         patchId = repo.addArchive(Archives.getZipUrlFoo110());
         repo.addPostCommand(patchId, new String[]{"bin/fusepatch.sh", "--query-server" });
         patchSet = repo.getPatchSet(patchId);
-        Assert.assertEquals(PatchId.fromString("foo-1.1.0"), patchSet.getPatchId());
+        Assert.assertEquals(Identity.fromString("foo-1.1.0"), patchSet.getPatchId());
         Assert.assertEquals(3, patchSet.getRecords().size());
         Assert.assertEquals(1, patchSet.getPostCommands().size());
         Assert.assertEquals("bin/fusepatch.sh --query-server", patchSet.getPostCommands().get(0));
         
-        List<PatchId> patches = repo.queryAvailable(null);
+        List<Identity> patches = repo.queryAvailable(null);
         Assert.assertEquals("Patch available", 2, patches.size());
         
-        Assert.assertEquals(PatchId.fromString("foo-1.1.0"), patches.get(0));
-        Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patches.get(1));
-        Assert.assertEquals(PatchId.fromString("foo-1.1.0"), repo.getLatestAvailable("foo"));
+        Assert.assertEquals(Identity.fromString("foo-1.1.0"), patches.get(0));
+        Assert.assertEquals(Identity.fromString("foo-1.0.0"), patches.get(1));
+        Assert.assertEquals(Identity.fromString("foo-1.1.0"), repo.getLatestAvailable("foo"));
         Assert.assertNull(repo.getLatestAvailable("bar"));
     }
 
@@ -98,9 +98,9 @@ public class SimpleRepositoryTest {
         File targetFile = repoPathB.resolve(zipFileA.getName()).toFile();
         Files.copy(zipFileA.toPath(), targetFile.toPath());
         
-        PatchId patchId = repo.addArchive(targetFile.toURI().toURL());
-        PatchSet patchSet = repo.getPatchSet(patchId);
-        Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patchSet.getPatchId());
+        Identity patchId = repo.addArchive(targetFile.toURI().toURL());
+        Package patchSet = repo.getPatchSet(patchId);
+        Assert.assertEquals(Identity.fromString("foo-1.0.0"), patchSet.getPatchId());
         Assert.assertEquals(4, patchSet.getRecords().size());
 
         // Verify that the file got removed
@@ -130,7 +130,7 @@ public class SimpleRepositoryTest {
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathD).build();
         PatchRepository repo = patchTool.getPatchRepository();
         
-        PatchId oneoffId = PatchId.fromString("foo-1.0.0");
+        Identity oneoffId = Identity.fromString("foo-1.0.0");
         try {
             repo.addArchive(Archives.getZipUrlFoo100SP1(), oneoffId);
             Assert.fail("PatchException expected");
@@ -138,15 +138,15 @@ public class SimpleRepositoryTest {
             // expected
         }
         
-        PatchId idA = repo.addArchive(Archives.getZipUrlFoo100());
-        PatchSet setA = repo.getPatchSet(idA);
-        PatchId idB = repo.addArchive(Archives.getZipUrlFoo100SP1(), oneoffId);
-        PatchSet setB = repo.getPatchSet(idB);
+        Identity idA = repo.addArchive(Archives.getZipUrlFoo100());
+        Package setA = repo.getPatchSet(idA);
+        Identity idB = repo.addArchive(Archives.getZipUrlFoo100SP1(), oneoffId);
+        Package setB = repo.getPatchSet(idB);
         Archives.assertPathsEqual(setA.getRecords(), setB.getRecords());
         Assert.assertEquals(1, setB.getDependencies().size());
         Assert.assertEquals(idA, setB.getDependencies().iterator().next());
         
-        PatchSet smartSet = PatchSet.smartSet(setA, setB);
+        Package smartSet = Package.smartSet(setA, setB);
         Assert.assertEquals(1, smartSet.getRecords().size());
         Archives.assertActionPathEquals("UPD config/propsA.properties", smartSet.getRecords().get(0));
     }

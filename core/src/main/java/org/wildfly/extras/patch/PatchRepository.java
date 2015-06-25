@@ -36,31 +36,31 @@ public interface PatchRepository {
      * Get the list of available patches
      * @param prefix The patch name prefix - null for all patches
      */
-    List<PatchId> queryAvailable(String prefix);
+    List<Identity> queryAvailable(String prefix);
 
     /**
      * Get the latest available patche for the given prefix
      * @param prefix The mandatory patch name prefix
      */
-    PatchId getLatestAvailable(String prefix);
+    Identity getLatestAvailable(String prefix);
 
     /**
      * Get the patch set for the given id
      */
-    PatchSet getPatchSet(PatchId patchId);
+    Package getPatchSet(Identity patchId);
     
     /**
      * Add the given patch archive
      * @param fileUrl The file URL to the patch archive
      */
-    PatchId addArchive(URL fileUrl) throws IOException;
+    Identity addArchive(URL fileUrl) throws IOException;
     
     /**
      * Add the given patch archive
      * @param fileUrl The file URL to the patch archive
      * @param oneoffId An optional patch id if the given URL is a one-off patch
      */
-    PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException;
+    Identity addArchive(URL fileUrl, Identity oneoffId) throws IOException;
     
     /**
      * Add the given patch archive
@@ -68,18 +68,18 @@ public interface PatchRepository {
      * @param oneoffId An optional patch id if the given URL is a one-off patch
      * @param dependencies An optional set of patch dependencies
      */
-    PatchId addArchive(URL fileUrl, PatchId oneoffId, Set<PatchId> dependencies) throws IOException;
+    Identity addArchive(URL fileUrl, Identity oneoffId, Set<Identity> dependencies) throws IOException;
     
     /**
      * Add a post-install command for the given patch id
      */
-    void addPostCommand(PatchId patchId, String[] cmdarr);
+    void addPostCommand(Identity patchId, String[] cmdarr);
     
 	/**
 	 * Get the smart patch for the given seed.
      * @param seedPatch The patch set obtained from the server - may be null
      * @param patchId The target patch id - null for the latest
 	 */
-	SmartPatch getSmartPatch(PatchSet seedPatch, PatchId patchId);
+	SmartPatch getSmartPatch(Package seedPatch, Identity patchId);
 
 }

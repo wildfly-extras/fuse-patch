@@ -49,10 +49,9 @@ import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import org.wildfly.extras.patch.PatchId;
-import org.wildfly.extras.patch.PatchSet;
-import org.wildfly.extras.patch.PatchSet.Action;
-import org.wildfly.extras.patch.PatchSet.Record;
+import org.wildfly.extras.patch.Identity;
+import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.Record;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.Version;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
@@ -81,7 +80,7 @@ final class Parser {
     static final String VERSION_PREFIX = "# fusepatch:";
     static final String PATCHID_PREFIX = "# patch id:";
     
-    static PatchSet buildPatchSetFromZip(PatchId patchId, Action action, File zipfile) throws IOException {
+    static Package buildPatchSetFromZip(Identity patchId, Record.Action action, File zipfile) throws IOException {
         IllegalArgumentAssertion.assertNotNull(zipfile, "zipfile");
         IllegalArgumentAssertion.assertTrue(zipfile.isFile(), "Zip file does not exist: " + zipfile);
         
@@ -102,18 +101,18 @@ final class Parser {
                 entry = zip.getNextEntry();
             }
         }
-        return PatchSet.create(patchId, records);
+        return Package.create(patchId, records);
     }
 
-    static PatchSet readPatchSet(Path rootPath, PatchId patchId) throws IOException {
+    static Package readPatchSet(Path rootPath, Identity patchId) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         return readPatchSet(assertMetadataFile(rootPath, patchId));
     }
 
-    static List<PatchId> getAvailable(Path rootPath, final String prefix, boolean latest) {
+    static List<Identity> getAvailable(Path rootPath, final String prefix, boolean latest) {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
-        final Map<String, TreeSet<PatchId>> auxmap = new HashMap<>();
+        final Map<String, TreeSet<Identity>> auxmap = new HashMap<>();
         if (rootPath.toFile().exists()) {
             try {
                 Files.walkFileTree(rootPath, new SimpleFileVisitor<Path>() {
@@ -121,8 +120,8 @@ final class Parser {
                     public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
                         String name = path.getFileName().toString();
                         if ((prefix == null || name.startsWith(prefix)) && name.endsWith(".metadata")) {
-                            PatchId patchId = PatchId.fromFile(path.toFile());
-                            TreeSet<PatchId> idset = auxmap.get(patchId.getName());
+                            Identity patchId = Identity.fromFile(path.toFile());
+                            TreeSet<Identity> idset = auxmap.get(patchId.getName());
                             if (idset == null) {
                                 idset = new TreeSet<>();
                                 auxmap.put(patchId.getName(), idset);
@@ -136,15 +135,15 @@ final class Parser {
                 throw new IllegalStateException(ex);
             }
         }
-        Set<PatchId> sortedSet = new TreeSet<>();
-        for (TreeSet<PatchId> set : auxmap.values()) {
+        Set<Identity> sortedSet = new TreeSet<>();
+        for (TreeSet<Identity> set : auxmap.values()) {
             if (latest) {
                 sortedSet.add(set.last());
             } else {
                 sortedSet.addAll(set);
             }
         }
-        List<PatchId> result = new ArrayList<>(sortedSet);
+        List<Identity> result = new ArrayList<>(sortedSet);
         Collections.reverse(result);
         return Collections.unmodifiableList(result);
     }
@@ -159,7 +158,7 @@ final class Parser {
             String date = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss").format(new Date());
             pw.println("# " + date);
             pw.println("# " + message);
-            PatchSet patchSet = PatchSet.create(smartPatch.getPatchId(), smartPatch.getRecords(), smartPatch.getPostCommands());
+            Package patchSet = Package.create(smartPatch.getPatchId(), smartPatch.getRecords(), smartPatch.getPostCommands());
             writePatchSet(patchSet, fos, false);
         }
     }
@@ -180,7 +179,7 @@ final class Parser {
         return Collections.unmodifiableList(lines);
     }
     
-    static void writePatchSet(Path rootPath, PatchSet patchSet) throws IOException {
+    static void writePatchSet(Path rootPath, Package patchSet) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
         IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
         File metadataFile = getMetadataFile(rootPath, patchSet.getPatchId());
@@ -190,21 +189,21 @@ final class Parser {
         }
     }
     
-    static void writePatchSet(PatchSet patchSet, OutputStream outstream) throws IOException {
+    static void writePatchSet(Package patchSet, OutputStream outstream) throws IOException {
         writePatchSet(patchSet, outstream, true);
     }
     
-    static File getMetadataFile(Path rootPath, PatchId patchId) {
+    static File getMetadataFile(Path rootPath, Identity patchId) {
         return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString(), patchId + ".metadata")).toFile();
     }
     
-    static File assertMetadataFile(Path rootPath, PatchId patchId) {
+    static File assertMetadataFile(Path rootPath, Identity patchId) {
         File metadataFile = getMetadataFile(rootPath, patchId);
         IllegalStateAssertion.assertTrue(metadataFile.isFile(), "Cannot obtain metadata file: " + metadataFile);
         return metadataFile;
     }
     
-    private static void writePatchSet(PatchSet patchSet, OutputStream outstream, boolean versions) throws IOException {
+    private static void writePatchSet(Package patchSet, OutputStream outstream, boolean versions) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
         IllegalArgumentAssertion.assertNotNull(outstream, "outstream");
         try (PrintStream pw = new PrintStream(outstream)) {
@@ -213,7 +212,7 @@ final class Parser {
                 pw.println(PATCHID_PREFIX + " " + patchSet.getPatchId());
             }
             
-            Set<PatchId> deps = patchSet.getDependencies();
+            Set<Identity> deps = patchSet.getDependencies();
             if (!deps.isEmpty()) {
                 pw.println();
                 pw.println("[properties]");
@@ -239,20 +238,20 @@ final class Parser {
         }
     }
 
-    static PatchSet readPatchSet(File metadataFile) throws IOException {
+    static Package readPatchSet(File metadataFile) throws IOException {
         IllegalArgumentAssertion.assertNotNull(metadataFile, "metadataFile");
         IllegalArgumentAssertion.assertTrue(metadataFile.isFile(), "Cannot find metadata file: " + metadataFile);
 
         Set<Record> records = new HashSet<>();
         List<String> commands = new ArrayList<>();
-        Set<PatchId> dependencies = new LinkedHashSet<>();
+        Set<Identity> dependencies = new LinkedHashSet<>();
         
         try (BufferedReader br = new BufferedReader(new FileReader(metadataFile))) {
             String line = br.readLine().trim();
             IllegalStateAssertion.assertTrue(line.startsWith(VERSION_PREFIX), "Cannot obtain version info");
             line = br.readLine().trim();
             IllegalStateAssertion.assertTrue(line.startsWith(PATCHID_PREFIX), "Cannot obtain patch id");
-            PatchId patchId = PatchId.fromString(line.substring(PATCHID_PREFIX.length()).trim());
+            Identity patchId = Identity.fromString(line.substring(PATCHID_PREFIX.length()).trim());
             String mode = null;
             while (line != null) {
                 line = line.trim();
@@ -273,7 +272,7 @@ final class Parser {
                     if ("Dependencies".equals(name)) {
                         IllegalStateAssertion.assertTrue(dependencies.isEmpty(), "Dependencies already defined" + line);
                         for (String tok : value.split(",")) {
-                            dependencies.add(PatchId.fromString(tok.trim()));
+                            dependencies.add(Identity.fromString(tok.trim()));
                         }
                     }
                 }
@@ -285,7 +284,7 @@ final class Parser {
                 }
                 line = br.readLine();
             } 
-            return PatchSet.create(patchId, records, dependencies, commands);
+            return Package.create(patchId, records, dependencies, commands);
         }
     }
 }

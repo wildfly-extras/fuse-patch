@@ -25,9 +25,9 @@ import java.nio.file.Paths;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.wildfly.extras.patch.PatchId;
+import org.wildfly.extras.patch.Identity;
 import org.wildfly.extras.patch.PatchRepository;
-import org.wildfly.extras.patch.PatchSet;
+import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.utils.IOUtils;
@@ -51,17 +51,17 @@ public class OneOffPatchTest {
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathA).serverPath(serverPathA).build();
         PatchRepository repo = patchTool.getPatchRepository();
         
-        PatchId idA = repo.addArchive(Archives.getZipUrlFoo100());
-        PatchId idB = repo.addArchive(Archives.getZipUrlFoo100SP1(), idA);
+        Identity idA = repo.addArchive(Archives.getZipUrlFoo100());
+        Identity idB = repo.addArchive(Archives.getZipUrlFoo100SP1(), idA);
 
-        PatchSet setA = patchTool.install(idA, false);
+        Package setA = patchTool.install(idA, false);
         Assert.assertEquals(4, setA.getRecords().size());
         Archives.assertActionPathEquals("INFO config/propsA.properties", setA.getRecords().get(0));
         Archives.assertActionPathEquals("INFO config/propsB.properties", setA.getRecords().get(1));
         Archives.assertActionPathEquals("INFO config/remove-me.properties", setA.getRecords().get(2));
         Archives.assertActionPathEquals("INFO lib/foo-1.0.0.jar", setA.getRecords().get(3));
 
-        PatchSet setB = patchTool.install(idB, false);
+        Package setB = patchTool.install(idB, false);
         Assert.assertEquals(4, setB.getRecords().size());
         Archives.assertActionPathEquals("INFO config/propsA.properties", setB.getRecords().get(0));
         Archives.assertActionPathEquals("INFO config/propsB.properties", setB.getRecords().get(1));

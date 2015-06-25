@@ -32,7 +32,7 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.extras.patch.PatchId;
+import org.wildfly.extras.patch.Identity;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 
@@ -56,7 +56,7 @@ public class SimpleAccessTest {
     @Test
     public void testQueryServer() throws Exception {
         PatchTool patchTool = new PatchToolBuilder().build();
-        List<PatchId> pids = patchTool.getServerInstance().queryAppliedPatches();
+        List<Identity> pids = patchTool.getServerInstance().queryAppliedPatches();
         Assert.assertEquals(1, pids.size());
         Assert.assertEquals("fuse-patch-distro-wildfly", pids.get(0).getName());
     }
@@ -64,7 +64,7 @@ public class SimpleAccessTest {
     @Test
     public void testQueryRepository() throws Exception {
         PatchTool patchTool = new PatchToolBuilder().build();
-        List<PatchId> pids = patchTool.getPatchRepository().queryAvailable(null);
+        List<Identity> pids = patchTool.getPatchRepository().queryAvailable(null);
         Assert.assertEquals(0, pids.size());
     }
 }

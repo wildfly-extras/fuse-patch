@@ -24,9 +24,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 
-import org.wildfly.extras.patch.PatchId;
+import org.wildfly.extras.patch.Identity;
 import org.wildfly.extras.patch.PatchRepository;
-import org.wildfly.extras.patch.PatchSet;
+import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.ServerInstance;
 import org.wildfly.extras.patch.SmartPatch;
@@ -73,7 +73,7 @@ public final class DefaultPatchTool implements PatchTool {
     }
     
     @Override
-    public PatchSet install(PatchId patchId, boolean force) throws IOException {
+    public Package install(Identity patchId, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         Lock.tryLock();
         try {
@@ -84,11 +84,11 @@ public final class DefaultPatchTool implements PatchTool {
     }
 
     @Override
-    public PatchSet update(String prefix, boolean force) throws IOException {
+    public Package update(String prefix, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
         Lock.tryLock();
         try {
-            PatchId latestId = getPatchRepository().getLatestAvailable(prefix);
+            Identity latestId = getPatchRepository().getLatestAvailable(prefix);
             PatchAssertion.assertNotNull(latestId, "Cannot obtain patch id for prefix: " + prefix);
             return installInternal(latestId, force);
         } finally {
@@ -96,18 +96,18 @@ public final class DefaultPatchTool implements PatchTool {
         }
     }
     
-    private PatchSet installInternal(PatchId patchId, boolean force) throws IOException {
+    private Package installInternal(Identity patchId, boolean force) throws IOException {
         
-        PatchId serverId = null;
+        Identity serverId = null;
         String prefix = patchId.getName();
-        for (PatchId pid : getServerInstance().queryAppliedPatches()) {
+        for (Identity pid : getServerInstance().queryAppliedPatches()) {
             if (pid.getName().equals(prefix)) {
                 serverId = pid;
                 break;
             }
         }
         
-        PatchSet seedPatch = serverId != null ? getServerInstance().getPatchSet(serverId) : null;
+        Package seedPatch = serverId != null ? getServerInstance().getPatchSet(serverId) : null;
         SmartPatch smartPatch = getPatchRepository().getSmartPatch(seedPatch, patchId);
         return getServerInstance().applySmartPatch(smartPatch, force);
     }

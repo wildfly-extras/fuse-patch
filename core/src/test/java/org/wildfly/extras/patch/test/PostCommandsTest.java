@@ -26,9 +26,9 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.wildfly.extras.patch.PatchId;
+import org.wildfly.extras.patch.Identity;
 import org.wildfly.extras.patch.PatchRepository;
-import org.wildfly.extras.patch.PatchSet;
+import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.ServerInstance;
@@ -63,16 +63,16 @@ public class PostCommandsTest {
         PatchRepository repo = patchTool.getPatchRepository();
         
         repo.addArchive(Archives.getZipUrlFoo100());
-        repo.addPostCommand(PatchId.fromString("foo-1.0.0"), new String[]{"echo", "Do", "first"});
-        repo.addPostCommand(PatchId.fromString("foo-1.0.0"), new String[]{"echo", "Do", "after"});
+        repo.addPostCommand(Identity.fromString("foo-1.0.0"), new String[]{"echo", "Do", "first"});
+        repo.addPostCommand(Identity.fromString("foo-1.0.0"), new String[]{"echo", "Do", "after"});
 
         // Verify clean server
-        List<PatchId> patches = server.queryAppliedPatches();
+        List<Identity> patches = server.queryAppliedPatches();
         Assert.assertTrue("Patch set empty", patches.isEmpty());
         
         // Obtain the smart patch from the repo
-        SmartPatch smartPatch = repo.getSmartPatch(null, PatchId.fromString("foo-1.0.0"));
-        Assert.assertEquals(PatchId.fromString("foo-1.0.0"), smartPatch.getPatchId());
+        SmartPatch smartPatch = repo.getSmartPatch(null, Identity.fromString("foo-1.0.0"));
+        Assert.assertEquals(Identity.fromString("foo-1.0.0"), smartPatch.getPatchId());
         
         // Verify post install commands
         List<String> cmds = smartPatch.getPostCommands();
@@ -81,8 +81,8 @@ public class PostCommandsTest {
         Assert.assertEquals("echo Do after", cmds.get(1));
         
         // Update the server with a known patch
-        PatchSet patch = server.applySmartPatch(smartPatch, false);
-        Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patch.getPatchId());
+        Package patch = server.applySmartPatch(smartPatch, false);
+        Assert.assertEquals(Identity.fromString("foo-1.0.0"), patch.getPatchId());
     }
 
     @Test
@@ -95,7 +95,7 @@ public class PostCommandsTest {
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathB).build();
         PatchRepository repo = patchTool.getPatchRepository();
         
-        PatchSet patchSet = repo.getPatchSet(PatchId.fromString("foo-1.0.0"));
+        Package patchSet = repo.getPatchSet(Identity.fromString("foo-1.0.0"));
         Assert.assertEquals(1, patchSet.getPostCommands().size());
         Assert.assertEquals("echo hello world", patchSet.getPostCommands().get(0));
     }
@@ -106,12 +106,12 @@ public class PostCommandsTest {
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathC).build();
         PatchRepository repo = patchTool.getPatchRepository();
         
-        PatchId patchId = repo.addArchive(Archives.getZipUrlFoo100());
+        Identity patchId = repo.addArchive(Archives.getZipUrlFoo100());
         
         String repoUrl = repoPathC.toUri().toURL().toString();
         Main.mainInternal(new String[] {"--repository", repoUrl, "--add-cmd", "foo-1.0.0", "echo hello world"});
         
-        PatchSet patchSet = repo.getPatchSet(patchId);
+        Package patchSet = repo.getPatchSet(patchId);
         Assert.assertEquals(1, patchSet.getPostCommands().size());
         Assert.assertEquals("echo hello world", patchSet.getPostCommands().get(0));
     }

@@ -25,19 +25,19 @@ import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.wildfly.extras.patch.PatchId;
+import org.wildfly.extras.patch.Identity;
 import org.wildfly.extras.patch.Version;
 
-public class PatchIdTest {
+public class IdentityTest {
 
     @Test
     public void testOrdering() throws Exception {
 
-        PatchId id1 = PatchId.create("aaa", Version.parseVersion("2.0.0"));
-        PatchId id2 = PatchId.create("fuse", Version.parseVersion("1.2.0"));
-        PatchId id3 = PatchId.create("fuse", Version.parseVersion("1.12.0"));
+        Identity id1 = Identity.create("aaa", Version.parseVersion("2.0.0"));
+        Identity id2 = Identity.create("fuse", Version.parseVersion("1.2.0"));
+        Identity id3 = Identity.create("fuse", Version.parseVersion("1.12.0"));
         
-        List<PatchId> list = Arrays.asList(id3, id2, id1);
+        List<Identity> list = Arrays.asList(id3, id2, id1);
         Collections.sort(list);
         
         Assert.assertEquals(id1, list.get(0));
@@ -48,18 +48,18 @@ public class PatchIdTest {
     @Test
     public void testFromString() throws Exception {
 
-        PatchId id = PatchId.fromString("aaa-2.0.0");
-        Assert.assertEquals(PatchId.create("aaa", Version.parseVersion("2.0.0")), id);
+        Identity id = Identity.fromString("aaa-2.0.0");
+        Assert.assertEquals(Identity.create("aaa", Version.parseVersion("2.0.0")), id);
         
-        id = PatchId.fromString("aaa-2.0.0-SNAPSHOT");
-        Assert.assertEquals(PatchId.create("aaa", Version.parseVersion("2.0.0-SNAPSHOT")), id);
+        id = Identity.fromString("aaa-2.0.0-SNAPSHOT");
+        Assert.assertEquals(Identity.create("aaa", Version.parseVersion("2.0.0-SNAPSHOT")), id);
         Assert.assertEquals("aaa-2.0.0-SNAPSHOT", id.getCanonicalForm());
         
-        id = PatchId.fromString("aaa-2.0.0.redhat-SNAPSHOT");
-        Assert.assertEquals(PatchId.create("aaa", Version.parseVersion("2.0.0.redhat-SNAPSHOT")), id);
+        id = Identity.fromString("aaa-2.0.0.redhat-SNAPSHOT");
+        Assert.assertEquals(Identity.create("aaa", Version.parseVersion("2.0.0.redhat-SNAPSHOT")), id);
         Assert.assertEquals("aaa-2.0.0.redhat-SNAPSHOT", id.getCanonicalForm());
         
-        id = PatchId.fromString("aaa-bbb-ccc");
-        Assert.assertEquals(PatchId.create("aaa-bbb-ccc", Version.parseVersion("0.0.0")), id);
+        id = Identity.fromString("aaa-bbb-ccc");
+        Assert.assertEquals(Identity.create("aaa-bbb-ccc", Version.parseVersion("0.0.0")), id);
     }
 }
