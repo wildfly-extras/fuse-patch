@@ -28,7 +28,7 @@ import org.junit.Test;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Version;
 
-public class PatchIdTest {
+public class IdentityTest {
 
     @Test
     public void testOrdering() throws Exception {

@@ -40,8 +40,8 @@ import java.util.zip.ZipInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wildfly.extras.patch.PatchId;
-import org.wildfly.extras.patch.PatchSet;
-import org.wildfly.extras.patch.PatchSet.Record;
+import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.Record;
 import org.wildfly.extras.patch.ServerInstance;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.utils.IOUtils;
@@ -85,12 +85,12 @@ final class WildFlyServerInstance implements ServerInstance {
     }
 
     @Override
-    public PatchSet getPatchSet(String prefix) {
+    public Package getPackage(String prefix) {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
         Lock.tryLock();
         try {
             List<PatchId> list = Parser.getAvailable(getWorkspace(), prefix, true);
-            return list.isEmpty() ? null : getPatchSet(list.get(0));
+            return list.isEmpty() ? null : getPackage(list.get(0));
         } finally {
             Lock.unlock();
         }
@@ -109,11 +109,11 @@ final class WildFlyServerInstance implements ServerInstance {
     }
 
     @Override
-    public PatchSet getPatchSet(PatchId patchId) {
+    public Package getPackage(PatchId patchId) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         Lock.tryLock();
         try {
-            return Parser.readPatchSet(getWorkspace(), patchId);
+            return Parser.readPackage(getWorkspace(), patchId);
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         } finally {
@@ -122,7 +122,7 @@ final class WildFlyServerInstance implements ServerInstance {
     }
 
     @Override
-    public PatchSet applySmartPatch(SmartPatch smartPatch, boolean force) throws IOException {
+    public Package applySmartPatch(SmartPatch smartPatch, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(smartPatch, "smartPatch");
         
         // Do nothing on empty smart patch
@@ -146,7 +146,7 @@ final class WildFlyServerInstance implements ServerInstance {
             
             
             PatchId patchId = smartPatch.getPatchId();
-            PatchSet serverSet = getPatchSet(patchId.getName());
+            Package serverSet = getPackage(patchId.getName());
             
             // Get the latest applied records
             Map<Path, Record> serverRecords = new HashMap<>();
@@ -205,8 +205,8 @@ final class WildFlyServerInstance implements ServerInstance {
             for (Record rec : serverRecords.values()) {
                 inforecs.add(Record.create(rec.getPath(), rec.getChecksum()));
             }
-            PatchSet infoset = PatchSet.create(patchId, inforecs);
-            Parser.writePatchSet(getWorkspace(), infoset);
+            Package infoset = Package.create(patchId, inforecs);
+            Parser.writePackage(getWorkspace(), infoset);
 
             // Write the log message
             final String message;

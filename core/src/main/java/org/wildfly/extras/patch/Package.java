@@ -19,13 +19,11 @@
  */
 package org.wildfly.extras.patch;
 
-import static org.wildfly.extras.patch.PatchSet.Action.ADD;
-import static org.wildfly.extras.patch.PatchSet.Action.DEL;
-import static org.wildfly.extras.patch.PatchSet.Action.INFO;
-import static org.wildfly.extras.patch.PatchSet.Action.UPD;
+import static org.wildfly.extras.patch.Record.Action.ADD;
+import static org.wildfly.extras.patch.Record.Action.DEL;
+import static org.wildfly.extras.patch.Record.Action.UPD;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,47 +36,42 @@ import java.util.Map;
 import java.util.Set;
 
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
-import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 
 /**
- * A patch set.
+ * A package.
  *
- * A patch set associates a patch id with a list of artefacts ids. 
+ * A package associates a patch id with a list of artefacts ids. 
  *
- * A {@code PatchSet} is immutable.
+ * A {@code Package} is immutable.
  * 
  * @author thomas.diesler@jboss.com
  * @since 10-Jun-2015
  */
-public final class PatchSet {
+public final class Package {
 
-    private final PatchId patchId;
+    private final PatchId identity;
     private final Map<Path, Record> recordsMap = new LinkedHashMap<>();
     private final List<String> commands = new ArrayList<>();
     private final Set<PatchId> dependencies = new LinkedHashSet<>();
     private int hashCache;
 
-    public static enum Action {
-        INFO, ADD, UPD, DEL
-    };
-
-    public static PatchSet create(PatchId patchId, Collection<Record> records) {
-        return new PatchSet(patchId, records, Collections.<PatchId>emptySet(), Collections.<String>emptyList());
+    public static Package create(PatchId patchId, Collection<Record> records) {
+        return new Package(patchId, records, Collections.<PatchId>emptySet(), Collections.<String>emptyList());
     }
 
-    public static PatchSet create(PatchId patchId, Collection<Record> records, Set<PatchId> dependencies) {
-        return new PatchSet(patchId, records, dependencies, Collections.<String>emptyList());
+    public static Package create(PatchId patchId, Collection<Record> records, Set<PatchId> dependencies) {
+        return new Package(patchId, records, dependencies, Collections.<String>emptyList());
     }
 
-    public static PatchSet create(PatchId patchId, Collection<Record> records, List<String> commands) {
-        return new PatchSet(patchId, records, Collections.<PatchId>emptySet(), commands);
+    public static Package create(PatchId patchId, Collection<Record> records, List<String> commands) {
+        return new Package(patchId, records, Collections.<PatchId>emptySet(), commands);
     }
 
-    public static PatchSet create(PatchId patchId, Collection<Record> records, Set<PatchId> dependencies, List<String> commands) {
-        return new PatchSet(patchId, records, dependencies, commands);
+    public static Package create(PatchId patchId, Collection<Record> records, Set<PatchId> dependencies, List<String> commands) {
+        return new Package(patchId, records, dependencies, commands);
     }
 
-    public static PatchSet smartSet(PatchSet seedPatch, PatchSet targetSet) {
+    public static Package smartSet(Package seedPatch, Package targetSet) {
         IllegalArgumentAssertion.assertNotNull(targetSet, "targetSet");
 
         // All seed patch records are remove candidates
@@ -106,17 +99,17 @@ public final class PatchSet {
         }
         
         records.addAll(removeMap.values());
-        return new PatchSet(targetSet.patchId, records, targetSet.dependencies, targetSet.commands);
+        return new Package(targetSet.identity, records, targetSet.dependencies, targetSet.commands);
     }
 
-    private PatchSet(PatchId patchId, Collection<Record> records, Set<PatchId> dependencies, List<String> commands) {
+    private Package(PatchId patchId, Collection<Record> records, Set<PatchId> dependencies, List<String> commands) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         IllegalArgumentAssertion.assertNotNull(records, "records");
         IllegalArgumentAssertion.assertNotNull(dependencies, "dependencies");
         IllegalArgumentAssertion.assertNotNull(commands, "commands");
         this.dependencies.addAll(dependencies);
         this.commands.addAll(commands);
-        this.patchId = patchId;
+        this.identity = patchId;
 
         // Sort the artefacts by path
         Map<Path, Record> auxmap = new HashMap<>();
@@ -131,7 +124,7 @@ public final class PatchSet {
     }
 
     public PatchId getPatchId() {
-        return patchId;
+        return identity;
     }
 
     public List<Record> getRecords() {
@@ -157,7 +150,7 @@ public final class PatchSet {
     @Override
     public int hashCode() {
         if (hashCache == 0) {
-            hashCache = ("" + patchId + recordsMap + commands).hashCode();
+            hashCache = ("" + identity + recordsMap + commands).hashCode();
         }
         return hashCache;
     }
@@ -165,9 +158,9 @@ public final class PatchSet {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof PatchSet)) return false;
-        PatchSet other = (PatchSet) obj;
-        boolean result = patchId.equals(other.patchId);
+        if (!(obj instanceof Package)) return false;
+        Package other = (Package) obj;
+        boolean result = identity.equals(other.identity);
         result &= recordsMap.equals(other.recordsMap);
         result &= dependencies.equals(other.dependencies);
         result &= commands.equals(other.commands);
@@ -176,73 +169,6 @@ public final class PatchSet {
 
     @Override
     public String toString() {
-        return "PatchSet[" + patchId + ",recs=" + recordsMap.size() + ",deps=" + dependencies + ",cmds=" + commands.size() + "]";
-    }
-
-    public final static class Record {
-
-        private final Action action;
-        private final Path path;
-        private final Long checksum;
-
-        public static Record create(Path path) {
-            return new Record(INFO, path, 0L);
-        }
-
-        public static Record create(Path path, Long checksum) {
-            return new Record(INFO, path, checksum);
-        }
-
-        public static Record create(Action action, Path path, Long checksum) {
-            return new Record(action, path, checksum);
-        }
-
-        public static Record fromString(String line) {
-            IllegalArgumentAssertion.assertNotNull(line, "line");
-            String[] toks = line.split("[\\s]");
-            IllegalStateAssertion.assertEquals(3, toks.length, "Invalid line: " + line);
-            return new Record(Action.valueOf(toks[0]), Paths.get(toks[1]), new Long(toks[2]));
-        }
-        
-        private Record(Action action, Path path, Long checksum) {
-            IllegalArgumentAssertion.assertNotNull(action, "action");
-            IllegalArgumentAssertion.assertNotNull(path, "path");
-            IllegalArgumentAssertion.assertNotNull(checksum, "checksum");
-            this.action = action;
-            this.path = path;
-            this.checksum = checksum;
-        }
-
-        public Action getAction() {
-            return action;
-        }
-
-        public Path getPath() {
-            return path;
-        }
-
-        public Long getChecksum() {
-            return checksum;
-        }
-
-        @Override
-        public int hashCode() {
-            return ("" + path + checksum).hashCode();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (!(obj instanceof Record))
-                return false;
-            Record other = (Record) obj;
-            return path.equals(other.path) && checksum.equals(other.checksum);
-        }
-
-        @Override
-        public String toString() {
-            return action + " " + path + " " + checksum;
-        }
+        return "Package[" + identity + ",recs=" + recordsMap.size() + ",deps=" + dependencies + ",cmds=" + commands.size() + "]";
     }
 }

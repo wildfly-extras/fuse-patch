@@ -27,8 +27,8 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.extras.patch.PatchId;
-import org.wildfly.extras.patch.PatchRepository;
-import org.wildfly.extras.patch.PatchSet;
+import org.wildfly.extras.patch.Repository;
+import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.ServerInstance;
@@ -60,7 +60,7 @@ public class PostCommandsTest {
 
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathA).serverPath(serverPathA).build();
         ServerInstance server = patchTool.getServerInstance();
-        PatchRepository repo = patchTool.getPatchRepository();
+        Repository repo = patchTool.getPatchRepository();
         
         repo.addArchive(Archives.getZipUrlFoo100());
         repo.addPostCommand(PatchId.fromString("foo-1.0.0"), new String[]{"echo", "Do", "first"});
@@ -81,7 +81,7 @@ public class PostCommandsTest {
         Assert.assertEquals("echo Do after", cmds.get(1));
         
         // Update the server with a known patch
-        PatchSet patch = server.applySmartPatch(smartPatch, false);
+        Package patch = server.applySmartPatch(smartPatch, false);
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patch.getPatchId());
     }
 
@@ -93,9 +93,9 @@ public class PostCommandsTest {
         Main.mainInternal(new String[] {"--repository", repoUrl, "--add", fileUrl, "--add-cmd", "echo hello world"});
         
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathB).build();
-        PatchRepository repo = patchTool.getPatchRepository();
+        Repository repo = patchTool.getPatchRepository();
         
-        PatchSet patchSet = repo.getPatchSet(PatchId.fromString("foo-1.0.0"));
+        Package patchSet = repo.getPackage(PatchId.fromString("foo-1.0.0"));
         Assert.assertEquals(1, patchSet.getPostCommands().size());
         Assert.assertEquals("echo hello world", patchSet.getPostCommands().get(0));
     }
@@ -104,14 +104,14 @@ public class PostCommandsTest {
     public void testAddWithExisting() throws Exception {
 
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathC).build();
-        PatchRepository repo = patchTool.getPatchRepository();
+        Repository repo = patchTool.getPatchRepository();
         
         PatchId patchId = repo.addArchive(Archives.getZipUrlFoo100());
         
         String repoUrl = repoPathC.toUri().toURL().toString();
         Main.mainInternal(new String[] {"--repository", repoUrl, "--add-cmd", "foo-1.0.0", "echo hello world"});
         
-        PatchSet patchSet = repo.getPatchSet(patchId);
+        Package patchSet = repo.getPackage(patchId);
         Assert.assertEquals(1, patchSet.getPostCommands().size());
         Assert.assertEquals("echo hello world", patchSet.getPostCommands().get(0));
     }

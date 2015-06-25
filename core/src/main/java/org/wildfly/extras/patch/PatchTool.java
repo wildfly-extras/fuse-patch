@@ -37,15 +37,15 @@ public interface PatchTool {
     /**
      * Get the patch repository
      */
-    PatchRepository getPatchRepository();
+    Repository getPatchRepository();
     
     /**
      * Install the given patch id to the server
      */
-    PatchSet install(PatchId patchId, boolean force) throws IOException;
+    Package install(PatchId patchId, boolean force) throws IOException;
 
     /**
      * Update the server for the given patch name
      */
-    PatchSet update(String symbolicName, boolean force) throws IOException;
+    Package update(String symbolicName, boolean force) throws IOException;
 }

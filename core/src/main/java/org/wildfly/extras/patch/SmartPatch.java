@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.wildfly.extras.patch.PatchSet.Action;
-import org.wildfly.extras.patch.PatchSet.Record;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 
 
@@ -46,18 +44,18 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 public final class SmartPatch {
 
     private final File patchFile;
-    private final PatchSet patchSet;
+    private final Package patchSet;
     private final Map<Path, Record> delMap = new HashMap<>();
     private final Map<Path, Record> updMap = new HashMap<>();
     private final Map<Path, Record> addMap = new HashMap<>();
     
-    public SmartPatch(PatchSet patchSet, File patchFile) {
+    public SmartPatch(Package patchSet, File patchFile) {
         IllegalArgumentAssertion.assertNotNull(patchFile, "patchFile");
         IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
         this.patchSet = patchSet;
         this.patchFile = patchFile;
         for (Record rec : patchSet.getRecords()) {
-            Action action = rec.getAction();
+            Record.Action action = rec.getAction();
             switch (rec.getAction()) {
                 case ADD:
                     addMap.put(rec.getPath(), rec);

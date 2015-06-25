@@ -23,14 +23,14 @@ import java.io.File;
 import java.io.IOException;
 
 import org.wildfly.extras.patch.PatchId;
-import org.wildfly.extras.patch.PatchSet;
-import org.wildfly.extras.patch.PatchSet.Action;
+import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.Record;
 
 public final class ParserAccess {
 
-    public static PatchSet getPatchSet(File zipFile) throws IOException {
+    public static Package getPackage(File zipFile) throws IOException {
         PatchId patchId = PatchId.fromFile(zipFile);
-        return Parser.buildPatchSetFromZip(patchId, Action.ADD, zipFile);
+        return Parser.buildPackageFromZip(patchId, Record.Action.ADD, zipFile);
     }
 
 }

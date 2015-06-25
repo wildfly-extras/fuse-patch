@@ -52,19 +52,19 @@ public interface ServerInstance {
 	List<PatchId> queryAppliedPatches();
 
     /**
-     * Get the applied patch for a given prefix
-     * @return patch set or null
+     * Get the applied package for a given prefix
+     * @return package or null
      */
-	PatchSet getPatchSet(String prefix);
+	Package getPackage(String prefix);
 
     /**
-     * Get the applied patch set for the given id
+     * Get the applied package for the given id
      */
-    PatchSet getPatchSet(PatchId patchId);
+    Package getPackage(PatchId patchId);
     
 	/**
 	 * Apply a smart patch and return the result
 	 */
-	PatchSet applySmartPatch(SmartPatch smartPatch, boolean force) throws IOException;
+	Package applySmartPatch(SmartPatch smartPatch, boolean force) throws IOException;
 
 }

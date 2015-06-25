@@ -51,7 +51,7 @@ import java.util.StringTokenizer;
  * </ol>
  * 
  * <p>
- * {@code Version} objects are immutable.
+ * A {@code Version} is immutable.
  */
 public class Version implements Comparable<Version> {
 

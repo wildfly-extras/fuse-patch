@@ -50,9 +50,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.wildfly.extras.patch.PatchId;
-import org.wildfly.extras.patch.PatchSet;
-import org.wildfly.extras.patch.PatchSet.Action;
-import org.wildfly.extras.patch.PatchSet.Record;
+import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.Record;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.Version;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
@@ -81,7 +80,7 @@ final class Parser {
     static final String VERSION_PREFIX = "# fusepatch:";
     static final String PATCHID_PREFIX = "# patch id:";
     
-    static PatchSet buildPatchSetFromZip(PatchId patchId, Action action, File zipfile) throws IOException {
+    static Package buildPackageFromZip(PatchId patchId, Record.Action action, File zipfile) throws IOException {
         IllegalArgumentAssertion.assertNotNull(zipfile, "zipfile");
         IllegalArgumentAssertion.assertTrue(zipfile.isFile(), "Zip file does not exist: " + zipfile);
         
@@ -102,13 +101,13 @@ final class Parser {
                 entry = zip.getNextEntry();
             }
         }
-        return PatchSet.create(patchId, records);
+        return Package.create(patchId, records);
     }
 
-    static PatchSet readPatchSet(Path rootPath, PatchId patchId) throws IOException {
+    static Package readPackage(Path rootPath, PatchId patchId) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
-        return readPatchSet(assertMetadataFile(rootPath, patchId));
+        return readPackage(assertMetadataFile(rootPath, patchId));
     }
 
     static List<PatchId> getAvailable(Path rootPath, final String prefix, boolean latest) {
@@ -159,8 +158,8 @@ final class Parser {
             String date = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss").format(new Date());
             pw.println("# " + date);
             pw.println("# " + message);
-            PatchSet patchSet = PatchSet.create(smartPatch.getPatchId(), smartPatch.getRecords(), smartPatch.getPostCommands());
-            writePatchSet(patchSet, fos, false);
+            Package patchSet = Package.create(smartPatch.getPatchId(), smartPatch.getRecords(), smartPatch.getPostCommands());
+            writePackage(patchSet, fos, false);
         }
     }
     
@@ -180,18 +179,18 @@ final class Parser {
         return Collections.unmodifiableList(lines);
     }
     
-    static void writePatchSet(Path rootPath, PatchSet patchSet) throws IOException {
+    static void writePackage(Path rootPath, Package patchSet) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
         IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
         File metadataFile = getMetadataFile(rootPath, patchSet.getPatchId());
         metadataFile.getParentFile().mkdirs();
         try (FileOutputStream fos = new FileOutputStream(metadataFile)) {
-            writePatchSet(patchSet, fos, true);
+            writePackage(patchSet, fos, true);
         }
     }
     
-    static void writePatchSet(PatchSet patchSet, OutputStream outstream) throws IOException {
-        writePatchSet(patchSet, outstream, true);
+    static void writePackage(Package patchSet, OutputStream outstream) throws IOException {
+        writePackage(patchSet, outstream, true);
     }
     
     static File getMetadataFile(Path rootPath, PatchId patchId) {
@@ -204,7 +203,7 @@ final class Parser {
         return metadataFile;
     }
     
-    private static void writePatchSet(PatchSet patchSet, OutputStream outstream, boolean versions) throws IOException {
+    private static void writePackage(Package patchSet, OutputStream outstream, boolean versions) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
         IllegalArgumentAssertion.assertNotNull(outstream, "outstream");
         try (PrintStream pw = new PrintStream(outstream)) {
@@ -239,7 +238,7 @@ final class Parser {
         }
     }
 
-    static PatchSet readPatchSet(File metadataFile) throws IOException {
+    static Package readPackage(File metadataFile) throws IOException {
         IllegalArgumentAssertion.assertNotNull(metadataFile, "metadataFile");
         IllegalArgumentAssertion.assertTrue(metadataFile.isFile(), "Cannot find metadata file: " + metadataFile);
 
@@ -285,7 +284,7 @@ final class Parser {
                 }
                 line = br.readLine();
             } 
-            return PatchSet.create(patchId, records, dependencies, commands);
+            return Package.create(patchId, records, dependencies, commands);
         }
     }
 }

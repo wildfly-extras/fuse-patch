@@ -38,16 +38,15 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wildfly.extras.patch.PatchId;
-import org.wildfly.extras.patch.PatchRepository;
-import org.wildfly.extras.patch.PatchSet;
-import org.wildfly.extras.patch.PatchSet.Action;
-import org.wildfly.extras.patch.PatchSet.Record;
+import org.wildfly.extras.patch.Repository;
+import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.Record;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 import org.wildfly.extras.patch.utils.PatchAssertion;
 
-final class DefaultPatchRepository implements PatchRepository {
+final class DefaultPatchRepository implements Repository {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultPatchRepository.class);
     
@@ -87,11 +86,11 @@ final class DefaultPatchRepository implements PatchRepository {
     }
 
     @Override
-    public PatchSet getPatchSet(PatchId patchId) {
+    public Package getPackage(PatchId patchId) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         Lock.tryLock();
         try {
-            return Parser.readPatchSet(rootPath, patchId);
+            return Parser.readPackage(rootPath, patchId);
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         } finally {
@@ -129,30 +128,30 @@ final class DefaultPatchRepository implements PatchRepository {
             Map<Path, PatchId> pathMap = new HashMap<>();
             for (PatchId auxid : Parser.getAvailable(rootPath, null, false)) {
                 if (!patchId.getName().equals(auxid.getName())) {
-                    for (Record rec : getPatchSet(auxid).getRecords()) {
+                    for (Record rec : getPackage(auxid).getRecords()) {
                         pathMap.put(rec.getPath(), auxid);
                     }
                 }
             }
             
             // Build the patch set
-            PatchSet patchSet;
+            Package patchSet;
             if (oneoffId != null) {
-                PatchSet oneoffSet = getPatchSet(oneoffId);
+                Package oneoffSet = getPackage(oneoffId);
                 Map<Path, Record> records = new HashMap<>();
                 for (Record rec : oneoffSet.getRecords()) {
                     records.put(rec.getPath(), rec);
                 }
-                PatchSet sourceSet = Parser.buildPatchSetFromZip(patchId, Action.INFO, sourcePath.toFile());
+                Package sourceSet = Parser.buildPackageFromZip(patchId, Record.Action.INFO, sourcePath.toFile());
                 for (Record rec : sourceSet.getRecords()) {
                     records.put(rec.getPath(), rec);
                 }
                 Set<PatchId> depids = new LinkedHashSet<>(dependencies);
                 depids.add(oneoffId);
-                patchSet = PatchSet.create(patchId, records.values(), depids);
+                patchSet = Package.create(patchId, records.values(), depids);
             } else {
-                PatchSet sourceSet = Parser.buildPatchSetFromZip(patchId, Action.INFO, sourcePath.toFile());
-                patchSet = PatchSet.create(patchId, sourceSet.getRecords(), dependencies);
+                Package sourceSet = Parser.buildPackageFromZip(patchId, Record.Action.INFO, sourcePath.toFile());
+                patchSet = Package.create(patchId, sourceSet.getRecords(), dependencies);
             }
             
             // Assert no duplicate paths
@@ -170,7 +169,7 @@ final class DefaultPatchRepository implements PatchRepository {
             File targetFile = getPatchFile(patchId);
             targetFile.getParentFile().mkdirs();
             Files.copy(sourcePath, targetFile.toPath());
-            Parser.writePatchSet(rootPath, patchSet);
+            Parser.writePackage(rootPath, patchSet);
             
             // Remove the source file when it was placed in the repository 
             if (sourcePath.startsWith(rootPath)) {
@@ -198,12 +197,12 @@ final class DefaultPatchRepository implements PatchRepository {
         IllegalArgumentAssertion.assertNotNull(cmdarr, "cmdarr");
         Lock.tryLock();
         try {
-            PatchSet patchSet = getPatchSet(patchId);
+            Package patchSet = getPackage(patchId);
             List<String> commands = new ArrayList<>(patchSet.getPostCommands());
             commands.add(commandString(cmdarr));
-            patchSet = PatchSet.create(patchId, patchSet.getRecords(), commands);
+            patchSet = Package.create(patchId, patchSet.getRecords(), commands);
             try {
-                Parser.writePatchSet(rootPath, patchSet);
+                Parser.writePackage(rootPath, patchSet);
             } catch (IOException ex) {
                 throw new IllegalStateException(ex);
             }
@@ -214,7 +213,7 @@ final class DefaultPatchRepository implements PatchRepository {
     }
 
     @Override
-    public SmartPatch getSmartPatch(PatchSet seedPatch, PatchId patchId) {
+    public SmartPatch getSmartPatch(Package seedPatch, PatchId patchId) {
         Lock.tryLock();
         try {
             // Derive the target patch id from the seed patch id
@@ -227,8 +226,8 @@ final class DefaultPatchRepository implements PatchRepository {
             File zipfile = getPatchFile(patchId);
             PatchAssertion.assertTrue(zipfile.isFile(), "Cannot obtain patch file: " + zipfile);
 
-            PatchSet targetSet = getPatchSet(patchId);
-            PatchSet smartSet = PatchSet.smartSet(seedPatch, targetSet);
+            Package targetSet = getPackage(patchId);
+            Package smartSet = Package.smartSet(seedPatch, targetSet);
             return new SmartPatch(smartSet, zipfile);
         } finally {
             Lock.unlock();

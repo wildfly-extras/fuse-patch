@@ -33,8 +33,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.extras.patch.PatchException;
 import org.wildfly.extras.patch.PatchId;
-import org.wildfly.extras.patch.PatchRepository;
-import org.wildfly.extras.patch.PatchSet;
+import org.wildfly.extras.patch.Repository;
+import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.utils.IOUtils;
@@ -63,16 +63,16 @@ public class SimpleRepositoryTest {
         
         URL urlA = new URL("file:./target/repos/SimpleRepositoryTest/repoA");
         PatchTool patchTool = new PatchToolBuilder().repositoryUrl(urlA).build();
-        PatchRepository repo = patchTool.getPatchRepository();
+        Repository repo = patchTool.getPatchRepository();
         
         PatchId patchId = repo.addArchive(Archives.getZipUrlFoo100());
-        PatchSet patchSet = repo.getPatchSet(patchId);
+        Package patchSet = repo.getPackage(patchId);
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patchSet.getPatchId());
         Assert.assertEquals(4, patchSet.getRecords().size());
         
         patchId = repo.addArchive(Archives.getZipUrlFoo110());
         repo.addPostCommand(patchId, new String[]{"bin/fusepatch.sh", "--query-server" });
-        patchSet = repo.getPatchSet(patchId);
+        patchSet = repo.getPackage(patchId);
         Assert.assertEquals(PatchId.fromString("foo-1.1.0"), patchSet.getPatchId());
         Assert.assertEquals(3, patchSet.getRecords().size());
         Assert.assertEquals(1, patchSet.getPostCommands().size());
@@ -91,7 +91,7 @@ public class SimpleRepositoryTest {
     public void testFileMove() throws Exception {
         
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathB).build();
-        PatchRepository repo = patchTool.getPatchRepository();
+        Repository repo = patchTool.getPatchRepository();
         
         // copy a file to the root of the repository
         File zipFileA = Archives.getZipFileFoo100();
@@ -99,7 +99,7 @@ public class SimpleRepositoryTest {
         Files.copy(zipFileA.toPath(), targetFile.toPath());
         
         PatchId patchId = repo.addArchive(targetFile.toURI().toURL());
-        PatchSet patchSet = repo.getPatchSet(patchId);
+        Package patchSet = repo.getPackage(patchId);
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patchSet.getPatchId());
         Assert.assertEquals(4, patchSet.getRecords().size());
 
@@ -111,7 +111,7 @@ public class SimpleRepositoryTest {
     public void testOverlappingPaths() throws Exception {
         
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathC).build();
-        PatchRepository repo = patchTool.getPatchRepository();
+        Repository repo = patchTool.getPatchRepository();
         
         repo.addArchive(Archives.getZipUrlFoo100());
         Path copyPath = Paths.get("target/foo-copy-1.1.0.zip");
@@ -128,7 +128,7 @@ public class SimpleRepositoryTest {
     public void testAddOneOff() throws Exception {
         
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathD).build();
-        PatchRepository repo = patchTool.getPatchRepository();
+        Repository repo = patchTool.getPatchRepository();
         
         PatchId oneoffId = PatchId.fromString("foo-1.0.0");
         try {
@@ -139,14 +139,14 @@ public class SimpleRepositoryTest {
         }
         
         PatchId idA = repo.addArchive(Archives.getZipUrlFoo100());
-        PatchSet setA = repo.getPatchSet(idA);
+        Package setA = repo.getPackage(idA);
         PatchId idB = repo.addArchive(Archives.getZipUrlFoo100SP1(), oneoffId);
-        PatchSet setB = repo.getPatchSet(idB);
+        Package setB = repo.getPackage(idB);
         Archives.assertPathsEqual(setA.getRecords(), setB.getRecords());
         Assert.assertEquals(1, setB.getDependencies().size());
         Assert.assertEquals(idA, setB.getDependencies().iterator().next());
         
-        PatchSet smartSet = PatchSet.smartSet(setA, setB);
+        Package smartSet = Package.smartSet(setA, setB);
         Assert.assertEquals(1, smartSet.getRecords().size());
         Archives.assertActionPathEquals("UPD config/propsA.properties", smartSet.getRecords().get(0));
     }

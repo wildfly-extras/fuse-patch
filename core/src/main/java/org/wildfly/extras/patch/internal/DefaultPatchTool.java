@@ -25,8 +25,8 @@ import java.net.URL;
 import java.nio.file.Path;
 
 import org.wildfly.extras.patch.PatchId;
-import org.wildfly.extras.patch.PatchRepository;
-import org.wildfly.extras.patch.PatchSet;
+import org.wildfly.extras.patch.Repository;
+import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.ServerInstance;
 import org.wildfly.extras.patch.SmartPatch;
@@ -37,7 +37,7 @@ import org.wildfly.extras.patch.utils.PatchAssertion;
 public final class DefaultPatchTool implements PatchTool {
 
     private ServerInstance serverInstance;
-    private PatchRepository patchRepository;
+    private Repository patchRepository;
     private Path serverPath;
     private URL repoUrl;
     
@@ -55,7 +55,7 @@ public final class DefaultPatchTool implements PatchTool {
     }
 
     @Override
-    public PatchRepository getPatchRepository() {
+    public Repository getPatchRepository() {
         if (patchRepository == null) {
             if (repoUrl == null) {
                 repoUrl = DefaultPatchRepository.getConfiguredUrl();
@@ -73,7 +73,7 @@ public final class DefaultPatchTool implements PatchTool {
     }
     
     @Override
-    public PatchSet install(PatchId patchId, boolean force) throws IOException {
+    public Package install(PatchId patchId, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         Lock.tryLock();
         try {
@@ -84,7 +84,7 @@ public final class DefaultPatchTool implements PatchTool {
     }
 
     @Override
-    public PatchSet update(String prefix, boolean force) throws IOException {
+    public Package update(String prefix, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
         Lock.tryLock();
         try {
@@ -96,7 +96,7 @@ public final class DefaultPatchTool implements PatchTool {
         }
     }
     
-    private PatchSet installInternal(PatchId patchId, boolean force) throws IOException {
+    private Package installInternal(PatchId patchId, boolean force) throws IOException {
         
         PatchId serverId = null;
         String prefix = patchId.getName();
@@ -107,7 +107,7 @@ public final class DefaultPatchTool implements PatchTool {
             }
         }
         
-        PatchSet seedPatch = serverId != null ? getServerInstance().getPatchSet(serverId) : null;
+        Package seedPatch = serverId != null ? getServerInstance().getPackage(serverId) : null;
         SmartPatch smartPatch = getPatchRepository().getSmartPatch(seedPatch, patchId);
         return getServerInstance().applySmartPatch(smartPatch, force);
     }

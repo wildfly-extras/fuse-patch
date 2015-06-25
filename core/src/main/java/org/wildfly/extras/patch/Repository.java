@@ -25,12 +25,12 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * A patch repository.
+ * A package repository.
  *
  * @author thomas.diesler@jboss.com
  * @since 10-Jun-2015
  */
-public interface PatchRepository {
+public interface Repository {
 
     /**
      * Get the list of available patches
@@ -47,7 +47,7 @@ public interface PatchRepository {
     /**
      * Get the patch set for the given id
      */
-    PatchSet getPatchSet(PatchId patchId);
+    Package getPackage(PatchId patchId);
     
     /**
      * Add the given patch archive
@@ -80,6 +80,6 @@ public interface PatchRepository {
      * @param seedPatch The patch set obtained from the server - may be null
      * @param patchId The target patch id - null for the latest
 	 */
-	SmartPatch getSmartPatch(PatchSet seedPatch, PatchId patchId);
+	SmartPatch getSmartPatch(Package seedPatch, PatchId patchId);
 
 }
