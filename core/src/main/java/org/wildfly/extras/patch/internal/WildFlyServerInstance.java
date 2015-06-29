@@ -22,6 +22,8 @@ package org.wildfly.extras.patch.internal;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -33,14 +35,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Record;
 import org.wildfly.extras.patch.ServerInstance;
 import org.wildfly.extras.patch.SmartPatch;
@@ -53,6 +56,7 @@ final class WildFlyServerInstance implements ServerInstance {
 
     private static final Logger LOG = LoggerFactory.getLogger(WildFlyServerInstance.class);
 
+    private static final String FUSE_LAYER = "fuse";
     private final Path homePath;
 
     WildFlyServerInstance(Path homePath) {
@@ -319,6 +323,35 @@ final class WildFlyServerInstance implements ServerInstance {
                     }
                 }
                 entry = zip.getNextEntry();
+            }
+        }
+        
+        // Ensure Fuse layer exists
+        Path modulesPath = homePath.resolve("modules");
+        if (modulesPath.toFile().exists()) {
+            Properties props = new Properties();
+            Path layersPath = modulesPath.resolve("layers.conf");
+            if (layersPath.toFile().isFile()) {
+                try (FileReader fr = new FileReader(layersPath.toFile())) {
+                    props.load(fr);
+                }
+            }
+            List<String> layers = new ArrayList<>();
+            String spec = props.getProperty("layers");
+            if (spec != null) {
+                for (String layer : spec.split(",")) {
+                    layers.add(layer.trim());
+                }
+            }
+            if (!layers.contains(FUSE_LAYER)) {
+                layers.add(0, FUSE_LAYER);
+                spec = layers.toString();
+                spec = spec.substring(1, spec.length() - 1);
+                props.setProperty("layers", spec);
+                PatchLogger.warn("Layers does not contain '" + FUSE_LAYER + "', writing: " + props);
+                try (FileWriter fw = new FileWriter(layersPath.toFile())) {
+                    props.store(fw, "Fixed by fusepatch");
+                }
             }
         }
     }
