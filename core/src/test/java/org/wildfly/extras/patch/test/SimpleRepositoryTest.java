@@ -26,6 +26,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Assert;
@@ -122,6 +123,10 @@ public class SimpleRepositoryTest {
         } catch (PatchException ex) {
             Assert.assertTrue(ex.getMessage().contains("duplicate paths in [foo-1.0.0]"));
         }
+        
+        // Force
+        PatchId patchId = repo.addArchive(copyPath.toUri().toURL(), null, Collections.<PatchId>emptySet(), true);
+        Assert.assertEquals(PatchId.fromString("foo-copy-1.1.0"), patchId);
     }
 
     @Test

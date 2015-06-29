@@ -102,7 +102,7 @@ public class Main {
                     dependencies.add(PatchId.fromString(depid));
                 }
             }
-            patchTool.getPatchRepository().addArchive(options.addUrl, oneoffId, dependencies);
+            patchTool.getPatchRepository().addArchive(options.addUrl, oneoffId, dependencies, options.force);
             opfound = true;
         }
         

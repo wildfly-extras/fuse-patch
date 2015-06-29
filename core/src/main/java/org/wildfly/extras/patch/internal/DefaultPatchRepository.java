@@ -100,16 +100,16 @@ final class DefaultPatchRepository implements Repository {
 
     @Override
     public PatchId addArchive(URL fileUrl) throws IOException {
-        return addArchive(fileUrl, null, Collections.<PatchId>emptySet());
+        return addArchive(fileUrl, null, Collections.<PatchId>emptySet(), false);
     }
     
     @Override
     public PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException {
-        return addArchive(fileUrl, oneoffId, Collections.<PatchId>emptySet());
+        return addArchive(fileUrl, oneoffId, Collections.<PatchId>emptySet(), false);
     }
     
     @Override
-    public PatchId addArchive(URL fileUrl, PatchId oneoffId, Set<PatchId> dependencies) throws IOException {
+    public PatchId addArchive(URL fileUrl, PatchId oneoffId, Set<PatchId> dependencies, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(fileUrl, "fileUrl");
         IllegalArgumentAssertion.assertTrue(fileUrl.getPath().endsWith(".zip"), "Unsupported file extension: " + fileUrl);
         Lock.tryLock();
@@ -159,11 +159,16 @@ final class DefaultPatchRepository implements Repository {
             for (Record rec : patchSet.getRecords()) {
                 PatchId otherId = pathMap.get(rec.getPath());
                 if (otherId != null) {
-                    PatchLogger.error("Path '" + rec.getPath() + "' already contained in: " + otherId);
+                    String message = "Path '" + rec.getPath() + "' already contained in: " + otherId;
+                    if (force) {
+                        PatchLogger.warn(message);
+                    } else {
+                        PatchLogger.error(message);
+                    }
                     duplicates.add(otherId);
                 }
             }
-            PatchAssertion.assertTrue(duplicates.isEmpty(), "Cannot add " + patchId + " because of duplicate paths in " + duplicates);
+            PatchAssertion.assertTrue(force || duplicates.isEmpty(), "Cannot add " + patchId + " because of duplicate paths in " + duplicates);
             
             // Add to repository
             File targetFile = getPatchFile(patchId);

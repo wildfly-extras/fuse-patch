@@ -34,7 +34,7 @@ import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.utils.IOUtils;
 
-public class PatchDependenciesTest {
+public class PackageDependenciesTest {
 
     final static Path serverPathA = Paths.get("target/servers/PatchDependenciesTest/srvA");
     final static Path repoPathA = Paths.get("target/repos/PatchDependenciesTest/repoA");
@@ -54,7 +54,7 @@ public class PatchDependenciesTest {
         Repository repo = patchTool.getPatchRepository();
         
         PatchId idA = repo.addArchive(Archives.getZipUrlFoo100());
-        PatchId idB = repo.addArchive(Archives.getZipUrlFoo110(), null, Collections.singleton(PatchId.fromString("foo-1.0.0")));
+        PatchId idB = repo.addArchive(Archives.getZipUrlFoo110(), null, Collections.singleton(PatchId.fromString("foo-1.0.0")), false);
 
         Package setB;
         try {

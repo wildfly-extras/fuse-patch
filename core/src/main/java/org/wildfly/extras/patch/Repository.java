@@ -68,7 +68,7 @@ public interface Repository {
      * @param oneoffId An optional patch id if the given URL is a one-off patch
      * @param dependencies An optional set of patch dependencies
      */
-    PatchId addArchive(URL fileUrl, PatchId oneoffId, Set<PatchId> dependencies) throws IOException;
+    PatchId addArchive(URL fileUrl, PatchId oneoffId, Set<PatchId> dependencies, boolean force) throws IOException;
     
     /**
      * Add a post-install command for the given patch id
