@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.wildfly.extras.patch</groupId>
         <artifactId>fuse-patch</artifactId>
-        <version>1.3.2-SNAPSHOT</version>
+        <version>1.4.0</version>
     </parent>
 
     <name>Fuse Patch :: Distro</name>
