@@ -66,6 +66,7 @@
     <modules>
         <module>core</module>
         <module>distro</module>
+        <module>installer</module>
         <module>itests</module>
     </modules>
 

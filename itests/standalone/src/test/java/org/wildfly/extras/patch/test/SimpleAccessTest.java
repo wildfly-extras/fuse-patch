@@ -65,6 +65,6 @@ public class SimpleAccessTest {
     public void testQueryRepository() throws Exception {
         PatchTool patchTool = new PatchToolBuilder().build();
         List<PatchId> pids = patchTool.getPatchRepository().queryAvailable(null);
-        Assert.assertEquals(0, pids.size());
+        Assert.assertEquals(1, pids.size());
     }
 }

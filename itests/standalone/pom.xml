@@ -102,20 +102,19 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>unpack-fuse-patch</id>
+                        <id>copy-fuse-patch</id>
                         <phase>process-test-resources</phase>
                         <goals>
-                            <goal>unpack</goal>
+                            <goal>copy</goal>
                         </goals>
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.wildfly.extras.patch</groupId>
-                                    <artifactId>fuse-patch-distro-standalone</artifactId>
+                                    <artifactId>fuse-patch-installer</artifactId>
                                     <version>${project.version}</version>
-                                    <type>zip</type>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
-                                    <overWrite>false</overWrite>
+                                    <destFileName>fuse-patch-installer.jar</destFileName>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -133,10 +132,11 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <executable>${fusepatch.home}/bin/fusepatch.sh</executable>
+                            <executable>java</executable>
                             <arguments>
-                                <argument>--server=${jboss.home}</argument>
-                                <argument>--install=fuse-patch-distro-wildfly-${project.version}</argument>
+                                <argument>-jar</argument>
+                                <argument>${project.build.directory}/fuse-patch-installer.jar</argument>
+                                <argument>${jboss.home}</argument>
                             </arguments>
                         </configuration>
                     </execution>
