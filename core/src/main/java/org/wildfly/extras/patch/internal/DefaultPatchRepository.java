@@ -21,7 +21,8 @@ package org.wildfly.extras.patch.internal;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,10 +38,10 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.wildfly.extras.patch.PatchId;
-import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Record;
+import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.IllegalStateAssertion;
@@ -52,12 +53,13 @@ final class DefaultPatchRepository implements Repository {
     
     private final Path rootPath;
 
-    DefaultPatchRepository(URL repoUrl) {
-        if (repoUrl == null) {
-            repoUrl = getConfiguredUrl();
+    DefaultPatchRepository(URI repoUri) {
+        if (repoUri == null) {
+            repoUri = getConfiguredUrl();
         }
-        IllegalStateAssertion.assertNotNull(repoUrl, "Cannot obtain repository URL");
-        Path path = Paths.get(repoUrl.getPath());
+        IllegalStateAssertion.assertNotNull(repoUri, "Cannot obtain repository URL");
+
+        Path path = getPathFromUri(repoUri);
         PatchAssertion.assertTrue(path.toFile().isDirectory(), "Repository root does not exist: " + path);
         LOG.debug("Repository location: {}", path);
         this.rootPath = path.toAbsolutePath();
@@ -99,22 +101,22 @@ final class DefaultPatchRepository implements Repository {
     }
 
     @Override
-    public PatchId addArchive(URL fileUrl) throws IOException {
+    public PatchId addArchive(URL fileUrl) throws IOException, URISyntaxException {
         return addArchive(fileUrl, null, Collections.<PatchId>emptySet(), false);
     }
     
     @Override
-    public PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException {
+    public PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException, URISyntaxException {
         return addArchive(fileUrl, oneoffId, Collections.<PatchId>emptySet(), false);
     }
     
     @Override
-    public PatchId addArchive(URL fileUrl, PatchId oneoffId, Set<PatchId> dependencies, boolean force) throws IOException {
+    public PatchId addArchive(URL fileUrl, PatchId oneoffId, Set<PatchId> dependencies, boolean force) throws IOException, URISyntaxException {
         IllegalArgumentAssertion.assertNotNull(fileUrl, "fileUrl");
         IllegalArgumentAssertion.assertTrue(fileUrl.getPath().endsWith(".zip"), "Unsupported file extension: " + fileUrl);
         Lock.tryLock();
         try {
-            Path sourcePath = Paths.get(fileUrl.getPath());
+            Path sourcePath = getPathFromUri(fileUrl.toURI());
             PatchId patchId = PatchId.fromFile(sourcePath.toFile());
             PatchAssertion.assertFalse(queryAvailable(null).contains(patchId), "Repository already contains " + patchId);
 
@@ -239,15 +241,15 @@ final class DefaultPatchRepository implements Repository {
         }
     }
 
-    static URL getConfiguredUrl() {
+    static URI getConfiguredUrl() {
         String repoSpec = System.getProperty("fusepatch.repository");
         if (repoSpec == null) {
             repoSpec = System.getenv("FUSEPATCH_REPOSITORY");
         }
         if (repoSpec != null) {
             try {
-                return new URL(repoSpec);
-            } catch (MalformedURLException ex) {
+                return new URI(repoSpec);
+            } catch (URISyntaxException ex) {
                 throw new IllegalStateException(ex);
             }
         }
@@ -264,5 +266,20 @@ final class DefaultPatchRepository implements Repository {
 
     private File getPatchFile(PatchId patchId) {
         return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString(), patchId + ".zip")).toFile();
+    }
+
+    private Path getPathFromUri(URI uri) {
+        Path path;
+        if (uri.getScheme().equals("file") && isRelativeUri(uri)) {
+            path = Paths.get(".", uri.getSchemeSpecificPart());
+        } else {
+            path = Paths.get(uri);
+        }
+        return path;
+    }
+
+    private boolean isRelativeUri(URI repoUri) {
+        String schemeSpecificPart = repoUri.getSchemeSpecificPart();
+        return schemeSpecificPart.startsWith("./") || schemeSpecificPart.startsWith("../") || !schemeSpecificPart.startsWith("/");
     }
 }

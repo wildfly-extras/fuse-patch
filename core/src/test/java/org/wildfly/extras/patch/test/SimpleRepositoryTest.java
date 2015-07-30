@@ -19,8 +19,6 @@
  */
 package org.wildfly.extras.patch.test;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Files;
@@ -32,13 +30,15 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchException;
 import org.wildfly.extras.patch.PatchId;
-import org.wildfly.extras.patch.Repository;
-import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
+import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.utils.IOUtils;
+
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class SimpleRepositoryTest {
 
@@ -61,8 +61,9 @@ public class SimpleRepositoryTest {
 
     @Test
     public void testSimpleAccess() throws Exception {
-        
+
         URL urlA = new URL("file:./target/repos/SimpleRepositoryTest/repoA");
+
         PatchTool patchTool = new PatchToolBuilder().repositoryUrl(urlA).build();
         Repository repo = patchTool.getPatchRepository();
         

@@ -36,11 +36,6 @@
     <artifactId>fuse-patch-core</artifactId>
     <packaging>jar</packaging>
 
-    <!-- Properties -->
-    <properties>
-        <log4j.configuration>file://${basedir}/src/test/resources/logging.properties</log4j.configuration>
-    </properties>
-
     <!-- Dependencies -->
     <dependencies>
         <dependency>
@@ -91,9 +86,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                    <systemPropertyVariables>
-                        <log4j.configuration>${log4j.configuration}</log4j.configuration>
-                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>

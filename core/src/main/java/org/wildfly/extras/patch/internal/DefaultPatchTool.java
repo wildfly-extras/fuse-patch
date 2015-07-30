@@ -20,14 +20,13 @@
 package org.wildfly.extras.patch.internal;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.nio.file.Path;
 
-import org.wildfly.extras.patch.PatchId;
-import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
+import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.ServerInstance;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
@@ -39,11 +38,11 @@ public final class DefaultPatchTool implements PatchTool {
     private ServerInstance serverInstance;
     private Repository patchRepository;
     private Path serverPath;
-    private URL repoUrl;
+    private URI repoUri;
     
-	public DefaultPatchTool(Path serverPath, URL repoUrl) {
+	public DefaultPatchTool(Path serverPath, URI repoUri) {
 	    this.serverPath = serverPath;
-	    this.repoUrl = repoUrl;
+	    this.repoUri = repoUri;
     }
 
     @Override
@@ -57,17 +56,13 @@ public final class DefaultPatchTool implements PatchTool {
     @Override
     public Repository getPatchRepository() {
         if (patchRepository == null) {
-            if (repoUrl == null) {
-                repoUrl = DefaultPatchRepository.getConfiguredUrl();
-                if (repoUrl == null) {
-                    try {
-                        repoUrl = getServerInstance().getDefaultRepositoryPath().toUri().toURL();
-                    } catch (MalformedURLException ex) {
-                        throw new IllegalStateException(ex);
-                    }
+            if (repoUri == null) {
+                repoUri = DefaultPatchRepository.getConfiguredUrl();
+                if (repoUri == null) {
+                    repoUri = getServerInstance().getDefaultRepositoryPath().toUri();
                 }
             }
-            patchRepository = new DefaultPatchRepository(repoUrl);
+            patchRepository = new DefaultPatchRepository(repoUri);
         }
         return patchRepository;
     }

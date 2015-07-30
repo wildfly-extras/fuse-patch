@@ -22,6 +22,7 @@ package org.wildfly.extras.patch.test;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -132,7 +133,7 @@ public class SimpleUpdateTest {
             server.applySmartPatch(smartPatch, false);
             Assert.fail("PatchException expected");
         } catch (PatchException ex) {
-            Assert.assertTrue(ex.getMessage().contains("existing file config/propsA.properties"));
+            Assert.assertTrue(ex.getMessage().contains("existing file config" + File.separator  + "propsA.properties"));
         }
         
         // Force the the override
@@ -171,7 +172,7 @@ public class SimpleUpdateTest {
             server.applySmartPatch(smartPatch, false);
             Assert.fail("PatchException expected");
         } catch (PatchException ex) {
-            Assert.assertTrue(ex.getMessage().contains("already modified file config/propsA.properties"));
+            Assert.assertTrue(ex.getMessage().contains("already modified file config" + File.separator + "propsA.properties"));
         }
         
         // force the the override

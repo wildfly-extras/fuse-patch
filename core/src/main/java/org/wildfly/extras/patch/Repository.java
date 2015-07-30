@@ -20,6 +20,7 @@
 package org.wildfly.extras.patch;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.Set;
@@ -53,14 +54,14 @@ public interface Repository {
      * Add the given patch archive
      * @param fileUrl The file URL to the patch archive
      */
-    PatchId addArchive(URL fileUrl) throws IOException;
+    PatchId addArchive(URL fileUrl) throws IOException, URISyntaxException;
     
     /**
      * Add the given patch archive
      * @param fileUrl The file URL to the patch archive
      * @param oneoffId An optional patch id if the given URL is a one-off patch
      */
-    PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException;
+    PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException, URISyntaxException;
     
     /**
      * Add the given patch archive
@@ -68,7 +69,7 @@ public interface Repository {
      * @param oneoffId An optional patch id if the given URL is a one-off patch
      * @param dependencies An optional set of patch dependencies
      */
-    PatchId addArchive(URL fileUrl, PatchId oneoffId, Set<PatchId> dependencies, boolean force) throws IOException;
+    PatchId addArchive(URL fileUrl, PatchId oneoffId, Set<PatchId> dependencies, boolean force) throws IOException, URISyntaxException;
     
     /**
      * Add a post-install command for the given patch id
