@@ -34,7 +34,6 @@
     <!-- Properties -->
     <properties>
         <fusepatch.home>${project.build.directory}/fuse-patch-${project.version}</fusepatch.home>
-        <fusepatch.ext>sh</fusepatch.ext>
     </properties>
     
     <!-- Dependencies -->
@@ -49,8 +48,8 @@
             <groupId>org.wildfly.extras.patch</groupId>
             <artifactId>fuse-patch-distro-wildfly</artifactId>
             <version>${project.version}</version>
-            <type>zip</type>
             <scope>provided</scope>
+            <type>zip</type>
         </dependency>
     </dependencies>
 
@@ -98,12 +97,22 @@
                         <id>add-fuse-patch</id>
                         <phase>prepare-package</phase>
                         <goals>
-                            <goal>exec</goal>
+                            <goal>java</goal>
                         </goals>
                         <configuration>
-                            <executable>${fusepatch.home}/bin/fusepatch.${fusepatch.ext}</executable>
+                            <mainClass>org.wildfly.extras.patch.internal.Main</mainClass>
+                            <classpathScope>test</classpathScope>
+                            <systemProperties>
+                                <systemProperty>
+                                    <key>log4j.configuration</key>
+                                    <value>file:${basedir}/etc/config/logging.properties</value>
+                                </systemProperty>
+                            </systemProperties>
                             <arguments>
-                                <argument>--add=file:${fusepatch.home}/repository/fuse-patch-distro-wildfly-${project.version}.zip</argument>
+                                <argument>--repository</argument>
+                                <argument>file:${fusepatch.home}/repository</argument>
+                                <argument>--add</argument>
+                                <argument>file:${fusepatch.home}/repository/fuse-patch-distro-wildfly-${project.version}.zip</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -111,20 +120,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <!-- Profiles -->
-    <profiles>
-        <profile>
-            <id>windows</id>
-            <activation>
-                <os>
-                    <family>Windows</family>
-                </os>
-            </activation>
-            <properties>
-                <fusepatch.ext>bat</fusepatch.ext>
-                <symbol.at>@</symbol.at>
-            </properties>
-        </profile>
-    </profiles>
 </project>

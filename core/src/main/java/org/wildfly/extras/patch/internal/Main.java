@@ -21,7 +21,6 @@ package org.wildfly.extras.patch.internal;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -71,7 +70,7 @@ public class Main {
         }
     }
 
-	private static void run(CmdLineParser cmdParser, Options options) throws IOException, URISyntaxException {
+	private static void run(CmdLineParser cmdParser, Options options) throws IOException {
 		
 	    boolean opfound = false;
 	    
