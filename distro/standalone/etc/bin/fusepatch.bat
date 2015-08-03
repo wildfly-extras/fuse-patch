@@ -1,7 +1,7 @@
-${symbol.at}echo off
+@echo off
 
-${symbol.at}if not "%ECHO%" == ""  echo %ECHO%
-${symbol.at}if "%OS%" == "Windows_NT" setlocal
+@if not "%ECHO%" == ""  echo %ECHO%
+@if "%OS%" == "Windows_NT" setlocal
 
 if "%OS%" == "Windows_NT" (
   set "DIRNAME=%~dp0%"
