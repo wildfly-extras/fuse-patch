@@ -22,8 +22,6 @@ package org.wildfly.extras.patch.internal;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -54,16 +52,16 @@ final class DefaultPatchRepository implements Repository {
     
     private final Path rootPath;
 
-    DefaultPatchRepository(URI repoUri) {
-        if (repoUri == null) {
-            repoUri = getConfiguredUrl();
+    DefaultPatchRepository(URL repoUrl) {
+        if (repoUrl == null) {
+            repoUrl = getConfiguredUrl();
         }
-        IllegalStateAssertion.assertNotNull(repoUri, "Cannot obtain repository URL");
+        IllegalStateAssertion.assertNotNull(repoUrl, "Cannot obtain repository URL");
 
-        Path path = getPathFromUri(repoUri);
+        Path path = getAbsolutePath(repoUrl);
         PatchAssertion.assertTrue(path.toFile().isDirectory(), "Repository root does not exist: " + path);
         LOG.debug("Repository location: {}", path);
-        this.rootPath = path.toAbsolutePath();
+        this.rootPath = path;
     }
 
     @Override
@@ -102,22 +100,22 @@ final class DefaultPatchRepository implements Repository {
     }
 
     @Override
-    public PatchId addArchive(URL fileUrl) throws IOException, URISyntaxException {
+    public PatchId addArchive(URL fileUrl) throws IOException {
         return addArchive(fileUrl, null, Collections.<PatchId>emptySet(), false);
     }
     
     @Override
-    public PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException, URISyntaxException {
+    public PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException {
         return addArchive(fileUrl, oneoffId, Collections.<PatchId>emptySet(), false);
     }
     
     @Override
-    public PatchId addArchive(URL fileUrl, PatchId oneoffId, Set<PatchId> dependencies, boolean force) throws IOException, URISyntaxException {
+    public PatchId addArchive(URL fileUrl, PatchId oneoffId, Set<PatchId> dependencies, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(fileUrl, "fileUrl");
         IllegalArgumentAssertion.assertTrue(fileUrl.getPath().endsWith(".zip"), "Unsupported file extension: " + fileUrl);
         Lock.tryLock();
         try {
-            Path sourcePath = getPathFromUri(fileUrl.toURI());
+            Path sourcePath = getAbsolutePath(fileUrl);
             PatchId patchId = PatchId.fromFile(sourcePath.toFile());
             PatchAssertion.assertFalse(queryAvailable(null).contains(patchId), "Repository already contains " + patchId);
 
@@ -242,16 +240,14 @@ final class DefaultPatchRepository implements Repository {
         }
     }
 
-    static URI getConfiguredUrl() {
+    static URL getConfiguredUrl() {
         String repoSpec = System.getProperty("fusepatch.repository");
         if (repoSpec == null) {
             repoSpec = System.getenv("FUSEPATCH_REPOSITORY");
         }
         if (repoSpec != null) {
             try {
-                return new URL(repoSpec).toURI();
-            } catch (URISyntaxException ex) {
-                throw new IllegalStateException(ex);
+                return new URL(repoSpec);
             } catch (MalformedURLException ex) {
                 throw new IllegalStateException(ex);
             }
@@ -271,14 +267,8 @@ final class DefaultPatchRepository implements Repository {
         return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString(), patchId + ".zip")).toFile();
     }
 
-    private Path getPathFromUri(URI uri) {
-        if (uri.getScheme().equals("file")) {
-            File f = new File(uri.getSchemeSpecificPart());
-            if (!f.isAbsolute()) {
-                return Paths.get(".", uri.getSchemeSpecificPart());
-            }
-            return Paths.get(f.toURI());
-        }
-        return Paths.get(uri);
+    private Path getAbsolutePath(URL url) {
+        IllegalArgumentAssertion.assertTrue("file".equals(url.getProtocol()), "Unsupported protocol: " + url);
+        return new File(url.getPath()).getAbsoluteFile().toPath();
     }
 }
