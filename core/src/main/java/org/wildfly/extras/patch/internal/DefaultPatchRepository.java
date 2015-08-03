@@ -21,6 +21,7 @@ package org.wildfly.extras.patch.internal;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -248,8 +249,10 @@ final class DefaultPatchRepository implements Repository {
         }
         if (repoSpec != null) {
             try {
-                return new URI(repoSpec);
+                return new URL(repoSpec).toURI();
             } catch (URISyntaxException ex) {
+                throw new IllegalStateException(ex);
+            } catch (MalformedURLException ex) {
                 throw new IllegalStateException(ex);
             }
         }
@@ -269,17 +272,13 @@ final class DefaultPatchRepository implements Repository {
     }
 
     private Path getPathFromUri(URI uri) {
-        Path path;
-        if (uri.getScheme().equals("file") && isRelativeUri(uri)) {
-            path = Paths.get(".", uri.getSchemeSpecificPart());
-        } else {
-            path = Paths.get(uri);
+        if (uri.getScheme().equals("file")) {
+            File f = new File(uri.getSchemeSpecificPart());
+            if (!f.isAbsolute()) {
+                return Paths.get(".", uri.getSchemeSpecificPart());
+            }
+            return Paths.get(f.toURI());
         }
-        return path;
-    }
-
-    private boolean isRelativeUri(URI repoUri) {
-        String schemeSpecificPart = repoUri.getSchemeSpecificPart();
-        return schemeSpecificPart.startsWith("./") || schemeSpecificPart.startsWith("../") || !schemeSpecificPart.startsWith("/");
+        return Paths.get(uri);
     }
 }

@@ -30,7 +30,7 @@
 
     <artifactId>fuse-patch-distro</artifactId>
     <packaging>pom</packaging>
-    
+
     <modules>
         <module>standalone</module>
         <module>wildfly</module>

@@ -34,6 +34,7 @@
     <!-- Properties -->
     <properties>
         <fusepatch.home>${project.build.directory}/fuse-patch-${project.version}</fusepatch.home>
+        <fusepatch.ext>sh</fusepatch.ext>
     </properties>
     
     <!-- Dependencies -->
@@ -100,7 +101,7 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <executable>${fusepatch.home}/bin/fusepatch.sh</executable>
+                            <executable>${fusepatch.home}/bin/fusepatch.${fusepatch.ext}</executable>
                             <arguments>
                                 <argument>--add=file:${fusepatch.home}/repository/fuse-patch-distro-wildfly-${project.version}.zip</argument>
                             </arguments>
@@ -110,4 +111,20 @@
             </plugin>
         </plugins>
     </build>
+
+    <!-- Profiles -->
+    <profiles>
+        <profile>
+            <id>windows</id>
+            <activation>
+                <os>
+                    <family>Windows</family>
+                </os>
+            </activation>
+            <properties>
+                <fusepatch.ext>bat</fusepatch.ext>
+                <symbol.at>@</symbol.at>
+            </properties>
+        </profile>
+    </profiles>
 </project>
