@@ -127,11 +127,11 @@ final class DefaultPatchRepository implements Repository {
             }
             
             // Collect the paths from the latest other patch sets
-            Map<Path, PatchId> pathMap = new HashMap<>();
+            Map<Path, Record> combinedPathsMap = new HashMap<>();
             for (PatchId auxid : Parser.getAvailable(rootPath, null, false)) {
                 if (!patchId.getName().equals(auxid.getName())) {
                     for (Record rec : getPackage(auxid).getRecords()) {
-                        pathMap.put(rec.getPath(), auxid);
+                        combinedPathsMap.put(rec.getPath(), rec);
                     }
                 }
             }
@@ -159,15 +159,18 @@ final class DefaultPatchRepository implements Repository {
             // Assert no duplicate paths
             Set<PatchId> duplicates = new HashSet<>();
             for (Record rec : patchSet.getRecords()) {
-                PatchId otherId = pathMap.get(rec.getPath());
-                if (otherId != null) {
-                    String message = "Path '" + rec.getPath() + "' already contained in: " + otherId;
-                    if (force) {
-                        PatchLogger.warn(message);
-                    } else {
-                        PatchLogger.error(message);
+                Record otherRec = combinedPathsMap.get(rec.getPath());
+                if (otherRec != null) {
+                    PatchId otherId = otherRec.getPatchId();
+                    if (!rec.getChecksum().equals(otherRec.getChecksum())) {
+                        String message = "Path '" + rec.getPath() + "' already contained in: " + otherId;
+                        if (force) {
+                            PatchLogger.warn(message);
+                        } else {
+                            PatchLogger.error(message);
+                        }
+                        duplicates.add(otherId);
                     }
-                    duplicates.add(otherId);
                 }
             }
             PatchAssertion.assertTrue(force || duplicates.isEmpty(), "Cannot add " + patchId + " because of duplicate paths in " + duplicates);

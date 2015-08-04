@@ -45,30 +45,21 @@ import org.wildfly.extras.patch.utils.IOUtils;
 
 public class SimpleUpdateTest {
 
-    final static Path serverPathA = Paths.get("target/servers/SimpleUpdateTest/srvA");
-    final static Path serverPathB = Paths.get("target/servers/SimpleUpdateTest/srvB");
-    final static Path serverPathC = Paths.get("target/servers/SimpleUpdateTest/srvC");
-    final static Path serverPathD = Paths.get("target/servers/SimpleUpdateTest/srvD");
-    final static Path serverPathE = Paths.get("target/servers/SimpleUpdateTest/srvE");
+    final static Path[] serverPaths = new Path[5];
 
     @BeforeClass
     public static void setUp() throws Exception {
-        IOUtils.rmdirs(serverPathA);
-        IOUtils.rmdirs(serverPathB);
-        IOUtils.rmdirs(serverPathC);
-        IOUtils.rmdirs(serverPathD);
-        IOUtils.rmdirs(serverPathE);
-        serverPathA.toFile().mkdirs();
-        serverPathB.toFile().mkdirs();
-        serverPathC.toFile().mkdirs();
-        serverPathD.toFile().mkdirs();
-        serverPathE.toFile().mkdirs();
+        for (int i = 0; i < 5; i++) {
+            serverPaths[i] = Paths.get("target/servers/SimpleUpdateTest/srv" + (i + 1));
+            IOUtils.rmdirs(serverPaths[i]);
+            serverPaths[i].toFile().mkdirs();
+        }
     }
 
     @Test
     public void testSimpleUpdate() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().serverPath(serverPathA).build();
+        PatchTool patchTool = new PatchToolBuilder().serverPath(serverPaths[0]).build();
         ServerInstance server = patchTool.getServerInstance();
         
         List<PatchId> patches = server.queryAppliedPatches();
@@ -86,7 +77,7 @@ public class SimpleUpdateTest {
         Assert.assertEquals(patchId, curSet.getPatchId());
         Assert.assertEquals(setA.getRecords(), curSet.getRecords());
         Archives.assertPathsEqual(setA.getRecords(), server.getPackage(patchId).getRecords());
-        Archives.assertPathsEqual(setA, serverPathA);
+        Archives.assertPathsEqual(setA, serverPaths[0]);
 
         // Verify smart patch B
         Package setB = ParserAccess.getPackage(Archives.getZipFileFoo110());
@@ -105,7 +96,7 @@ public class SimpleUpdateTest {
         Assert.assertEquals(3, curSet.getRecords().size());
         Assert.assertEquals(setB.getRecords(), curSet.getRecords());
         Archives.assertPathsEqual(setB.getRecords(), server.getPackage(patchId).getRecords());
-        Archives.assertPathsEqual(setB, serverPathA);
+        Archives.assertPathsEqual(setB, serverPaths[0]);
         
         // verify that we can query the set
         patches = server.queryAppliedPatches();
@@ -117,10 +108,10 @@ public class SimpleUpdateTest {
     @Test
     public void testAddingFileThatExists() throws Exception {
         
-        PatchTool patchTool = new PatchToolBuilder().serverPath(serverPathB).build();
+        PatchTool patchTool = new PatchToolBuilder().serverPath(serverPaths[1]).build();
         ServerInstance server = patchTool.getServerInstance();
         
-        Path targetPath = serverPathB.resolve("config/propsA.properties");
+        Path targetPath = serverPaths[1].resolve("config/propsA.properties");
         
         // Copy a file to the server
         targetPath.getParent().toFile().mkdirs();
@@ -141,7 +132,7 @@ public class SimpleUpdateTest {
         assertFileContent("some.prop = A1", targetPath);
         
         // Delete the workspace
-        IOUtils.rmdirs(serverPathB.resolve("fusepatch"));
+        IOUtils.rmdirs(serverPaths[1].resolve("fusepatch"));
         Assert.assertTrue("No patches applied", server.queryAppliedPatches().isEmpty());
         
         // Verify that the files can be added if they have the same checksum
@@ -152,10 +143,10 @@ public class SimpleUpdateTest {
     @Test
     public void testOverrideModifiedFile() throws Exception {
         
-        PatchTool patchTool = new PatchToolBuilder().serverPath(serverPathC).build();
+        PatchTool patchTool = new PatchToolBuilder().serverPath(serverPaths[2]).build();
         ServerInstance server = patchTool.getServerInstance();
         
-        Path targetPath = serverPathC.resolve("config/propsA.properties");
+        Path targetPath = serverPaths[2].resolve("config/propsA.properties");
         
         // Install foo-1.0.0
         Package setA = ParserAccess.getPackage(Archives.getZipFileFoo100());
@@ -183,10 +174,10 @@ public class SimpleUpdateTest {
     @Test
     public void testRemoveNonExistingFile() throws Exception {
         
-        PatchTool patchTool = new PatchToolBuilder().serverPath(serverPathD).build();
+        PatchTool patchTool = new PatchToolBuilder().serverPath(serverPaths[3]).build();
         ServerInstance server = patchTool.getServerInstance();
         
-        Path targetPath = serverPathD.resolve("config/remove-me.properties");
+        Path targetPath = serverPaths[3].resolve("config/remove-me.properties");
         
         // Install foo-1.0.0
         Package setA = ParserAccess.getPackage(Archives.getZipFileFoo100());

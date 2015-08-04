@@ -42,71 +42,65 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class SimpleRepositoryTest {
 
-    final static Path repoPathA = Paths.get("target/repos/SimpleRepositoryTest/repoA");
-    final static Path repoPathB = Paths.get("target/repos/SimpleRepositoryTest/repoB");
-    final static Path repoPathC = Paths.get("target/repos/SimpleRepositoryTest/repoC");
-    final static Path repoPathD = Paths.get("target/repos/SimpleRepositoryTest/repoD");
+    final static Path[] repoPaths = new Path[5];
 
     @BeforeClass
     public static void setUp() throws Exception {
-        IOUtils.rmdirs(repoPathA);
-        IOUtils.rmdirs(repoPathB);
-        IOUtils.rmdirs(repoPathC);
-        IOUtils.rmdirs(repoPathD);
-        repoPathA.toFile().mkdirs();
-        repoPathB.toFile().mkdirs();
-        repoPathC.toFile().mkdirs();
-        repoPathD.toFile().mkdirs();
+        for (int i = 0; i < 5; i++) {
+            repoPaths[i] = Paths.get("target/repos/SimpleRepositoryTest/repo" + (i + 1));
+            IOUtils.rmdirs(repoPaths[i]);
+            repoPaths[i].toFile().mkdirs();
+        }
     }
 
     @Test
     public void testSimpleAccess() throws Exception {
 
-        URL urlA = new URL("file:./target/repos/SimpleRepositoryTest/repoA");
+        URL urlA = new URL("file:./" + repoPaths[0].toString());
 
         PatchTool patchTool = new PatchToolBuilder().repositoryUrl(urlA).build();
         Repository repo = patchTool.getPatchRepository();
-        
+
         PatchId patchId = repo.addArchive(Archives.getZipUrlFoo100());
         Package patchSet = repo.getPackage(patchId);
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patchSet.getPatchId());
         Assert.assertEquals(4, patchSet.getRecords().size());
-        
+
         patchId = repo.addArchive(Archives.getZipUrlFoo110());
-        repo.addPostCommand(patchId, new String[]{"bin/fusepatch.sh", "--query-server" });
+        repo.addPostCommand(patchId, new String[] { "bin/fusepatch.sh", "--query-server" });
         patchSet = repo.getPackage(patchId);
         Assert.assertEquals(PatchId.fromString("foo-1.1.0"), patchSet.getPatchId());
         Assert.assertEquals(3, patchSet.getRecords().size());
         Assert.assertEquals(1, patchSet.getPostCommands().size());
         Assert.assertEquals("bin/fusepatch.sh --query-server", patchSet.getPostCommands().get(0));
-        
+
         List<PatchId> patches = repo.queryAvailable(null);
         Assert.assertEquals("Patch available", 2, patches.size());
-        
+
         Assert.assertEquals(PatchId.fromString("foo-1.1.0"), patches.get(0));
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patches.get(1));
         Assert.assertEquals(PatchId.fromString("foo-1.1.0"), repo.getLatestAvailable("foo"));
         Assert.assertNull(repo.getLatestAvailable("bar"));
-        
+
         Assert.assertTrue(repo.removeArchive(PatchId.fromString("foo-1.1.0")));
         patches = repo.queryAvailable(null);
         Assert.assertEquals("Patch available", 1, patches.size());
-        
+
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patches.get(0));
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), repo.getLatestAvailable("foo"));
     }
 
     @Test
     public void testFileMove() throws Exception {
-        
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathB).build();
+
+        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[1]).build();
         Repository repo = patchTool.getPatchRepository();
-        
+
         // copy a file to the root of the repository
         File zipFileA = Archives.getZipFileFoo100();
-        File targetFile = repoPathB.resolve(zipFileA.getName()).toFile();
+        File targetFile = repoPaths[1].resolve(zipFileA.getName()).toFile();
         Files.copy(zipFileA.toPath(), targetFile.toPath());
-        
+
         PatchId patchId = repo.addArchive(targetFile.toURI().toURL());
         Package patchSet = repo.getPackage(patchId);
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patchSet.getPatchId());
@@ -118,10 +112,10 @@ public class SimpleRepositoryTest {
 
     @Test
     public void testOverlappingPaths() throws Exception {
-        
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathC).build();
+
+        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[2]).build();
         Repository repo = patchTool.getPatchRepository();
-        
+
         repo.addArchive(Archives.getZipUrlFoo100());
         Path copyPath = Paths.get("target/foo-copy-1.1.0.zip");
         Files.copy(Archives.getZipFileFoo110().toPath(), copyPath, REPLACE_EXISTING);
@@ -129,20 +123,31 @@ public class SimpleRepositoryTest {
             repo.addArchive(copyPath.toUri().toURL());
             Assert.fail("PatchException expected");
         } catch (PatchException ex) {
-            Assert.assertTrue(ex.getMessage().contains("duplicate paths in [foo-1.0.0]"));
+            String message = ex.getMessage();
+            Assert.assertTrue(message, message.contains("duplicate paths in [foo-1.0.0]"));
         }
-        
+
         // Force
-        PatchId patchId = repo.addArchive(copyPath.toUri().toURL(), null, Collections.<PatchId>emptySet(), true);
+        PatchId patchId = repo.addArchive(copyPath.toUri().toURL(), null, Collections.<PatchId> emptySet(), true);
         Assert.assertEquals(PatchId.fromString("foo-copy-1.1.0"), patchId);
     }
 
     @Test
-    public void testAddOneOff() throws Exception {
-        
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathD).build();
+    public void testEqualOverlappingPaths() throws Exception {
+
+        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[3]).build();
         Repository repo = patchTool.getPatchRepository();
-        
+
+        Assert.assertEquals(PatchId.fromString("foo-1.1.0"), repo.addArchive(Archives.getZipUrlFoo110()));
+        Assert.assertEquals(PatchId.fromString("bar-1.0.0"), repo.addArchive(Archives.getZipUrlBar100()));
+    }
+
+    @Test
+    public void testAddOneOff() throws Exception {
+
+        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[4]).build();
+        Repository repo = patchTool.getPatchRepository();
+
         PatchId oneoffId = PatchId.fromString("foo-1.0.0");
         try {
             repo.addArchive(Archives.getZipUrlFoo100SP1(), oneoffId);
@@ -150,7 +155,7 @@ public class SimpleRepositoryTest {
         } catch (PatchException ex) {
             // expected
         }
-        
+
         PatchId idA = repo.addArchive(Archives.getZipUrlFoo100());
         Package setA = repo.getPackage(idA);
         PatchId idB = repo.addArchive(Archives.getZipUrlFoo100SP1(), oneoffId);
@@ -158,7 +163,7 @@ public class SimpleRepositoryTest {
         Archives.assertPathsEqual(setA.getRecords(), setB.getRecords());
         Assert.assertEquals(1, setB.getDependencies().size());
         Assert.assertEquals(idA, setB.getDependencies().iterator().next());
-        
+
         Package smartSet = Package.smartSet(setA, setB);
         Assert.assertEquals(1, smartSet.getRecords().size());
         Archives.assertActionPathEquals("UPD config/propsA.properties", smartSet.getRecords().get(0));

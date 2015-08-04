@@ -43,7 +43,7 @@ import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.Record;
 import org.wildfly.extras.patch.test.subA.ClassA;
 
-public class Archives {
+class Archives {
 
     /**
      * foo-1.0.0.zip
@@ -53,7 +53,7 @@ public class Archives {
      * config/propsB.properties
      * lib/foo-1.0.0.jar
      */
-    public static URL getZipUrlFoo100() throws IOException {
+    static URL getZipUrlFoo100() throws IOException {
         File targetFile = Paths.get("target/foo-1.0.0.zip").toFile();
         if (!targetFile.exists()) {
             JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "foo-1.0.0.jar");
@@ -68,7 +68,7 @@ public class Archives {
         return targetFile.toURI().toURL();
     }
 
-    public static File getZipFileFoo100() throws IOException {
+    static File getZipFileFoo100() throws IOException {
         return new File(getZipUrlFoo100().getPath());
     }
     
@@ -77,7 +77,7 @@ public class Archives {
      * 
      * config/propsA.properties
      */
-    public static URL getZipUrlFoo100SP1() throws IOException {
+    static URL getZipUrlFoo100SP1() throws IOException {
         File targetFile = Paths.get("target/foo-1.0.0.SP1.zip").toFile();
         if (!targetFile.exists()) {
             GenericArchive archive = ShrinkWrap.create(GenericArchive.class);
@@ -87,7 +87,7 @@ public class Archives {
         return targetFile.toURI().toURL();
     }
     
-    public static File getZipFileFoo100SP1() throws IOException {
+    static File getZipFileFoo100SP1() throws IOException {
         return new File(getZipUrlFoo100SP1().getPath());
     }
     
@@ -98,7 +98,7 @@ public class Archives {
      * config/propsB.properties
      * lib/foo-1.1.0.jar
      */
-    public static URL getZipUrlFoo110() throws IOException {
+    static URL getZipUrlFoo110() throws IOException {
         File targetFile = Paths.get("target/foo-1.1.0.zip").toFile();
         if (!targetFile.exists()) {
             JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "foo-1.1.0.jar");
@@ -112,16 +112,39 @@ public class Archives {
         return targetFile.toURI().toURL();
     }
     
-    public static File getZipFileFoo110() throws IOException {
+    static File getZipFileFoo110() throws IOException {
         return new File(getZipUrlFoo110().getPath());
     }
     
-    public static void assertActionPathEquals(String line, Record was) {
+    /**
+     * bar-1.0.0.zip
+     * 
+     * config/propsB.properties
+     * lib/bar-1.0.0.jar
+     */
+    static URL getZipUrlBar100() throws IOException {
+        File targetFile = Paths.get("target/bar-1.0.0.zip").toFile();
+        if (!targetFile.exists()) {
+            JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "bar-1.0.0.jar");
+            jar.addClasses(ClassA.class);
+            GenericArchive archive = ShrinkWrap.create(GenericArchive.class);
+            archive.add(new ArchiveAsset(jar, ZipExporter.class), "lib/" + jar.getName());
+            archive.add(new FileAsset(new File("src/test/resources/propsB.properties")), "config/propsB.properties");
+            archive.as(ZipExporter.class).exportTo(targetFile, true);
+        }
+        return targetFile.toURI().toURL();
+    }
+    
+    static File getZipFileBar100() throws IOException {
+        return new File(getZipUrlBar100().getPath());
+    }
+    
+    static void assertActionPathEquals(String line, Record was) {
         Record exp = Record.fromString(line + " 0");
         Assert.assertEquals(exp.getAction() + " " + exp.getPath(), was.getAction() + " " + was.getPath());
     }
 
-    public static void assertPathsEqual(final Package expSet, final Path rootPath) throws IOException {
+    static void assertPathsEqual(final Package expSet, final Path rootPath) throws IOException {
         final Set<Path> expPaths = new HashSet<>();
         for (Record rec : expSet.getRecords()) {
             expPaths.add(rec.getPath());
@@ -140,7 +163,7 @@ public class Archives {
         Assert.assertEquals(expPaths, wasPaths);
     }
 
-    public static void assertPathsEqual(List<Record> exp, List<Record> was) {
+    static void assertPathsEqual(List<Record> exp, List<Record> was) {
         final Set<Path> expPaths = new HashSet<>();
         for (Record rec : exp) {
             expPaths.add(rec.getPath());

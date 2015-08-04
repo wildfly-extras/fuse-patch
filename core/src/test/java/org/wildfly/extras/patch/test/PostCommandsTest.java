@@ -39,26 +39,23 @@ import org.wildfly.extras.patch.utils.IOUtils;
 public class PostCommandsTest {
 
     final static Path serverPathA = Paths.get("target/servers/PostCommandsTest/srvA");
-    final static Path repoPathA = Paths.get("target/repos/PostCommandsTest/repoA");
-    final static Path repoPathB = Paths.get("target/repos/PostCommandsTest/repoB");
-    final static Path repoPathC = Paths.get("target/repos/PostCommandsTest/repoC");
+    final static Path[] repoPaths = new Path[3];
 
     @BeforeClass
     public static void setUp() throws Exception {
         IOUtils.rmdirs(serverPathA);
-        IOUtils.rmdirs(repoPathA);
-        IOUtils.rmdirs(repoPathB);
-        IOUtils.rmdirs(repoPathC);
         serverPathA.toFile().mkdirs();
-        repoPathA.toFile().mkdirs();
-        repoPathB.toFile().mkdirs();
-        repoPathC.toFile().mkdirs();
+        for (int i = 0; i < 3; i++) {
+            repoPaths[i] = Paths.get("target/repos/PostCommandsTest/repo" + (i + 1));
+            IOUtils.rmdirs(repoPaths[i]);
+            repoPaths[i].toFile().mkdirs();
+        }
     }
 
     @Test
     public void testPostCommands() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathA).serverPath(serverPathA).build();
+        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[0]).serverPath(serverPathA).build();
         ServerInstance server = patchTool.getServerInstance();
         Repository repo = patchTool.getPatchRepository();
         
@@ -89,10 +86,10 @@ public class PostCommandsTest {
     public void testAddWithCmd() throws Exception {
 
         String fileUrl = Archives.getZipUrlFoo100().toString();
-        String repoUrl = repoPathB.toUri().toURL().toString();
+        String repoUrl = repoPaths[1].toUri().toURL().toString();
         Main.mainInternal(new String[] {"--repository", repoUrl, "--add", fileUrl, "--add-cmd", "echo hello world"});
         
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathB).build();
+        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[1]).build();
         Repository repo = patchTool.getPatchRepository();
         
         Package patchSet = repo.getPackage(PatchId.fromString("foo-1.0.0"));
@@ -103,12 +100,12 @@ public class PostCommandsTest {
     @Test
     public void testAddWithExisting() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathC).build();
+        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[2]).build();
         Repository repo = patchTool.getPatchRepository();
         
         PatchId patchId = repo.addArchive(Archives.getZipUrlFoo100());
         
-        String repoUrl = repoPathC.toUri().toURL().toString();
+        String repoUrl = repoPaths[2].toUri().toURL().toString();
         Main.mainInternal(new String[] {"--repository", repoUrl, "--add-cmd", "foo-1.0.0", "echo hello world"});
         
         Package patchSet = repo.getPackage(patchId);

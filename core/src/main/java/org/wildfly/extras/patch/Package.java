@@ -19,10 +19,6 @@
  */
 package org.wildfly.extras.patch;
 
-import static org.wildfly.extras.patch.Record.Action.ADD;
-import static org.wildfly.extras.patch.Record.Action.DEL;
-import static org.wildfly.extras.patch.Record.Action.UPD;
-
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
+import org.wildfly.extras.patch.Record.Action;
 
 /**
  * A package.
@@ -78,7 +75,7 @@ public final class Package {
         Map<Path, Record> removeMap = new HashMap<>();
         if (seedPatch != null) {
             for (Record rec : seedPatch.getRecords()) {
-                removeMap.put(rec.getPath(), Record.create(DEL, rec.getPath(), rec.getChecksum()));
+                removeMap.put(rec.getPath(), Record.create(null, Action.DEL, rec.getPath(), rec.getChecksum()));
             }
         }
         
@@ -91,9 +88,9 @@ public final class Package {
             } else {
                 if (removeMap.containsKey(path)) {
                     removeMap.remove(path);
-                    records.add(Record.create(UPD, path, checksum));
+                    records.add(Record.create(null, Action.UPD, path, checksum));
                 } else {
-                    records.add(Record.create(ADD, path, checksum));
+                    records.add(Record.create(null, Action.ADD, path, checksum));
                 }
             }
         }
@@ -111,10 +108,10 @@ public final class Package {
         this.commands.addAll(commands);
         this.identity = patchId;
 
-        // Sort the artefacts by path
+        // Sort the records by path
         Map<Path, Record> auxmap = new HashMap<>();
-        for (Record rec : records) {
-            auxmap.put(rec.getPath(), rec);
+        for (Record aux : records) {
+            auxmap.put(aux.getPath(), Record.create(patchId, aux.getAction(), aux.getPath(), aux.getChecksum()));
         }
         List<Path> paths = new ArrayList<>(auxmap.keySet());
         Collections.sort(paths);

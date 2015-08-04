@@ -96,7 +96,7 @@ final class Parser {
                         read = zip.read(buffer);
                     }
                     long crc = entry.getCrc();
-                    records.add(Record.create(action, Paths.get(name), crc));
+                    records.add(Record.create(patchId, action, Paths.get(name), crc));
                 }
                 entry = zip.getNextEntry();
             }
