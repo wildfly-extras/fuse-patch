@@ -193,8 +193,12 @@ final class Parser {
         writePackage(patchSet, outstream, true);
     }
     
+    static File getPatchDirectory(Path rootPath, PatchId patchId) {
+        return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString())).toFile();
+    }
+    
     static File getMetadataFile(Path rootPath, PatchId patchId) {
-        return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString(), patchId + ".metadata")).toFile();
+        return getPatchDirectory(rootPath, patchId).toPath().resolve(patchId + ".metadata").toFile();
     }
     
     static File assertMetadataFile(Path rootPath, PatchId patchId) {

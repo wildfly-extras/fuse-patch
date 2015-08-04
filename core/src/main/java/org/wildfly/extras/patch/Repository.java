@@ -71,6 +71,11 @@ public interface Repository {
     PatchId addArchive(URL fileUrl, PatchId oneoffId, Set<PatchId> dependencies, boolean force) throws IOException;
     
     /**
+     * Remove the given patch id
+     */
+    boolean removeArchive(PatchId removeId);
+    
+    /**
      * Add a post-install command for the given patch id
      */
     void addPostCommand(PatchId patchId, String[] cmdarr);
@@ -81,5 +86,4 @@ public interface Repository {
      * @param patchId The target patch id - null for the latest
 	 */
 	SmartPatch getSmartPatch(Package seedPatch, PatchId patchId);
-
 }

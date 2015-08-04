@@ -45,8 +45,11 @@ final class Options {
     @Option(name = "--audit-log", usage = "Print the audit log")
     boolean auditLog;
 
-    @Option(name = "--add", usage = "Add the given archive to the repository")
+    @Option(name = "--add", forbids = { "--remove" },  usage = "Add the given archive to the repository")
     URL addUrl;
+    
+    @Option(name = "--remove", forbids = { "--add" },  usage = "Remove the given patch id from the repository")
+    String removeId;
     
     @Option(name = "--one-off", depends = { "--add" }, usage = "A one-off target patch id")
     String patchId;
@@ -57,10 +60,10 @@ final class Options {
     @Option(name = "--add-cmd", handler = StringArrayOptionHandler.class, usage = "Add a post-install command for a given patch id")
     String[] addCmd;
     
-    @Option(name = "--install", usage = "Install the given patch id to the server")
+    @Option(name = "--install", forbids = { "--update" },  usage = "Install the given patch id to the server")
     String installId;
     
-    @Option(name = "--update", usage = "Update the server for the given patch name")
+    @Option(name = "--update", forbids = { "--install" },  usage = "Update the server for the given patch name")
     String updateName;
 
     @Option(name = "--force", usage = "Force an install/update operation")

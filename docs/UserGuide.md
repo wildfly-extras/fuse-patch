@@ -9,7 +9,7 @@ Here we describe typical workflows and some advanced use cases
 ### Contents
 
 1. [Download and Install](UserGuide.md#download-and-install)
-2. [Installed a package](UserGuide.md#installing-a-package)
+2. [Installing a package](UserGuide.md#installing-a-package)
 3. [Loading the Repository](UserGuide.md#loading-the-repository)
 4. [Updating the Server](UserGuide.md#updating-the-server)
 5. [Downgrading the Server](UserGuide.md#downgrading-the-server)
@@ -29,7 +29,7 @@ This is the standalone distribution, which comes with a local repository and is 
 $ bin/fusepatch.sh --help
 fusepatch [options...]
  --add URL          : Add the given archive to the repository
- --add-cmd VAL      : Add a post-install command for a given patch id
+ --add-cmd STRING[] : Add a post-install command for a given patch id
  --audit-log        : Print the audit log
  --depends VAL      : An array of dependency ids
  --force            : Force an install/update operation
@@ -37,6 +37,7 @@ fusepatch [options...]
  --one-off VAL      : A one-off target patch id
  --query-repository : Query the repository for available patches
  --query-server     : Query the server for installed patches
+ --remove VAL       : Remove the given patch id from the repository
  --repository URL   : URL to the patch repository
  --server PATH      : Path to the target server
  --update VAL       : Update the server for the given patch name
@@ -49,7 +50,7 @@ $ bin/fusepatch.sh --query-repository
 fuse-patch-distro-wildfly-1.3.0
 ```
 
-### Installed a package
+### Installing a package
 
 Lets assume we work with WildFly and want to use fusepatch from within WildFly.
 
@@ -83,6 +84,13 @@ Added foo-1.1.0
 $ bin/fusepatch.sh --query-repository
 foo-1.1.0
 foo-1.0.0
+```
+
+Unwanted packages can be removed from the repository.
+
+```
+$ bin/fusepatch.sh --remove foo-1.0.0 
+Removed foo-1.0.0
 ```
 
 ###  Updating the Server

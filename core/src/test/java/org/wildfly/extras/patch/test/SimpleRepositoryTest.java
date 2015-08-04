@@ -87,6 +87,13 @@ public class SimpleRepositoryTest {
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patches.get(1));
         Assert.assertEquals(PatchId.fromString("foo-1.1.0"), repo.getLatestAvailable("foo"));
         Assert.assertNull(repo.getLatestAvailable("bar"));
+        
+        Assert.assertTrue(repo.removeArchive(PatchId.fromString("foo-1.1.0")));
+        patches = repo.queryAvailable(null);
+        Assert.assertEquals("Patch available", 1, patches.size());
+        
+        Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patches.get(0));
+        Assert.assertEquals(PatchId.fromString("foo-1.0.0"), repo.getLatestAvailable("foo"));
     }
 
     @Test

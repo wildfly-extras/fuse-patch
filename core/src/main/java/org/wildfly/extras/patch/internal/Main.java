@@ -106,6 +106,13 @@ public class Main {
             opfound = true;
         }
         
+        // Remove from repository
+        if (options.removeId != null) {
+            PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
+            patchTool.getPatchRepository().removeArchive(PatchId.fromString(options.removeId));
+            opfound = true;
+        }
+        
         // Add post install command
         if (options.addCmd != null) {
             PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();

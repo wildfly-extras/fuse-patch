@@ -42,6 +42,7 @@ import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Record;
 import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.SmartPatch;
+import org.wildfly.extras.patch.utils.IOUtils;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 import org.wildfly.extras.patch.utils.PatchAssertion;
@@ -192,6 +193,26 @@ final class DefaultPatchRepository implements Repository {
             PatchLogger.info(message);
             
             return patchId;
+        } finally {
+            Lock.unlock();
+        }
+    }
+
+    @Override
+    public boolean removeArchive(PatchId patchId) {
+        IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
+        Lock.tryLock();
+        try {
+            if (!Parser.getMetadataFile(rootPath, patchId).exists()) { 
+                PatchLogger.warn("Patch does not exist: " + patchId);
+                return false;
+            }
+            File patchdir = Parser.getPatchDirectory(rootPath, patchId);
+            IOUtils.rmdirs(patchdir.toPath());
+            PatchLogger.info("Removed " + patchId);
+            return true;
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
         } finally {
             Lock.unlock();
         }
