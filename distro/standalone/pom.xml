@@ -34,6 +34,7 @@
     <!-- Properties -->
     <properties>
         <fusepatch.home>${project.build.directory}/fuse-patch-${project.version}</fusepatch.home>
+        <fusepatch.ext>sh</fusepatch.ext>
     </properties>
     
     <!-- Dependencies -->
@@ -97,22 +98,12 @@
                         <id>add-fuse-patch</id>
                         <phase>prepare-package</phase>
                         <goals>
-                            <goal>java</goal>
+                            <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <mainClass>org.wildfly.extras.patch.internal.Main</mainClass>
-                            <classpathScope>test</classpathScope>
-                            <systemProperties>
-                                <systemProperty>
-                                    <key>log4j.configuration</key>
-                                    <value>file:${basedir}/etc/config/logging.properties</value>
-                                </systemProperty>
-                            </systemProperties>
+                            <executable>${fusepatch.home}/bin/fusepatch.${fusepatch.ext}</executable>
                             <arguments>
-                                <argument>--repository</argument>
-                                <argument>file:${fusepatch.home}/repository</argument>
-                                <argument>--add</argument>
-                                <argument>file:${fusepatch.home}/repository/fuse-patch-distro-wildfly-${project.version}.zip</argument>
+                                <argument>--add=file:${fusepatch.home}/repository/fuse-patch-distro-wildfly-${project.version}.zip</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -120,4 +111,19 @@
             </plugin>
         </plugins>
     </build>
+
+    <!-- Profiles -->
+    <profiles>
+        <profile>
+            <id>windows</id>
+            <activation>
+                <os>
+                    <family>Windows</family>
+                </os>
+            </activation>
+            <properties>
+                <fusepatch.ext>bat</fusepatch.ext>
+            </properties>
+        </profile>
+    </profiles>
 </project>
