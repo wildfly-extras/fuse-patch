@@ -56,7 +56,7 @@ public class SimpleAccessTest {
     @Test
     public void testQueryServer() throws Exception {
         PatchTool patchTool = new PatchToolBuilder().build();
-        List<PatchId> pids = patchTool.getServerInstance().queryAppliedPatches();
+        List<PatchId> pids = patchTool.getServer().queryAppliedPackages();
         Assert.assertEquals(1, pids.size());
         Assert.assertEquals("fuse-patch-distro-wildfly", pids.get(0).getName());
     }
@@ -64,7 +64,7 @@ public class SimpleAccessTest {
     @Test
     public void testQueryRepository() throws Exception {
         PatchTool patchTool = new PatchToolBuilder().build();
-        List<PatchId> pids = patchTool.getPatchRepository().queryAvailable(null);
+        List<PatchId> pids = patchTool.getRepository().queryAvailable(null);
         Assert.assertEquals(1, pids.size());
     }
 }

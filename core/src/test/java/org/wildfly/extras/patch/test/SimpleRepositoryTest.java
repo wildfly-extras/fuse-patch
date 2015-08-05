@@ -59,7 +59,7 @@ public class SimpleRepositoryTest {
         URL urlA = new URL("file:./" + repoPaths[0].toString());
 
         PatchTool patchTool = new PatchToolBuilder().repositoryUrl(urlA).build();
-        Repository repo = patchTool.getPatchRepository();
+        Repository repo = patchTool.getRepository();
 
         PatchId patchId = repo.addArchive(Archives.getZipUrlFoo100());
         Package patchSet = repo.getPackage(patchId);
@@ -94,7 +94,7 @@ public class SimpleRepositoryTest {
     public void testFileMove() throws Exception {
 
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[1]).build();
-        Repository repo = patchTool.getPatchRepository();
+        Repository repo = patchTool.getRepository();
 
         // copy a file to the root of the repository
         File zipFileA = Archives.getZipFileFoo100();
@@ -114,7 +114,7 @@ public class SimpleRepositoryTest {
     public void testOverlappingPaths() throws Exception {
 
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[2]).build();
-        Repository repo = patchTool.getPatchRepository();
+        Repository repo = patchTool.getRepository();
 
         repo.addArchive(Archives.getZipUrlFoo100());
         Path copyPath = Paths.get("target/foo-copy-1.1.0.zip");
@@ -136,7 +136,7 @@ public class SimpleRepositoryTest {
     public void testEqualOverlappingPaths() throws Exception {
 
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[3]).build();
-        Repository repo = patchTool.getPatchRepository();
+        Repository repo = patchTool.getRepository();
 
         Assert.assertEquals(PatchId.fromString("foo-1.1.0"), repo.addArchive(Archives.getZipUrlFoo110()));
         Assert.assertEquals(PatchId.fromString("bar-1.0.0"), repo.addArchive(Archives.getZipUrlBar100()));
@@ -146,7 +146,7 @@ public class SimpleRepositoryTest {
     public void testAddOneOff() throws Exception {
 
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[4]).build();
-        Repository repo = patchTool.getPatchRepository();
+        Repository repo = patchTool.getRepository();
 
         PatchId oneoffId = PatchId.fromString("foo-1.0.0");
         try {

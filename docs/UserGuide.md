@@ -28,26 +28,27 @@ This is the standalone distribution, which comes with a local repository and is 
 ```
 $ bin/fusepatch.sh --help
 fusepatch [options...]
- --add URL          : Add the given archive to the repository
- --add-cmd STRING[] : Add a post-install command for a given patch id
- --audit-log        : Print the audit log
- --depends VAL      : An array of dependency ids
- --force            : Force an install/update operation
- --install VAL      : Install the given patch id to the server
- --one-off VAL      : A one-off target patch id
- --query-repository : Query the repository for available patches
- --query-server     : Query the server for installed patches
- --remove VAL       : Remove the given patch id from the repository
- --repository URL   : URL to the patch repository
- --server PATH      : Path to the target server
- --update VAL       : Update the server for the given patch name
+ --add URL                : Add the given archive to the repository
+ --add-cmd STRING[]       : Add a post-install command for a given patch id
+ --audit-log              : Print the audit log
+ --dependencies VAL       : A subcommand for --add that defines an array of dependencies
+ --force                  : Force an --add, --install or --update operation
+ --install VAL            : Install the given patch id to the server
+ --one-off VAL            : A subcommand for --add that names the target id for a one-off patch
+ --query-repository       : Query the repository for available patches
+ --query-server           : Query the server for installed patches
+ --query-server-paths VAL : Query managed server paths
+ --remove VAL             : Remove the given patch id from the repository
+ --repository URL         : URL to the patch repository
+ --server PATH            : Path to the target server
+ --update VAL             : Update the server for the given patch name
  ```
  
 The standalone distribution already contains the fuse-patch wildfly package.
 
 ```
 $ bin/fusepatch.sh --query-repository
-fuse-patch-distro-wildfly-1.3.0
+fuse-patch-distro-wildfly-1.5.0
 ```
 
 ### Installing a package
@@ -56,17 +57,29 @@ Lets assume we work with WildFly and want to use fusepatch from within WildFly.
 
 ```
 $ bin/fusepatch.sh --server ../wildfly-8.2.0.Final --update fuse-patch-distro-wildfly
-Installed fuse-patch-distro-wildfly-1.3.0
+Installed fuse-patch-distro-wildfly-1.5.0
 ```
 
-Now we can switch to WildFly and query the server
+Note, that the above uses `--update` instead of `--install`, which installs the latest available package for a given name.
+
+Now we can switch to WildFly and query the server for installed packages
 
 ```
 $ cd ../wildfly-8.2.0.Final
 $ bin/fusepatch.sh --query-server
-fuse-patch-distro-wildfly-1.3.0
+fuse-patch-distro-wildfly-1.5.0
 ```
-Note, that the above uses `--update` instead of `--install`, which installs the latest available package for a given name.
+
+or managed paths
+
+```
+$ cd ../wildfly-8.2.0.Final
+$ bin/fusepatch.sh --query-server-paths modules
+modules/layers.conf [fuse-patch-distro-wildfly-1.5.0]
+modules/system/layers/fuse/org/wildfly/extras/patch/main/args4j-2.0.31.jar [fuse-patch-distro-wildfly-1.5.0]
+modules/system/layers/fuse/org/wildfly/extras/patch/main/fuse-patch-core-1.4.1-SNAPSHOT.jar [fuse-patch-distro-wildfly-1.5.0]
+modules/system/layers/fuse/org/wildfly/extras/patch/main/module.xml [fuse-patch-distro-wildfly-1.5.0]
+```
 
 ###  Loading the Repository
 

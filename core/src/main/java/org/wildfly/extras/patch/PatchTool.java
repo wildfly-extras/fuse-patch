@@ -32,12 +32,12 @@ public interface PatchTool {
     /**
      * Get the server instance
      */
-    ServerInstance getServerInstance();
+    Server getServer();
     
     /**
      * Get the patch repository
      */
-    Repository getPatchRepository();
+    Repository getRepository();
     
     /**
      * Install the given patch id to the server

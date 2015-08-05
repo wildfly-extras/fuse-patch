@@ -31,7 +31,7 @@ import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
-import org.wildfly.extras.patch.ServerInstance;
+import org.wildfly.extras.patch.Server;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.internal.Main;
 import org.wildfly.extras.patch.utils.IOUtils;
@@ -56,15 +56,15 @@ public class PostCommandsTest {
     public void testPostCommands() throws Exception {
 
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[0]).serverPath(serverPathA).build();
-        ServerInstance server = patchTool.getServerInstance();
-        Repository repo = patchTool.getPatchRepository();
+        Server server = patchTool.getServer();
+        Repository repo = patchTool.getRepository();
         
         repo.addArchive(Archives.getZipUrlFoo100());
         repo.addPostCommand(PatchId.fromString("foo-1.0.0"), new String[]{"echo", "Do", "first"});
         repo.addPostCommand(PatchId.fromString("foo-1.0.0"), new String[]{"echo", "Do", "after"});
 
         // Verify clean server
-        List<PatchId> patches = server.queryAppliedPatches();
+        List<PatchId> patches = server.queryAppliedPackages();
         Assert.assertTrue("Patch set empty", patches.isEmpty());
         
         // Obtain the smart patch from the repo
@@ -90,7 +90,7 @@ public class PostCommandsTest {
         Main.mainInternal(new String[] {"--repository", repoUrl, "--add", fileUrl, "--add-cmd", "echo hello world"});
         
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[1]).build();
-        Repository repo = patchTool.getPatchRepository();
+        Repository repo = patchTool.getRepository();
         
         Package patchSet = repo.getPackage(PatchId.fromString("foo-1.0.0"));
         Assert.assertEquals(1, patchSet.getPostCommands().size());
@@ -101,7 +101,7 @@ public class PostCommandsTest {
     public void testAddWithExisting() throws Exception {
 
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[2]).build();
-        Repository repo = patchTool.getPatchRepository();
+        Repository repo = patchTool.getRepository();
         
         PatchId patchId = repo.addArchive(Archives.getZipUrlFoo100());
         

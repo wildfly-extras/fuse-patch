@@ -21,6 +21,7 @@ package org.wildfly.extras.patch.internal;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -30,6 +31,7 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wildfly.extras.patch.ManagedPath;
 import org.wildfly.extras.patch.PatchException;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
@@ -74,17 +76,28 @@ public class Main {
 		
 	    boolean opfound = false;
 	    
-		// Query the server
-		if (options.queryServer) {
-	        PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).build();
-		    printPatches(patchTool.getServerInstance().queryAppliedPatches());
-		    opfound = true;
-		} 
-		
         // Query the repository
         if (options.queryRepository) {
             PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
-            printPatches(patchTool.getPatchRepository().queryAvailable(null));
+            printPatches(patchTool.getRepository().queryAvailable(null));
+            opfound = true;
+        } 
+        
+        // Query the server
+        if (options.queryServer) {
+            PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).build();
+            printPatches(patchTool.getServer().queryAppliedPackages());
+            opfound = true;
+        } 
+        
+        // Query the server paths
+        if (options.queryServerPaths != null) {
+            PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).build();
+            List<String> managedPaths = new ArrayList<>();
+            for (ManagedPath managedPath : patchTool.getServer().queryManagedPaths(options.queryServerPaths)) {
+                managedPaths.add(managedPath.toString());
+            }
+            printLines(managedPaths);
             opfound = true;
         } 
         
@@ -93,23 +106,23 @@ public class Main {
             PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
             PatchId oneoffId = null;
             Set<PatchId> dependencies = new LinkedHashSet<>();
-            if (options.patchId != null) {
-                oneoffId = PatchId.fromString(options.patchId);
+            if (options.oneoffId != null) {
+                oneoffId = PatchId.fromString(options.oneoffId);
                 dependencies.add(oneoffId);
             }
-            if (options.depends != null) {
-                for (String depid : options.depends) {
+            if (options.dependencies != null) {
+                for (String depid : options.dependencies) {
                     dependencies.add(PatchId.fromString(depid));
                 }
             }
-            patchTool.getPatchRepository().addArchive(options.addUrl, oneoffId, dependencies, options.force);
+            patchTool.getRepository().addArchive(options.addUrl, oneoffId, dependencies, options.force);
             opfound = true;
         }
         
         // Remove from repository
         if (options.removeId != null) {
             PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
-            patchTool.getPatchRepository().removeArchive(PatchId.fromString(options.removeId));
+            patchTool.getRepository().removeArchive(PatchId.fromString(options.removeId));
             opfound = true;
         }
         
@@ -125,7 +138,7 @@ public class Main {
                 patchId = PatchId.fromString(options.addCmd[0]);
                 cmdarr = Arrays.copyOfRange(options.addCmd, 1, options.addCmd.length);
             }
-            patchTool.getPatchRepository().addPostCommand(patchId, cmdarr);
+            patchTool.getRepository().addPostCommand(patchId, cmdarr);
             opfound = true;
         }
         
@@ -146,7 +159,7 @@ public class Main {
         // Print the audit log
         if (options.auditLog) {
             PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).build();
-            printLines(patchTool.getServerInstance().getAuditLog());
+            printLines(patchTool.getServer().getAuditLog());
             opfound = true;
         } 
         

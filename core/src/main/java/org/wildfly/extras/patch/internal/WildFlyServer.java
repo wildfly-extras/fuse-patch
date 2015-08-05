@@ -42,24 +42,25 @@ import java.util.zip.ZipInputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wildfly.extras.patch.ManagedPath;
 import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Record;
-import org.wildfly.extras.patch.ServerInstance;
+import org.wildfly.extras.patch.Server;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.utils.IOUtils;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 import org.wildfly.extras.patch.utils.PatchAssertion;
 
-final class WildFlyServerInstance implements ServerInstance {
+final class WildFlyServer implements Server {
 
-    private static final Logger LOG = LoggerFactory.getLogger(WildFlyServerInstance.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WildFlyServer.class);
 
     private static final String FUSE_LAYER = "fuse";
     private final Path homePath;
 
-    WildFlyServerInstance(Path homePath) {
+    WildFlyServer(Path homePath) {
         if (homePath == null) {
             homePath = getConfiguredHomePath();
         }
@@ -79,10 +80,20 @@ final class WildFlyServerInstance implements ServerInstance {
     }
 
     @Override
-    public List<PatchId> queryAppliedPatches() {
+    public List<PatchId> queryAppliedPackages() {
         Lock.tryLock();
         try {
-            return Parser.getAvailable(getWorkspace(), null, true);
+            return Parser.queryAppliedPackages(getWorkspace(), null, true);
+        } finally {
+            Lock.unlock();
+        }
+    }
+
+    @Override
+    public List<ManagedPath> queryManagedPaths(String pattern) {
+        Lock.tryLock();
+        try {
+            return Parser.queryManagedPaths(getWorkspace(), pattern);
         } finally {
             Lock.unlock();
         }
@@ -93,7 +104,7 @@ final class WildFlyServerInstance implements ServerInstance {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
         Lock.tryLock();
         try {
-            List<PatchId> list = Parser.getAvailable(getWorkspace(), prefix, true);
+            List<PatchId> list = Parser.queryAppliedPackages(getWorkspace(), prefix, true);
             return list.isEmpty() ? null : getPackage(list.get(0));
         } finally {
             Lock.unlock();
@@ -139,7 +150,7 @@ final class WildFlyServerInstance implements ServerInstance {
         try {
             
             // Verify dependencies
-            List<PatchId> appliedPatches = queryAppliedPatches();
+            List<PatchId> appliedPatches = queryAppliedPackages();
             List<PatchId> unsatisfied = new ArrayList<>();
             for (PatchId depId : smartPatch.getDependencies()) {
                 if (!appliedPatches.contains(depId)) {
@@ -203,6 +214,7 @@ final class WildFlyServerInstance implements ServerInstance {
 
             // Update the server files
             updateServerFiles(smartPatch);
+            updateManagedPaths(smartPatch);
 
             // Update server side metadata
             Set<Record> inforecs = new HashSet<>();
@@ -212,7 +224,7 @@ final class WildFlyServerInstance implements ServerInstance {
             Package infoset = Package.create(patchId, inforecs);
             Parser.writePackage(getWorkspace(), infoset);
 
-            // Write the log message
+            // Write audit log
             final String message;
             if (serverSet == null) {
                 message = "Installed " + patchId;
@@ -226,11 +238,11 @@ final class WildFlyServerInstance implements ServerInstance {
                     message = "Downgraded from " + serverId + " to " + patchId;
                 }
             }
-            PatchLogger.info(message);
-            
-            // Write audit log
             Parser.writeAuditLog(getWorkspace(), message, smartPatch);
            
+            // Write the log message
+            PatchLogger.info(message);
+            
             // Run post install commands
             Runtime runtime = Runtime.getRuntime();
             File procdir = homePath.toFile();
@@ -359,6 +371,11 @@ final class WildFlyServerInstance implements ServerInstance {
         }
     }
 
+    private void updateManagedPaths(SmartPatch smartPatch) throws IOException {
+        ManagedPaths managedPaths = Parser.readManagedPaths(getWorkspace());
+        Parser.writeManagedPaths(getWorkspace(), managedPaths.updatePaths(smartPatch));
+    }
+    
     private Path getWorkspace() {
         return homePath.resolve(Paths.get("fusepatch", "workspace"));
     }

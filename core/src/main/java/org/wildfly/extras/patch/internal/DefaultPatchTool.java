@@ -28,7 +28,7 @@ import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.Repository;
-import org.wildfly.extras.patch.ServerInstance;
+import org.wildfly.extras.patch.Server;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.PatchAssertion;
@@ -36,7 +36,7 @@ import org.wildfly.extras.patch.utils.PatchAssertion;
 
 public final class DefaultPatchTool implements PatchTool {
 
-    private ServerInstance serverInstance;
+    private Server serverInstance;
     private Repository patchRepository;
     private Path serverPath;
     private URL repoUrl;
@@ -47,21 +47,21 @@ public final class DefaultPatchTool implements PatchTool {
     }
 
     @Override
-    public ServerInstance getServerInstance() {
+    public Server getServer() {
         if (serverInstance == null) {
-            serverInstance = new WildFlyServerInstance(serverPath);
+            serverInstance = new WildFlyServer(serverPath);
         }
         return serverInstance;
     }
 
     @Override
-    public Repository getPatchRepository() {
+    public Repository getRepository() {
         if (patchRepository == null) {
             if (repoUrl == null) {
                 repoUrl = DefaultPatchRepository.getConfiguredUrl();
                 if (repoUrl == null) {
                     try {
-                        repoUrl = getServerInstance().getDefaultRepositoryPath().toUri().toURL();
+                        repoUrl = getServer().getDefaultRepositoryPath().toUri().toURL();
                     } catch (MalformedURLException ex) {
                         throw new IllegalStateException(ex);
                     }
@@ -88,7 +88,7 @@ public final class DefaultPatchTool implements PatchTool {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
         Lock.tryLock();
         try {
-            PatchId latestId = getPatchRepository().getLatestAvailable(prefix);
+            PatchId latestId = getRepository().getLatestAvailable(prefix);
             PatchAssertion.assertNotNull(latestId, "Cannot obtain patch id for prefix: " + prefix);
             return installInternal(latestId, force);
         } finally {
@@ -100,15 +100,15 @@ public final class DefaultPatchTool implements PatchTool {
         
         PatchId serverId = null;
         String prefix = patchId.getName();
-        for (PatchId pid : getServerInstance().queryAppliedPatches()) {
+        for (PatchId pid : getServer().queryAppliedPackages()) {
             if (pid.getName().equals(prefix)) {
                 serverId = pid;
                 break;
             }
         }
         
-        Package seedPatch = serverId != null ? getServerInstance().getPackage(serverId) : null;
-        SmartPatch smartPatch = getPatchRepository().getSmartPatch(seedPatch, patchId);
-        return getServerInstance().applySmartPatch(smartPatch, force);
+        Package seedPatch = serverId != null ? getServer().getPackage(serverId) : null;
+        SmartPatch smartPatch = getRepository().getSmartPatch(seedPatch, patchId);
+        return getServer().applySmartPatch(smartPatch, force);
     }
 }

@@ -51,7 +51,7 @@ public class PackageDependenciesTest {
     public void testSimpleOneOff() throws Exception {
 
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathA).serverPath(serverPathA).build();
-        Repository repo = patchTool.getPatchRepository();
+        Repository repo = patchTool.getRepository();
         
         PatchId idA = repo.addArchive(Archives.getZipUrlFoo100());
         PatchId idB = repo.addArchive(Archives.getZipUrlFoo110(), null, Collections.singleton(PatchId.fromString("foo-1.0.0")), false);

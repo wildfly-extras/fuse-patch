@@ -69,7 +69,7 @@ final class DefaultPatchRepository implements Repository {
     public List<PatchId> queryAvailable(final String prefix) {
         Lock.tryLock();
         try {
-            return Parser.getAvailable(rootPath, prefix, false);
+            return Parser.queryAppliedPackages(rootPath, prefix, false);
         } finally {
             Lock.unlock();
         }
@@ -80,7 +80,7 @@ final class DefaultPatchRepository implements Repository {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
         Lock.tryLock();
         try {
-            List<PatchId> list = Parser.getAvailable(rootPath, prefix, true);
+            List<PatchId> list = Parser.queryAppliedPackages(rootPath, prefix, true);
             return list.isEmpty() ? null : list.get(0);
         } finally {
             Lock.unlock();
@@ -128,7 +128,7 @@ final class DefaultPatchRepository implements Repository {
             
             // Collect the paths from the latest other patch sets
             Map<Path, Record> combinedPathsMap = new HashMap<>();
-            for (PatchId auxid : Parser.getAvailable(rootPath, null, false)) {
+            for (PatchId auxid : Parser.queryAppliedPackages(rootPath, null, false)) {
                 if (!patchId.getName().equals(auxid.getName())) {
                     for (Record rec : getPackage(auxid).getRecords()) {
                         combinedPathsMap.put(rec.getPath(), rec);

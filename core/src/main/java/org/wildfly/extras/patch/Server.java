@@ -29,7 +29,7 @@ import java.util.List;
  * @author thomas.diesler@jboss.com
  * @since 10-Jun-2015
  */
-public interface ServerInstance {
+public interface Server {
 
 	/**
 	 * Get the server home path
@@ -47,10 +47,15 @@ public interface ServerInstance {
     List<String> getAuditLog();
     
 	/**
-	 * Get the list of applied packages
+	 * Query the list of applied packages
 	 */
-	List<PatchId> queryAppliedPatches();
+	List<PatchId> queryAppliedPackages();
 
+	/**
+	 * Query managed server paths
+	 */
+    List<ManagedPath> queryManagedPaths(String pathsPattern);
+    
     /**
      * Get the applied package for a given prefix
      * @return package or null
@@ -66,5 +71,4 @@ public interface ServerInstance {
 	 * Apply a smart patch and return the result
 	 */
 	Package applySmartPatch(SmartPatch smartPatch, boolean force) throws IOException;
-
 }

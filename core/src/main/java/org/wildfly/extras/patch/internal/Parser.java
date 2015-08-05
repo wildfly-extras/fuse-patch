@@ -24,11 +24,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,8 +51,9 @@ import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import org.wildfly.extras.patch.PatchId;
+import org.wildfly.extras.patch.ManagedPath;
 import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Record;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.Version;
@@ -58,6 +61,9 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 
 final class Parser {
+
+    private static final String AUDIT_LOG = "audit.log";
+    private static final String MANAGED_PATHS = "managed-paths.metadata";
 
     static Version VERSION;
     static {
@@ -76,14 +82,14 @@ final class Parser {
             throw new IllegalStateException(ex);
         }
     }
-    
+
     static final String VERSION_PREFIX = "# fusepatch:";
     static final String PATCHID_PREFIX = "# patch id:";
-    
+
     static Package buildPackageFromZip(PatchId patchId, Record.Action action, File zipfile) throws IOException {
         IllegalArgumentAssertion.assertNotNull(zipfile, "zipfile");
         IllegalArgumentAssertion.assertTrue(zipfile.isFile(), "Zip file does not exist: " + zipfile);
-        
+
         Set<Record> records = new HashSet<>();
         try (ZipInputStream zip = new ZipInputStream(new FileInputStream(zipfile))) {
             byte[] buffer = new byte[1024];
@@ -110,7 +116,7 @@ final class Parser {
         return readPackage(assertMetadataFile(rootPath, patchId));
     }
 
-    static List<PatchId> getAvailable(Path rootPath, final String prefix, boolean latest) {
+    static List<PatchId> queryAppliedPackages(Path rootPath, final String prefix, boolean latest) {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
         final Map<String, TreeSet<PatchId>> auxmap = new HashMap<>();
         if (rootPath.toFile().exists()) {
@@ -119,14 +125,16 @@ final class Parser {
                     @Override
                     public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
                         String name = path.getFileName().toString();
-                        if ((prefix == null || name.startsWith(prefix)) && name.endsWith(".metadata")) {
-                            PatchId patchId = PatchId.fromFile(path.toFile());
-                            TreeSet<PatchId> idset = auxmap.get(patchId.getName());
-                            if (idset == null) {
-                                idset = new TreeSet<>();
-                                auxmap.put(patchId.getName(), idset);
+                        if (!MANAGED_PATHS.equals(name) && name.endsWith(".metadata")) {
+                            if (prefix == null || name.startsWith(prefix)) {
+                                PatchId patchId = PatchId.fromFile(path.toFile());
+                                TreeSet<PatchId> idset = auxmap.get(patchId.getName());
+                                if (idset == null) {
+                                    idset = new TreeSet<>();
+                                    auxmap.put(patchId.getName(), idset);
+                                }
+                                idset.add(patchId);
                             }
-                            idset.add(patchId);
                         }
                         return FileVisitResult.CONTINUE;
                     }
@@ -147,12 +155,28 @@ final class Parser {
         Collections.reverse(result);
         return Collections.unmodifiableList(result);
     }
-    
+
+    static List<ManagedPath> queryManagedPaths(Path rootPath, String pattern) {
+        try {
+            List<ManagedPath> result = new ArrayList<>();
+            ManagedPaths mpaths = readManagedPaths(rootPath);
+            for (ManagedPath aux : mpaths.getPaths()) {
+                String path = aux.getPath().toString();
+                if (pattern == null || path.startsWith(pattern)) {
+                    result.add(aux);
+                }
+            }
+            return Collections.unmodifiableList(result);
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
     static void writeAuditLog(Path rootPath, String message, SmartPatch smartPatch) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
         IllegalArgumentAssertion.assertNotNull(message, "message");
         IllegalArgumentAssertion.assertNotNull(smartPatch, "smartPatch");
-        try (FileOutputStream fos = new FileOutputStream(rootPath.resolve("audit.log").toFile(), true)) {
+        try (FileOutputStream fos = new FileOutputStream(rootPath.resolve(AUDIT_LOG).toFile(), true)) {
             PrintStream pw = new PrintStream(fos);
             pw.println();
             String date = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss").format(new Date());
@@ -162,11 +186,11 @@ final class Parser {
             writePackage(patchSet, fos, false);
         }
     }
-    
+
     static List<String> readAuditLog(Path rootPath) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
         List<String> lines = new ArrayList<>();
-        File auditFile = rootPath.resolve("audit.log").toFile();
+        File auditFile = rootPath.resolve(AUDIT_LOG).toFile();
         if (auditFile.exists()) {
             try (BufferedReader br = new BufferedReader(new FileReader(auditFile))) {
                 String line = br.readLine();
@@ -178,7 +202,7 @@ final class Parser {
         }
         return Collections.unmodifiableList(lines);
     }
-    
+
     static void writePackage(Path rootPath, Package patchSet) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
         IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
@@ -188,34 +212,35 @@ final class Parser {
             writePackage(patchSet, fos, true);
         }
     }
-    
+
     static void writePackage(Package patchSet, OutputStream outstream) throws IOException {
         writePackage(patchSet, outstream, true);
     }
-    
+
     static File getPatchDirectory(Path rootPath, PatchId patchId) {
         return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString())).toFile();
     }
-    
+
     static File getMetadataFile(Path rootPath, PatchId patchId) {
         return getPatchDirectory(rootPath, patchId).toPath().resolve(patchId + ".metadata").toFile();
     }
-    
+
     static File assertMetadataFile(Path rootPath, PatchId patchId) {
         File metadataFile = getMetadataFile(rootPath, patchId);
         IllegalStateAssertion.assertTrue(metadataFile.isFile(), "Cannot obtain metadata file: " + metadataFile);
         return metadataFile;
     }
-    
-    private static void writePackage(Package patchSet, OutputStream outstream, boolean versions) throws IOException {
+
+    private static void writePackage(Package patchSet, OutputStream outstream, boolean addHeader) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
         IllegalArgumentAssertion.assertNotNull(outstream, "outstream");
         try (PrintStream pw = new PrintStream(outstream)) {
-            if (versions) {
+
+            if (addHeader) {
                 pw.println(VERSION_PREFIX + " " + VERSION);
                 pw.println(PATCHID_PREFIX + " " + patchSet.getPatchId());
             }
-            
+
             Set<PatchId> deps = patchSet.getDependencies();
             if (!deps.isEmpty()) {
                 pw.println();
@@ -224,13 +249,13 @@ final class Parser {
                 spec = spec.substring(1, spec.length() - 1);
                 pw.println("Dependencies: " + spec);
             }
-            
+
             pw.println();
             pw.println("[content]");
             for (Record rec : patchSet.getRecords()) {
                 pw.println(rec.toString());
             }
-            
+
             List<String> commands = patchSet.getPostCommands();
             if (!commands.isEmpty()) {
                 pw.println();
@@ -249,7 +274,7 @@ final class Parser {
         Set<Record> records = new HashSet<>();
         List<String> commands = new ArrayList<>();
         Set<PatchId> dependencies = new LinkedHashSet<>();
-        
+
         try (BufferedReader br = new BufferedReader(new FileReader(metadataFile))) {
             String line = br.readLine().trim();
             IllegalStateAssertion.assertTrue(line.startsWith(VERSION_PREFIX), "Cannot obtain version info");
@@ -287,8 +312,36 @@ final class Parser {
                     commands.add(line);
                 }
                 line = br.readLine();
-            } 
+            }
             return Package.create(patchId, records, dependencies, commands);
+        }
+    }
+
+    static ManagedPaths readManagedPaths(Path rootPath) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
+        List<ManagedPath> managedPaths = new ArrayList<>();
+        File metadataFile = rootPath.resolve(MANAGED_PATHS).toFile();
+        if (metadataFile.exists()) {
+            try (BufferedReader br = new BufferedReader(new FileReader(metadataFile))) {
+                String line = br.readLine();
+                while (line != null) {
+                    managedPaths.add(ManagedPath.fromString(line));
+                    line = br.readLine();
+                }
+            }
+        }
+        return new ManagedPaths(managedPaths);
+    }
+
+    static void writeManagedPaths(Path rootPath, ManagedPaths managedPaths) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
+        IllegalArgumentAssertion.assertNotNull(managedPaths, "managedPaths");
+        File metadataFile = rootPath.resolve(MANAGED_PATHS).toFile();
+        metadataFile.getParentFile().mkdirs();
+        try (PrintWriter pw = new PrintWriter(new FileWriter(metadataFile))) {
+            for (ManagedPath path : managedPaths.getPaths()) {
+                pw.println(path.toString());
+            }
         }
     }
 }

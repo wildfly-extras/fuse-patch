@@ -36,29 +36,32 @@ final class Options {
 	@Option(name = "--repository", usage = "URL to the patch repository")
 	URL repositoryUrl;
 
-	@Option(name = "--query-server", usage = "Query the server for installed patches")
-	boolean queryServer;
-
     @Option(name = "--query-repository", usage = "Query the repository for available patches")
     boolean queryRepository;
     
+    @Option(name = "--query-server", usage = "Query the server for installed patches")
+    boolean queryServer;
+
+    @Option(name = "--query-server-paths", usage = "Query managed server paths")
+    String queryServerPaths;
+
     @Option(name = "--audit-log", usage = "Print the audit log")
     boolean auditLog;
 
     @Option(name = "--add", forbids = { "--remove" },  usage = "Add the given archive to the repository")
     URL addUrl;
     
-    @Option(name = "--remove", forbids = { "--add" },  usage = "Remove the given patch id from the repository")
-    String removeId;
-    
-    @Option(name = "--one-off", depends = { "--add" }, usage = "A one-off target patch id")
-    String patchId;
-    
-    @Option(name = "--depends", depends = { "--add" }, usage = "An array of dependency ids")
-    String[]  depends;
-    
     @Option(name = "--add-cmd", handler = StringArrayOptionHandler.class, usage = "Add a post-install command for a given patch id")
     String[] addCmd;
+    
+    @Option(name = "--one-off", depends = { "--add" }, usage = "A subcommand for --add that names the target id for a one-off patch")
+    String oneoffId;
+    
+    @Option(name = "--dependencies", depends = { "--add" }, usage = "A subcommand for --add that defines an array of dependencies")
+    String[]  dependencies;
+    
+    @Option(name = "--remove", forbids = { "--add" },  usage = "Remove the given patch id from the repository")
+    String removeId;
     
     @Option(name = "--install", forbids = { "--update" },  usage = "Install the given patch id to the server")
     String installId;
@@ -66,6 +69,6 @@ final class Options {
     @Option(name = "--update", forbids = { "--install" },  usage = "Update the server for the given patch name")
     String updateName;
 
-    @Option(name = "--force", usage = "Force an install/update operation")
+    @Option(name = "--force", usage = "Force an --add, --install or --update operation")
     boolean force;
 }
