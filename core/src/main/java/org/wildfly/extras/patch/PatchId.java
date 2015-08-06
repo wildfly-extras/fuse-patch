@@ -19,7 +19,7 @@
  */
 package org.wildfly.extras.patch;
 
-import java.io.File;
+import java.net.URL;
 
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 
@@ -66,9 +66,9 @@ public final class PatchId implements Comparable<PatchId> {
         return new PatchId(identity, Version.emptyVersion);
     }
 
-    public static PatchId fromFile(File file) {
-        String name = file.getName();
-        return PatchId.fromString(name.substring(0, name.lastIndexOf('.')));
+    public static PatchId fromURL(URL url) {
+        String name = url.getFile();
+        return PatchId.fromString(name.substring(name.lastIndexOf('/') + 1, name.lastIndexOf('.')));
     }
     
     private PatchId(String name, Version version) {

@@ -20,13 +20,13 @@
 package org.wildfly.extras.patch.internal;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -320,9 +320,8 @@ final class WildFlyServer implements Server {
         for (Record rec : smartPatch.getReplaceSet()) {
             addupdPaths.add(rec.getPath());
         }
-        File patchFile = smartPatch.getPatchFile();
         if (!smartPatch.isUninstall()) {
-            try (ZipInputStream zip = new ZipInputStream(new FileInputStream(patchFile))) {
+            try (ZipInputStream zip = getZipInputStream(smartPatch)) {
                 ZipEntry entry = zip.getNextEntry();
                 while (entry != null) {
                     if (!entry.isDirectory()) {
@@ -343,7 +342,7 @@ final class WildFlyServer implements Server {
         
         // Handle replace and add sets
         if (!smartPatch.isUninstall()) {
-            try (ZipInputStream zip = new ZipInputStream(new FileInputStream(patchFile))) {
+            try (ZipInputStream zip = getZipInputStream(smartPatch)) {
                 byte[] buffer = new byte[1024];
                 ZipEntry entry = zip.getNextEntry();
                 while (entry != null) {
@@ -407,6 +406,12 @@ final class WildFlyServer implements Server {
         Parser.writeManagedPaths(getWorkspace(), managedPaths.updatePaths(smartPatch));
     }
     
+    private ZipInputStream getZipInputStream(SmartPatch smartPatch) throws IOException {
+        URL patchURL = smartPatch.getPatchURL();
+        IllegalStateAssertion.assertEquals("file", patchURL.getProtocol(), "Usupported protocol: " + patchURL);
+        return new ZipInputStream(patchURL.openStream());
+    }
+    
     private Path getWorkspace() {
         return homePath.resolve(Paths.get("fusepatch", "workspace"));
     }
@@ -426,5 +431,10 @@ final class WildFlyServer implements Server {
             }
         }
         return jbossHome != null ? Paths.get(jbossHome) : null;
+    }
+
+    @Override
+    public String toString() {
+        return "WildFlyServer[home=" + homePath + "]";
     }
 }

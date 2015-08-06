@@ -21,7 +21,6 @@ package org.wildfly.extras.patch.internal;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -88,26 +87,23 @@ final class Parser {
     static final String VERSION_PREFIX = "# fusepatch:";
     static final String PATCHID_PREFIX = "# patch id:";
 
-    static Package buildPackageFromZip(PatchId patchId, Record.Action action, File zipfile) throws IOException {
-        IllegalArgumentAssertion.assertNotNull(zipfile, "zipfile");
-        IllegalArgumentAssertion.assertTrue(zipfile.isFile(), "Zip file does not exist: " + zipfile);
+    static Package buildPackageFromZip(PatchId patchId, Record.Action action, ZipInputStream zipInput) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(zipInput, "zipInput");
 
         Set<Record> records = new HashSet<>();
-        try (ZipInputStream zip = new ZipInputStream(new FileInputStream(zipfile))) {
-            byte[] buffer = new byte[1024];
-            ZipEntry entry = zip.getNextEntry();
-            while (entry != null) {
-                if (!entry.isDirectory()) {
-                    String name = entry.getName();
-                    int read = zip.read(buffer);
-                    while (read > 0) {
-                        read = zip.read(buffer);
-                    }
-                    long crc = entry.getCrc();
-                    records.add(Record.create(patchId, action, Paths.get(name), crc));
+        byte[] buffer = new byte[1024];
+        ZipEntry entry = zipInput.getNextEntry();
+        while (entry != null) {
+            if (!entry.isDirectory()) {
+                String name = entry.getName();
+                int read = zipInput.read(buffer);
+                while (read > 0) {
+                    read = zipInput.read(buffer);
                 }
-                entry = zip.getNextEntry();
+                long crc = entry.getCrc();
+                records.add(Record.create(patchId, action, Paths.get(name), crc));
             }
+            entry = zipInput.getNextEntry();
         }
         return Package.create(patchId, records);
     }
@@ -130,7 +126,7 @@ final class Parser {
                         String name = path.getFileName().toString();
                         if (!MANAGED_PATHS.equals(name) && name.endsWith(".metadata")) {
                             if (prefix == null || name.startsWith(prefix)) {
-                                PatchId patchId = PatchId.fromFile(path.toFile());
+                                PatchId patchId = PatchId.fromURL(path.toUri().toURL());
                                 TreeSet<PatchId> idset = auxmap.get(patchId.getName());
                                 if (idset == null) {
                                     idset = new TreeSet<>();

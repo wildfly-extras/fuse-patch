@@ -23,14 +23,10 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
-import org.wildfly.extras.patch.Record;
-import org.wildfly.extras.patch.Record.Action;
 import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.Server;
 import org.wildfly.extras.patch.SmartPatch;
@@ -105,15 +101,11 @@ public final class DefaultPatchTool implements PatchTool {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         Lock.tryLock();
         try {
-            List<Record> records = new ArrayList<>();
             Package installed = getServer().getPackage(patchId);
             PatchAssertion.assertNotNull(installed, "Package not installed: " + patchId);
             PatchId latestId = getServer().getPackage(patchId.getName()).getPatchId();
             PatchAssertion.assertEquals(patchId, latestId, "Active package is " + latestId + ", cannot uninstall: " + patchId);
-            for (Record rec : installed.getRecords()) {
-                records.add(Record.create(patchId, Action.DEL, rec.getPath(), rec.getChecksum()));
-            }
-            SmartPatch smartPatch = new SmartPatch(Package.create(patchId, records), null);
+            SmartPatch smartPatch = SmartPatch.forUninstall(installed);
             return getServer().applySmartPatch(smartPatch, force);
         } finally {
             Lock.unlock();
@@ -134,5 +126,10 @@ public final class DefaultPatchTool implements PatchTool {
         Package seedPatch = serverId != null ? getServer().getPackage(serverId) : null;
         SmartPatch smartPatch = getRepository().getSmartPatch(seedPatch, patchId);
         return getServer().applySmartPatch(smartPatch, force);
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultPatchTool[server=" + serverPath + ",repo=" + repoUrl + "]";
     }
 }

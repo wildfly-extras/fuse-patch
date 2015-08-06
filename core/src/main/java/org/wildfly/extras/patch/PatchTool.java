@@ -45,12 +45,12 @@ public interface PatchTool {
     Package install(PatchId patchId, boolean force) throws IOException;
 
     /**
-     * Unnstall the given patch id from the server
-     */
-    Package uninstall(PatchId patchId, boolean force) throws IOException;
-
-    /**
      * Update the server for the given patch name
      */
     Package update(String symbolicName, boolean force) throws IOException;
+
+    /**
+     * Uninstall the given patch id from the server
+     */
+    Package uninstall(PatchId patchId, boolean force) throws IOException;
 }

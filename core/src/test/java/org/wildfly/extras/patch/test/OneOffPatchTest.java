@@ -25,34 +25,35 @@ import java.nio.file.Paths;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.wildfly.extras.patch.PatchId;
-import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.utils.IOUtils;
 
 public class OneOffPatchTest {
 
-    final static Path serverPathA = Paths.get("target/servers/OneOffPatchTest/srvA");
-    final static Path repoPathA = Paths.get("target/repos/OneOffPatchTest/repoA");
+    final static Path repoPath = Paths.get("target/repos/OneOffPatchTest/repo");
+    final static Path serverPath = Paths.get("target/servers/OneOffPatchTest/srvA");
 
     @BeforeClass
     public static void setUp() throws Exception {
-        IOUtils.rmdirs(serverPathA);
-        IOUtils.rmdirs(repoPathA);
-        serverPathA.toFile().mkdirs();
-        repoPathA.toFile().mkdirs();
+        IOUtils.rmdirs(repoPath);
+        repoPath.toFile().mkdirs();
+        IOUtils.rmdirs(serverPath);
+        serverPath.toFile().mkdirs();
+        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).build();
+        PatchId idA = patchTool.getRepository().addArchive(Archives.getZipUrlFoo100());
+        patchTool.getRepository().addArchive(Archives.getZipUrlFoo100SP1(), idA);
     }
 
     @Test
     public void testSimpleOneOff() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPathA).serverPath(serverPathA).build();
-        Repository repo = patchTool.getRepository();
+        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).serverPath(serverPath).build();
         
-        PatchId idA = repo.addArchive(Archives.getZipUrlFoo100());
-        PatchId idB = repo.addArchive(Archives.getZipUrlFoo100SP1(), idA);
+        PatchId idA = PatchId.fromURL(Archives.getZipUrlFoo100());
+        PatchId idB = PatchId.fromURL(Archives.getZipUrlFoo100SP1());
 
         Package setA = patchTool.install(idA, false);
         Assert.assertEquals(4, setA.getRecords().size());
