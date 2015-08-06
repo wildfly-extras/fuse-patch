@@ -30,12 +30,11 @@ import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.Record;
+import org.wildfly.extras.patch.Record.Action;
 import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.Server;
 import org.wildfly.extras.patch.SmartPatch;
-import org.wildfly.extras.patch.Record.Action;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
-import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 import org.wildfly.extras.patch.utils.PatchAssertion;
 
 
@@ -107,10 +106,10 @@ public final class DefaultPatchTool implements PatchTool {
         Lock.tryLock();
         try {
             List<Record> records = new ArrayList<>();
-            Package installed = server.getPackage(patchId);
-            IllegalStateAssertion.assertNotNull(installed, "Package not installed: " + patchId);
-            PatchId latestId = server.getPackage(patchId.getName()).getPatchId();
-            IllegalStateAssertion.assertEquals(patchId, latestId, "Active package is " + latestId + ", cannot uninstall: " + patchId);
+            Package installed = getServer().getPackage(patchId);
+            PatchAssertion.assertNotNull(installed, "Package not installed: " + patchId);
+            PatchId latestId = getServer().getPackage(patchId.getName()).getPatchId();
+            PatchAssertion.assertEquals(patchId, latestId, "Active package is " + latestId + ", cannot uninstall: " + patchId);
             for (Record rec : installed.getRecords()) {
                 records.add(Record.create(patchId, Action.DEL, rec.getPath(), rec.getChecksum()));
             }

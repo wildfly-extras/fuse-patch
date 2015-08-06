@@ -129,8 +129,8 @@ public class SimpleUpdateTest {
         // Cannot uninstall non-existing package
         try {
             patchTool.uninstall(PatchId.fromString("xxx-1.0.0"), false);
-            Assert.fail("IllegalStateException expected");
-        } catch (IllegalStateException ex) {
+            Assert.fail("PatchException expected");
+        } catch (PatchException ex) {
             String message = ex.getMessage();
             Assert.assertTrue(message, message.contains("not installed: xxx-1.0.0"));
         }
@@ -138,8 +138,8 @@ public class SimpleUpdateTest {
         // Cannot uninstall old package
         try {
             patchTool.uninstall(setA.getPatchId(), false);
-            Assert.fail("IllegalStateException expected");
-        } catch (IllegalStateException ex) {
+            Assert.fail("PatchException expected");
+        } catch (PatchException ex) {
             String message = ex.getMessage();
             Assert.assertTrue(message, message.contains("" + setB.getPatchId()));
             Assert.assertTrue(message, message.contains("cannot uninstall: " + setA.getPatchId()));

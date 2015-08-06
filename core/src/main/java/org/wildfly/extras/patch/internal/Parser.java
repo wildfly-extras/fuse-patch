@@ -59,6 +59,7 @@ import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.Version;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.IllegalStateAssertion;
+import org.wildfly.extras.patch.utils.PatchAssertion;
 
 final class Parser {
 
@@ -81,6 +82,7 @@ final class Parser {
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         }
+        PatchAssertion.assertNotNull(VERSION, "Cannot obtain fusepatch version");
     }
 
     static final String VERSION_PREFIX = "# fusepatch:";

@@ -64,7 +64,8 @@ public class Main {
         try {
         	run(parser, options);
         } catch (PatchException ex) {
-            PatchLogger.error(ex);
+            LOG.error("ERROR {}", ex.getMessage());
+            LOG.debug("Patch Exception", ex);
             throw ex;
         } catch (Throwable th) {
             LOG.error("Error executing command", th);

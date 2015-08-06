@@ -142,7 +142,7 @@ final class WildFlyServer implements Server {
         
         // Do nothing on empty smart patch
         if (smartPatch.getRecords().isEmpty()) {
-            PatchLogger.warn("Patch " + smartPatch.getPatchId() + " has already been applied");
+            LOG.warn("Patch {} has already been applied", smartPatch.getPatchId());
             return null;
         }
         
@@ -175,7 +175,7 @@ final class WildFlyServer implements Server {
             for (Record rec : smartPatch.getRemoveSet()) {
                 Path path = getServerHome().resolve(rec.getPath());
                 if (!path.toFile().exists()) {
-                    PatchLogger.warn("Attempt to delete a non existing file " + rec.getPath());
+                    LOG.warn("Attempt to delete a non existing file: {}", rec.getPath());
                 }
                 serverRecords.remove(rec.getPath());
             }
@@ -185,14 +185,14 @@ final class WildFlyServer implements Server {
                 Path path = getServerHome().resolve(rec.getPath());
                 String filename = path.getFileName().toString();
                 if (!path.toFile().exists()) {
-                    PatchLogger.warn("Attempt to replace a non existing file " + rec.getPath());
+                    LOG.warn("Attempt to replace a non existing file: ", rec.getPath());
                 } else if (filename.endsWith(".xml") || filename.endsWith(".properties")) {
                     Record exprec = serverRecords.get(rec.getPath());
                     Long expcheck = exprec != null ? exprec.getChecksum() : 0L;
                     Long wasCheck = IOUtils.getCRC32(path);
                     if (!expcheck.equals(wasCheck)) {
                         PatchAssertion.assertTrue(force, "Attempt to override an already modified file " + rec.getPath());
-                        PatchLogger.warn("Overriding an already modified file " + rec.getPath());
+                        LOG.warn("Overriding an already modified file: ", rec.getPath());
                     }
                 }
                 serverRecords.put(rec.getPath(), rec);
@@ -206,7 +206,7 @@ final class WildFlyServer implements Server {
                     Long wasCheck = IOUtils.getCRC32(path);
                     if (!expcheck.equals(wasCheck)) {
                         PatchAssertion.assertTrue(force, "Attempt to add an already existing file " + rec.getPath());
-                        PatchLogger.warn("Overriding an already existing file " + rec.getPath());
+                        LOG.warn("Overriding an already existing file: ", rec.getPath());
                     }
                 }
                 serverRecords.put(rec.getPath(), rec);
@@ -252,13 +252,13 @@ final class WildFlyServer implements Server {
             Parser.writeAuditLog(getWorkspace(), message, smartPatch);
            
             // Write the log message
-            PatchLogger.info(message);
+            LOG.info(message);
             
             // Run post install commands
             Runtime runtime = Runtime.getRuntime();
             File procdir = homePath.toFile();
             for (String cmd : smartPatch.getPostCommands()) {
-                PatchLogger.info("Run: " + cmd);
+                LOG.info("Run: {}", cmd);
                 String[] envarr = {};
                 String[] cmdarr = cmd.split("\\s") ;
                 Process proc = runtime.exec(cmdarr, envarr, procdir);
@@ -378,7 +378,7 @@ final class WildFlyServer implements Server {
                 }
                 value = value.substring(1);
                 props.setProperty("layers", value);
-                PatchLogger.warn("Layers config does not contain '" + FUSE_LAYER + "', writing: " + value);
+                LOG.warn("Layers config does not contain '" + FUSE_LAYER + "', writing: {}", value);
                 try (FileWriter fw = new FileWriter(layersPath.toFile())) {
                     props.store(fw, "Fixed by fusepatch");
                 }

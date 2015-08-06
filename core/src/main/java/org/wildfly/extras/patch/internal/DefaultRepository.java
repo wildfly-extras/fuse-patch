@@ -165,9 +165,9 @@ final class DefaultRepository implements Repository {
                     if (!rec.getChecksum().equals(otherRec.getChecksum())) {
                         String message = "Path '" + rec.getPath() + "' already contained in: " + otherId;
                         if (force) {
-                            PatchLogger.warn(message);
+                            LOG.warn(message);
                         } else {
-                            PatchLogger.error(message);
+                            LOG.error(message);
                         }
                         duplicates.add(otherId);
                     }
@@ -193,7 +193,7 @@ final class DefaultRepository implements Repository {
             if (!dependencies.isEmpty()) {
                 message += " with dependencies on " + dependencies;
             }
-            PatchLogger.info(message);
+            LOG.info(message);
             
             return patchId;
         } finally {
@@ -207,9 +207,9 @@ final class DefaultRepository implements Repository {
         Lock.tryLock();
         try {
             File patchdir = Parser.getMetadataDirectory(rootPath, patchId);
-            IllegalStateAssertion.assertTrue(patchdir.isDirectory(), "Archive does not exist: " + patchId);
+            PatchAssertion.assertTrue(patchdir.isDirectory(), "Archive does not exist: " + patchId);
             IOUtils.rmdirs(patchdir.toPath());
-            PatchLogger.info("Removed " + patchId);
+            LOG.info("Removed " + patchId);
             return true;
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
@@ -233,7 +233,7 @@ final class DefaultRepository implements Repository {
             } catch (IOException ex) {
                 throw new IllegalStateException(ex);
             }
-            PatchLogger.info("Added post install command to " + patchId);
+            LOG.info("Added post install command to " + patchId);
         } finally {
             Lock.unlock();
         }

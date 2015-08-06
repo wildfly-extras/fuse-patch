@@ -88,8 +88,8 @@ public class SimpleRepositoryTest {
         // Cannot remove non-existing archive
         try {
             repo.removeArchive(PatchId.fromString("xxx-1.0.0"));
-            Assert.fail("IllegalStateException expected");
-        } catch (IllegalStateException ex) {
+            Assert.fail("PatchException expected");
+        } catch (PatchException ex) {
             String message = ex.getMessage();
             Assert.assertTrue(message, message.contains("not exist: xxx-1.0.0"));
         }
