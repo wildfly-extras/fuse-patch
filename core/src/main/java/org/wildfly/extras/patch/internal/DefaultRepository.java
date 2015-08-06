@@ -20,6 +20,7 @@
 package org.wildfly.extras.patch.internal;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -34,6 +35,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.ZipInputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,7 +119,7 @@ final class DefaultRepository implements Repository {
         Lock.tryLock();
         try {
             Path sourcePath = getAbsolutePath(fileUrl);
-            PatchId patchId = PatchId.fromFile(sourcePath.toFile());
+            PatchId patchId = PatchId.fromURL(fileUrl);
             PatchAssertion.assertFalse(queryAvailable(null).contains(patchId), "Repository already contains " + patchId);
 
             // Verify one-off id
@@ -138,22 +140,24 @@ final class DefaultRepository implements Repository {
             
             // Build the patch set
             Package patchSet;
-            if (oneoffId != null) {
-                Package oneoffSet = getPackage(oneoffId);
-                Map<Path, Record> records = new HashMap<>();
-                for (Record rec : oneoffSet.getRecords()) {
-                    records.put(rec.getPath(), rec);
+            try (ZipInputStream zipInput = new ZipInputStream(new FileInputStream(sourcePath.toFile()))) {
+                if (oneoffId != null) {
+                    Package oneoffSet = getPackage(oneoffId);
+                    Map<Path, Record> records = new HashMap<>();
+                    for (Record rec : oneoffSet.getRecords()) {
+                        records.put(rec.getPath(), rec);
+                    }
+                    Package sourceSet = Parser.buildPackageFromZip(patchId, Record.Action.INFO, zipInput);
+                    for (Record rec : sourceSet.getRecords()) {
+                        records.put(rec.getPath(), rec);
+                    }
+                    Set<PatchId> depids = new LinkedHashSet<>(dependencies);
+                    depids.add(oneoffId);
+                    patchSet = Package.create(patchId, records.values(), depids);
+                } else {
+                    Package sourceSet = Parser.buildPackageFromZip(patchId, Record.Action.INFO, zipInput);
+                    patchSet = Package.create(patchId, sourceSet.getRecords(), dependencies);
                 }
-                Package sourceSet = Parser.buildPackageFromZip(patchId, Record.Action.INFO, sourcePath.toFile());
-                for (Record rec : sourceSet.getRecords()) {
-                    records.put(rec.getPath(), rec);
-                }
-                Set<PatchId> depids = new LinkedHashSet<>(dependencies);
-                depids.add(oneoffId);
-                patchSet = Package.create(patchId, records.values(), depids);
-            } else {
-                Package sourceSet = Parser.buildPackageFromZip(patchId, Record.Action.INFO, sourcePath.toFile());
-                patchSet = Package.create(patchId, sourceSet.getRecords(), dependencies);
             }
             
             // Assert no duplicate paths
@@ -176,7 +180,7 @@ final class DefaultRepository implements Repository {
             PatchAssertion.assertTrue(force || duplicates.isEmpty(), "Cannot add " + patchId + " because of duplicate paths in " + duplicates);
             
             // Add to repository
-            File targetFile = getPatchFile(patchId);
+            File targetFile = getPackagePath(patchId).toFile();
             targetFile.getParentFile().mkdirs();
             Files.copy(sourcePath, targetFile.toPath());
             Parser.writePackage(rootPath, patchSet);
@@ -248,14 +252,10 @@ final class DefaultRepository implements Repository {
                 IllegalArgumentAssertion.assertNotNull(seedPatch, "seedPatch");
                 patchId = getLatestAvailable(seedPatch.getPatchId().getName());
             }
-
-            // Get the patch zip file
-            File zipfile = getPatchFile(patchId);
-            PatchAssertion.assertTrue(zipfile.isFile(), "Cannot obtain patch file: " + zipfile);
-
             Package targetSet = getPackage(patchId);
+            PatchAssertion.assertNotNull(targetSet, "Repository does not contain package: " + patchId);
             Package smartSet = Package.smartSet(seedPatch, targetSet);
-            return new SmartPatch(smartSet, zipfile);
+            return SmartPatch.forInstall(smartSet, getPackageURL(patchId));
         } finally {
             Lock.unlock();
         }
@@ -284,12 +284,25 @@ final class DefaultRepository implements Repository {
         return result.toString().trim();
     }
 
-    private File getPatchFile(PatchId patchId) {
-        return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString(), patchId + ".zip")).toFile();
+    private Path getPackagePath(PatchId patchId) {
+        return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString(), patchId + ".zip"));
+    }
+
+    private URL getPackageURL(PatchId patchId) {
+        try {
+            return getPackagePath(patchId).toFile().toURI().toURL();
+        } catch (MalformedURLException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 
     private Path getAbsolutePath(URL url) {
         IllegalArgumentAssertion.assertTrue("file".equals(url.getProtocol()), "Unsupported protocol: " + url);
         return new File(url.getPath()).getAbsoluteFile().toPath();
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultRepository[rootPath=" + rootPath + "]";
     }
 }

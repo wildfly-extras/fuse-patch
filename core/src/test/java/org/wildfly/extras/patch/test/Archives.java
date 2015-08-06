@@ -68,10 +68,6 @@ class Archives {
         return targetFile.toURI().toURL();
     }
 
-    static File getZipFileFoo100() throws IOException {
-        return new File(getZipUrlFoo100().getPath());
-    }
-    
     /**
      * foo-1.0.0.SP1.zip
      * 
@@ -85,10 +81,6 @@ class Archives {
             archive.as(ZipExporter.class).exportTo(targetFile, true);
         }
         return targetFile.toURI().toURL();
-    }
-    
-    static File getZipFileFoo100SP1() throws IOException {
-        return new File(getZipUrlFoo100SP1().getPath());
     }
     
     /**
@@ -112,10 +104,6 @@ class Archives {
         return targetFile.toURI().toURL();
     }
     
-    static File getZipFileFoo110() throws IOException {
-        return new File(getZipUrlFoo110().getPath());
-    }
-    
     /**
      * bar-1.0.0.zip
      * 
@@ -133,10 +121,6 @@ class Archives {
             archive.as(ZipExporter.class).exportTo(targetFile, true);
         }
         return targetFile.toURI().toURL();
-    }
-    
-    static File getZipFileBar100() throws IOException {
-        return new File(getZipUrlBar100().getPath());
     }
     
     static void assertActionPathEquals(String line, Record was) {

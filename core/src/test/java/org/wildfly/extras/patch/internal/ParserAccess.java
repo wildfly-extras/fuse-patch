@@ -19,18 +19,21 @@
  */
 package org.wildfly.extras.patch.internal;
 
-import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.util.zip.ZipInputStream;
 
-import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Record;
 
 public final class ParserAccess {
 
-    public static Package getPackage(File zipFile) throws IOException {
-        PatchId patchId = PatchId.fromFile(zipFile);
-        return Parser.buildPackageFromZip(patchId, Record.Action.ADD, zipFile);
+    public static Package getPackage(URL zipurl) throws IOException {
+        PatchId patchId = PatchId.fromURL(zipurl);
+        try (ZipInputStream zipInput = new ZipInputStream(zipurl.openStream())) {
+            return Parser.buildPackageFromZip(patchId, Record.Action.ADD, zipInput);
+        }
     }
 
 }

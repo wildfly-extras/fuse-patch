@@ -19,7 +19,6 @@
  */
 package org.wildfly.extras.patch.internal;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -133,7 +132,7 @@ public class Main {
             PatchId patchId;
             String[] cmdarr;
             if (options.addUrl != null) {
-                patchId = PatchId.fromFile(new File(options.addUrl.getPath()));
+                patchId = PatchId.fromURL(options.addUrl);
                 cmdarr = options.addCmd;
             } else {
                 patchId = PatchId.fromString(options.addCmd[0]);

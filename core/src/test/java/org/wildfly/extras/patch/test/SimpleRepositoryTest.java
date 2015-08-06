@@ -110,9 +110,9 @@ public class SimpleRepositoryTest {
         Repository repo = patchTool.getRepository();
 
         // copy a file to the root of the repository
-        File zipFileA = Archives.getZipFileFoo100();
-        File targetFile = repoPaths[1].resolve(zipFileA.getName()).toFile();
-        Files.copy(zipFileA.toPath(), targetFile.toPath());
+        Path zipPathA = Paths.get(Archives.getZipUrlFoo100().toURI());
+        File targetFile = repoPaths[1].resolve(zipPathA.getFileName()).toFile();
+        Files.copy(zipPathA, targetFile.toPath());
 
         PatchId patchId = repo.addArchive(targetFile.toURI().toURL());
         Package patchSet = repo.getPackage(patchId);
@@ -131,7 +131,7 @@ public class SimpleRepositoryTest {
 
         repo.addArchive(Archives.getZipUrlFoo100());
         Path copyPath = Paths.get("target/foo-copy-1.1.0.zip");
-        Files.copy(Archives.getZipFileFoo110().toPath(), copyPath, REPLACE_EXISTING);
+        Files.copy(Paths.get(Archives.getZipUrlFoo110().toURI()), copyPath, REPLACE_EXISTING);
         try {
             repo.addArchive(copyPath.toUri().toURL());
             Assert.fail("PatchException expected");

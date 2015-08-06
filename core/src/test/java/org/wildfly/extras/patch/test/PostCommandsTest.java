@@ -38,13 +38,13 @@ import org.wildfly.extras.patch.utils.IOUtils;
 
 public class PostCommandsTest {
 
-    final static Path serverPathA = Paths.get("target/servers/PostCommandsTest/srvA");
+    final static Path serverPath = Paths.get("target/servers/PostCommandsTest/srvA");
     final static Path[] repoPaths = new Path[3];
 
     @BeforeClass
     public static void setUp() throws Exception {
-        IOUtils.rmdirs(serverPathA);
-        serverPathA.toFile().mkdirs();
+        IOUtils.rmdirs(serverPath);
+        serverPath.toFile().mkdirs();
         for (int i = 0; i < 3; i++) {
             repoPaths[i] = Paths.get("target/repos/PostCommandsTest/repo" + (i + 1));
             IOUtils.rmdirs(repoPaths[i]);
@@ -55,7 +55,7 @@ public class PostCommandsTest {
     @Test
     public void testPostCommands() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[0]).serverPath(serverPathA).build();
+        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[0]).serverPath(serverPath).build();
         Server server = patchTool.getServer();
         Repository repo = patchTool.getRepository();
         

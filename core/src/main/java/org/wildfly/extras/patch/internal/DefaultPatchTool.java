@@ -113,7 +113,7 @@ public final class DefaultPatchTool implements PatchTool {
             for (Record rec : installed.getRecords()) {
                 records.add(Record.create(patchId, Action.DEL, rec.getPath(), rec.getChecksum()));
             }
-            SmartPatch smartPatch = new SmartPatch(Package.create(patchId, records), null);
+            SmartPatch smartPatch = SmartPatch.forUninstall(Package.create(patchId, records));
             return getServer().applySmartPatch(smartPatch, force);
         } finally {
             Lock.unlock();
@@ -134,5 +134,10 @@ public final class DefaultPatchTool implements PatchTool {
         Package seedPatch = serverId != null ? getServer().getPackage(serverId) : null;
         SmartPatch smartPatch = getRepository().getSmartPatch(seedPatch, patchId);
         return getServer().applySmartPatch(smartPatch, force);
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultPatchTool[server=" + serverPath + ",repo=" + repoUrl + "]";
     }
 }
