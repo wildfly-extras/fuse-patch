@@ -159,10 +159,10 @@ final class WildFlyServer implements Server {
             }
             PatchAssertion.assertTrue(unsatisfied.isEmpty(), "Unsatisfied dependencies: " + unsatisfied);
             
-            
             PatchId patchId = smartPatch.getPatchId();
             Package serverSet = getPackage(patchId.getName());
-            
+            PatchId serverId = serverSet != null ? serverSet.getPatchId() : null;
+
             // Get the latest applied records
             Map<Path, Record> serverRecords = new HashMap<>();
             if (serverSet != null) {
@@ -216,13 +216,21 @@ final class WildFlyServer implements Server {
             updateServerFiles(smartPatch);
             updateManagedPaths(smartPatch);
 
-            // Update server side metadata
             Package infoset;
-            if (smartPatch.isUninstall()) {
-                infoset = Package.create(patchId, smartPatch.getRecords());
-                File packageDir = Parser.getMetadataDirectory(getWorkspace(), patchId).getParentFile();
-                IOUtils.rmdirs(packageDir.toPath());
-            } else {
+            
+            // Update server side metadata
+            if (!smartPatch.isUninstall()) {
+                
+                // Remove higer versions on downgrade
+                if (serverId != null && serverId.compareTo(patchId) > 0) {
+                    for (PatchId auxId : Parser.queryAppliedPackages(getWorkspace(), patchId.getName(), false)) {
+                        if (auxId.compareTo(patchId) > 0) {
+                            File packageDir = Parser.getMetadataDirectory(getWorkspace(), auxId).getParentFile();
+                            IOUtils.rmdirs(packageDir.toPath());
+                        }
+                    }
+                }
+                
                 Set<Record> inforecs = new HashSet<>();
                 for (Record rec : serverRecords.values()) {
                     inforecs.add(Record.create(rec.getPath(), rec.getChecksum()));
@@ -230,13 +238,19 @@ final class WildFlyServer implements Server {
                 infoset = Package.create(patchId, inforecs);
                 Parser.writePackage(getWorkspace(), infoset);
             }
+            
+            // Remove metadata on uninstall
+            else {
+                infoset = Package.create(patchId, smartPatch.getRecords());
+                File packageDir = Parser.getMetadataDirectory(getWorkspace(), patchId).getParentFile();
+                IOUtils.rmdirs(packageDir.toPath());
+            }
 
             // Write audit log
-            final String message;
-            if (serverSet == null) {
+            String message;
+            if (serverId == null) {
                 message = "Installed " + patchId;
             } else {
-                PatchId serverId = serverSet.getPatchId();
                 if (serverId.compareTo(patchId) < 0) {
                     message = "Upgraded from " + serverId + " to " + patchId;
                 } else if (serverId.compareTo(patchId) == 0) {
@@ -255,22 +269,24 @@ final class WildFlyServer implements Server {
             LOG.info(message);
             
             // Run post install commands
-            Runtime runtime = Runtime.getRuntime();
-            File procdir = homePath.toFile();
-            for (String cmd : smartPatch.getPostCommands()) {
-                LOG.info("Run: {}", cmd);
-                String[] envarr = {};
-                String[] cmdarr = cmd.split("\\s") ;
-                Process proc = runtime.exec(cmdarr, envarr, procdir);
-                try {
-                    startStreaming(proc.getInputStream(), System.out);
-                    startStreaming(proc.getErrorStream(), System.err);
-                    if (proc.waitFor() != 0) {
-                        LOG.error("Command did not terminate normally: " + cmd);
-                        break;
+            if (!smartPatch.isUninstall()) {
+                Runtime runtime = Runtime.getRuntime();
+                File procdir = homePath.toFile();
+                for (String cmd : smartPatch.getPostCommands()) {
+                    LOG.info("Run: {}", cmd);
+                    String[] envarr = {};
+                    String[] cmdarr = cmd.split("\\s") ;
+                    Process proc = runtime.exec(cmdarr, envarr, procdir);
+                    try {
+                        startStreaming(proc.getInputStream(), System.out);
+                        startStreaming(proc.getErrorStream(), System.err);
+                        if (proc.waitFor() != 0) {
+                            LOG.error("Command did not terminate normally: " + cmd);
+                            break;
+                        }
+                    } catch (InterruptedException ex) {
+                        // ignore
                     }
-                } catch (InterruptedException ex) {
-                    // ignore
                 }
             }
             
@@ -305,7 +321,7 @@ final class WildFlyServer implements Server {
             addupdPaths.add(rec.getPath());
         }
         File patchFile = smartPatch.getPatchFile();
-        if (patchFile != null) {
+        if (!smartPatch.isUninstall()) {
             try (ZipInputStream zip = new ZipInputStream(new FileInputStream(patchFile))) {
                 ZipEntry entry = zip.getNextEntry();
                 while (entry != null) {
@@ -326,7 +342,7 @@ final class WildFlyServer implements Server {
         }
         
         // Handle replace and add sets
-        if (patchFile != null) {
+        if (!smartPatch.isUninstall()) {
             try (ZipInputStream zip = new ZipInputStream(new FileInputStream(patchFile))) {
                 byte[] buffer = new byte[1024];
                 ZipEntry entry = zip.getNextEntry();

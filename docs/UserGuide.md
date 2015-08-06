@@ -175,6 +175,28 @@ DEL lib/foo-1.1.0.jar 2509787836
 
 Packageds can be unsinstalled from the server.
 
+```
+$ bin/fusepatch.sh --install foo-1.0.0
+Uninstalled foo-1.0.0
+```
+
+The audit log shows that all was removed
+
+```
+$ bin/fusepatch.sh --audit-log
+
+...
+
+# 06-Aug-2015 15:20:11
+# Uninstalled foo-1.0.0
+
+[content]
+DEL config/propsA.properties 1396661911
+DEL config/propsB.properties 427912505
+DEL config/remove-me.properties 1396661911
+DEL lib/foo-1.0.0.jar 3303198020
+```
+
 ### Conflicting Packages
 
 It is guaranteed that the repository does not contain conflicting packages. Specifically, the set of paths associated with one package cannot overlap with the set of paths from another package. This allows packages to get applied to the server independently without the possibility that content from one package overrides the files from another.
