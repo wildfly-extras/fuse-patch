@@ -58,7 +58,7 @@ public class SimpleUpdateTest {
     }
 
     @Test
-    public void testSimpleUpdate() throws Exception {
+    public void testInstallUpdateUninstall() throws Exception {
 
         PatchTool patchTool = new PatchToolBuilder().serverPath(serverPaths[0]).build();
         Server server = patchTool.getServer();
@@ -114,7 +114,7 @@ public class SimpleUpdateTest {
         Assert.assertEquals("config/propsB.properties [foo-1.0.0]", mpaths.get(1).toString());
         Assert.assertEquals("lib/foo-1.1.0.jar [foo-1.1.0]", mpaths.get(2).toString());
         
-        // Verify managed paths
+        // Verify selected managed paths
         mpaths = server.queryManagedPaths("config/props");
         Assert.assertEquals(2, mpaths.size());
         Assert.assertEquals("config/propsA.properties [foo-1.1.0]", mpaths.get(0).toString());
@@ -125,6 +125,41 @@ public class SimpleUpdateTest {
         Assert.assertEquals(1, patches.size());
         Assert.assertEquals(patchId, patches.get(0));
         Assert.assertEquals(curSet, server.getPackage("foo"));
+        
+        // Cannot uninstall non-existing package
+        try {
+            patchTool.uninstall(PatchId.fromString("xxx-1.0.0"), false);
+            Assert.fail("IllegalStateException expected");
+        } catch (IllegalStateException ex) {
+            String message = ex.getMessage();
+            Assert.assertTrue(message, message.contains("not installed: xxx-1.0.0"));
+        }
+        
+        // Cannot uninstall old package
+        try {
+            patchTool.uninstall(setA.getPatchId(), false);
+            Assert.fail("IllegalStateException expected");
+        } catch (IllegalStateException ex) {
+            String message = ex.getMessage();
+            Assert.assertTrue(message, message.contains("" + setB.getPatchId()));
+            Assert.assertTrue(message, message.contains("cannot uninstall: " + setA.getPatchId()));
+        }
+        
+        // Uninstall the package
+        curSet = patchTool.uninstall(patchId, false);
+        Assert.assertEquals(patchId, curSet.getPatchId());
+        Assert.assertEquals(3, curSet.getRecords().size());
+        Archives.assertActionPathEquals("DEL config/propsA.properties", curSet.getRecords().get(0));
+        Archives.assertActionPathEquals("DEL config/propsB.properties", curSet.getRecords().get(1));
+        Archives.assertActionPathEquals("DEL lib/foo-1.1.0.jar", curSet.getRecords().get(2));
+
+        // Verify managed paths
+        mpaths = server.queryManagedPaths(null);
+        Assert.assertEquals(0, mpaths.size());
+
+        // Verify query
+        patches = server.queryAppliedPackages();
+        Assert.assertEquals(0, patches.size());
     }
     
     @Test

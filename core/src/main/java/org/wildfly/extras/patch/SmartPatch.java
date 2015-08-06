@@ -50,7 +50,6 @@ public final class SmartPatch {
     private final Map<Path, Record> addMap = new HashMap<>();
     
     public SmartPatch(Package patchSet, File patchFile) {
-        IllegalArgumentAssertion.assertNotNull(patchFile, "patchFile");
         IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
         this.patchSet = patchSet;
         this.patchFile = patchFile;
@@ -80,6 +79,10 @@ public final class SmartPatch {
         return patchFile;
     }
 
+    public boolean isUninstall() {
+        return patchFile == null;
+    }
+    
     public List<Record> getRecords() {
         return patchSet.getRecords();
     }

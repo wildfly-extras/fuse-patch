@@ -217,12 +217,19 @@ final class WildFlyServer implements Server {
             updateManagedPaths(smartPatch);
 
             // Update server side metadata
-            Set<Record> inforecs = new HashSet<>();
-            for (Record rec : serverRecords.values()) {
-                inforecs.add(Record.create(rec.getPath(), rec.getChecksum()));
+            Package infoset;
+            if (smartPatch.isUninstall()) {
+                infoset = Package.create(patchId, smartPatch.getRecords());
+                File packageDir = Parser.getMetadataDirectory(getWorkspace(), patchId).getParentFile();
+                IOUtils.rmdirs(packageDir.toPath());
+            } else {
+                Set<Record> inforecs = new HashSet<>();
+                for (Record rec : serverRecords.values()) {
+                    inforecs.add(Record.create(rec.getPath(), rec.getChecksum()));
+                }
+                infoset = Package.create(patchId, inforecs);
+                Parser.writePackage(getWorkspace(), infoset);
             }
-            Package infoset = Package.create(patchId, inforecs);
-            Parser.writePackage(getWorkspace(), infoset);
 
             // Write audit log
             final String message;
@@ -233,7 +240,11 @@ final class WildFlyServer implements Server {
                 if (serverId.compareTo(patchId) < 0) {
                     message = "Upgraded from " + serverId + " to " + patchId;
                 } else if (serverId.compareTo(patchId) == 0) {
-                    message = "Reinstalled " + patchId;
+                    if (smartPatch.isUninstall()) {
+                        message = "Uninstalled " + patchId;
+                    } else {
+                        message = "Reinstalled " + patchId;
+                    }
                 } else {
                     message = "Downgraded from " + serverId + " to " + patchId;
                 }
@@ -294,14 +305,16 @@ final class WildFlyServer implements Server {
             addupdPaths.add(rec.getPath());
         }
         File patchFile = smartPatch.getPatchFile();
-        try (ZipInputStream zip = new ZipInputStream(new FileInputStream(patchFile))) {
-            ZipEntry entry = zip.getNextEntry();
-            while (entry != null) {
-                if (!entry.isDirectory()) {
-                    Path path = Paths.get(entry.getName());
-                    addupdPaths.remove(path);
+        if (patchFile != null) {
+            try (ZipInputStream zip = new ZipInputStream(new FileInputStream(patchFile))) {
+                ZipEntry entry = zip.getNextEntry();
+                while (entry != null) {
+                    if (!entry.isDirectory()) {
+                        Path path = Paths.get(entry.getName());
+                        addupdPaths.remove(path);
+                    }
+                    entry = zip.getNextEntry();
                 }
-                entry = zip.getNextEntry();
             }
         }
         IllegalStateAssertion.assertTrue(addupdPaths.isEmpty(), "Patch file does not contain expected paths: " + addupdPaths);
@@ -313,28 +326,30 @@ final class WildFlyServer implements Server {
         }
         
         // Handle replace and add sets
-        try (ZipInputStream zip = new ZipInputStream(new FileInputStream(patchFile))) {
-            byte[] buffer = new byte[1024];
-            ZipEntry entry = zip.getNextEntry();
-            while (entry != null) {
-                if (!entry.isDirectory()) {
-                    Path path = Paths.get(entry.getName());
-                    if (smartPatch.isReplacePath(path) || smartPatch.isAddPath(path)) {
-                        File file = homePath.resolve(path).toFile();
-                        file.getParentFile().mkdirs();
-                        try (FileOutputStream fos = new FileOutputStream(file)) {
-                            int read = zip.read(buffer);
-                            while (read > 0) {
-                                fos.write(buffer, 0, read);
-                                read = zip.read(buffer);
+        if (patchFile != null) {
+            try (ZipInputStream zip = new ZipInputStream(new FileInputStream(patchFile))) {
+                byte[] buffer = new byte[1024];
+                ZipEntry entry = zip.getNextEntry();
+                while (entry != null) {
+                    if (!entry.isDirectory()) {
+                        Path path = Paths.get(entry.getName());
+                        if (smartPatch.isReplacePath(path) || smartPatch.isAddPath(path)) {
+                            File file = homePath.resolve(path).toFile();
+                            file.getParentFile().mkdirs();
+                            try (FileOutputStream fos = new FileOutputStream(file)) {
+                                int read = zip.read(buffer);
+                                while (read > 0) {
+                                    fos.write(buffer, 0, read);
+                                    read = zip.read(buffer);
+                                }
+                            }
+                            if (file.getName().endsWith(".sh") || file.getName().endsWith(".bat")) {
+                                file.setExecutable(true);
                             }
                         }
-                        if (file.getName().endsWith(".sh") || file.getName().endsWith(".bat")) {
-                            file.setExecutable(true);
-                        }
                     }
+                    entry = zip.getNextEntry();
                 }
-                entry = zip.getNextEntry();
             }
         }
         

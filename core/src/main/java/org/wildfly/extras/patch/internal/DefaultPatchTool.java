@@ -23,21 +23,26 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
+import org.wildfly.extras.patch.Record;
 import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.Server;
 import org.wildfly.extras.patch.SmartPatch;
+import org.wildfly.extras.patch.Record.Action;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
+import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 import org.wildfly.extras.patch.utils.PatchAssertion;
 
 
 public final class DefaultPatchTool implements PatchTool {
 
-    private Server serverInstance;
-    private Repository patchRepository;
+    private Server server;
+    private Repository repository;
     private Path serverPath;
     private URL repoUrl;
     
@@ -48,17 +53,17 @@ public final class DefaultPatchTool implements PatchTool {
 
     @Override
     public Server getServer() {
-        if (serverInstance == null) {
-            serverInstance = new WildFlyServer(serverPath);
+        if (server == null) {
+            server = new WildFlyServer(serverPath);
         }
-        return serverInstance;
+        return server;
     }
 
     @Override
     public Repository getRepository() {
-        if (patchRepository == null) {
+        if (repository == null) {
             if (repoUrl == null) {
-                repoUrl = DefaultPatchRepository.getConfiguredUrl();
+                repoUrl = DefaultRepository.getConfiguredUrl();
                 if (repoUrl == null) {
                     try {
                         repoUrl = getServer().getDefaultRepositoryPath().toUri().toURL();
@@ -67,9 +72,9 @@ public final class DefaultPatchTool implements PatchTool {
                     }
                 }
             }
-            patchRepository = new DefaultPatchRepository(repoUrl);
+            repository = new DefaultRepository(repoUrl);
         }
-        return patchRepository;
+        return repository;
     }
     
     @Override
@@ -96,6 +101,26 @@ public final class DefaultPatchTool implements PatchTool {
         }
     }
     
+    @Override
+    public Package uninstall(PatchId patchId, boolean force) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
+        Lock.tryLock();
+        try {
+            List<Record> records = new ArrayList<>();
+            Package installed = server.getPackage(patchId);
+            IllegalStateAssertion.assertNotNull(installed, "Package not installed: " + patchId);
+            PatchId latestId = server.getPackage(patchId.getName()).getPatchId();
+            IllegalStateAssertion.assertEquals(patchId, latestId, "Active package is " + latestId + ", cannot uninstall: " + patchId);
+            for (Record rec : installed.getRecords()) {
+                records.add(Record.create(patchId, Action.DEL, rec.getPath(), rec.getChecksum()));
+            }
+            SmartPatch smartPatch = new SmartPatch(Package.create(patchId, records), null);
+            return getServer().applySmartPatch(smartPatch, force);
+        } finally {
+            Lock.unlock();
+        }
+    }
+
     private Package installInternal(PatchId patchId, boolean force) throws IOException {
         
         PatchId serverId = null;

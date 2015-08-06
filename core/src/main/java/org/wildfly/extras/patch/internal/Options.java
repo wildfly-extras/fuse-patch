@@ -63,12 +63,15 @@ final class Options {
     @Option(name = "--remove", forbids = { "--add" },  usage = "Remove the given patch id from the repository")
     String removeId;
     
-    @Option(name = "--install", forbids = { "--update" },  usage = "Install the given patch id to the server")
+    @Option(name = "--install", forbids = { "--update", "--uninstall" },  usage = "Install the given patch id to the server")
     String installId;
     
-    @Option(name = "--update", forbids = { "--install" },  usage = "Update the server for the given patch name")
+    @Option(name = "--update", forbids = { "--install", "--uninstall" },  usage = "Update the server for the given patch name")
     String updateName;
 
+    @Option(name = "--uninstall", forbids = { "--install", "--update" },  usage = "Uninstall the given patch id from the server")
+    String uninstallId;
+    
     @Option(name = "--force", usage = "Force an --add, --install or --update operation")
     boolean force;
 }

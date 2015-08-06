@@ -156,6 +156,13 @@ public class Main {
             opfound = true;
         } 
         
+        // Install to server
+        if (options.uninstallId != null) {
+            PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).build();
+            patchTool.uninstall(PatchId.fromString(options.uninstallId), options.force);
+            opfound = true;
+        }
+        
         // Print the audit log
         if (options.auditLog) {
             PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).build();

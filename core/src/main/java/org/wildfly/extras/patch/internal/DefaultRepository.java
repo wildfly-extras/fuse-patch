@@ -47,13 +47,13 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 import org.wildfly.extras.patch.utils.PatchAssertion;
 
-final class DefaultPatchRepository implements Repository {
+final class DefaultRepository implements Repository {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultPatchRepository.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultRepository.class);
     
     private final Path rootPath;
 
-    DefaultPatchRepository(URL repoUrl) {
+    DefaultRepository(URL repoUrl) {
         if (repoUrl == null) {
             repoUrl = getConfiguredUrl();
         }
@@ -206,11 +206,8 @@ final class DefaultPatchRepository implements Repository {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         Lock.tryLock();
         try {
-            if (!Parser.getMetadataFile(rootPath, patchId).exists()) { 
-                PatchLogger.warn("Patch does not exist: " + patchId);
-                return false;
-            }
-            File patchdir = Parser.getPatchDirectory(rootPath, patchId);
+            File patchdir = Parser.getMetadataDirectory(rootPath, patchId);
+            IllegalStateAssertion.assertTrue(patchdir.isDirectory(), "Archive does not exist: " + patchId);
             IOUtils.rmdirs(patchdir.toPath());
             PatchLogger.info("Removed " + patchId);
             return true;

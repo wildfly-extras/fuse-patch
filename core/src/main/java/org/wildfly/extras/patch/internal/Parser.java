@@ -113,7 +113,8 @@ final class Parser {
     static Package readPackage(Path rootPath, PatchId patchId) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
-        return readPackage(assertMetadataFile(rootPath, patchId));
+        File metadata = getMetadataFile(rootPath, patchId);
+        return metadata.isFile() ? readPackage(metadata) : null;
     }
 
     static List<PatchId> queryAppliedPackages(Path rootPath, final String prefix, boolean latest) {
@@ -217,12 +218,18 @@ final class Parser {
         writePackage(patchSet, outstream, true);
     }
 
-    static File getPatchDirectory(Path rootPath, PatchId patchId) {
+    static File getMetadataDirectory(Path rootPath, PatchId patchId) {
         return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString())).toFile();
     }
 
+    static File assertMetadataDirectory(Path rootPath, PatchId patchId) {
+        File metadataDir = getMetadataDirectory(rootPath, patchId);
+        IllegalStateAssertion.assertTrue(metadataDir.isDirectory(), "Cannot obtain metadata directory: " + metadataDir);
+        return metadataDir;
+    }
+    
     static File getMetadataFile(Path rootPath, PatchId patchId) {
-        return getPatchDirectory(rootPath, patchId).toPath().resolve(patchId + ".metadata").toFile();
+        return getMetadataDirectory(rootPath, patchId).toPath().resolve(patchId + ".metadata").toFile();
     }
 
     static File assertMetadataFile(Path rootPath, PatchId patchId) {

@@ -9,15 +9,16 @@ Here we describe typical workflows and some advanced use cases
 ### Contents
 
 1. [Download and Install](UserGuide.md#download-and-install)
-2. [Installing a package](UserGuide.md#installing-a-package)
+2. [Installing a Package](UserGuide.md#installing-a-package)
 3. [Loading the Repository](UserGuide.md#loading-the-repository)
-4. [Updating the Server](UserGuide.md#updating-the-server)
-5. [Downgrading the Server](UserGuide.md#downgrading-the-server)
-6. [Conflicting Packages](UserGuide.md#conflicting-packages)
-7. [Conflicting Server Paths](UserGuide.md#conflicting-server-paths)
-8. [Running Post-Install Commands](UserGuide.md#running-post-install-commands)
-9. [Support for One-Off Patches](UserGuide.md#support-for-one-off-patches)
-10. [Support for Package dependencies](UserGuide.md#support-for-package-dependencies)
+4. [Upgrading a Package](UserGuide.md#upgrading-a-package)
+5. [Downgrading a Package](UserGuide.md#downgrading-a-package)
+6. [Uninstalling a Package](UserGuide.md#uninstalling-a-package)
+7. [Conflicting Packages](UserGuide.md#conflicting-packages)
+8. [Conflicting Server Paths](UserGuide.md#conflicting-server-paths)
+9. [Running Post-Install Commands](UserGuide.md#running-post-install-commands)
+10. [Support for One-Off Patches](UserGuide.md#support-for-one-off-patches)
+11. [Support for Package Dependencies](UserGuide.md#support-for-package-dependencies)
 
 ### Download and Install
 
@@ -41,6 +42,7 @@ fusepatch [options...]
  --remove VAL             : Remove the given patch id from the repository
  --repository URL         : URL to the patch repository
  --server PATH            : Path to the target server
+ --uninstall VAL          : Uninstall the given patch id from the server
  --update VAL             : Update the server for the given patch name
  ```
  
@@ -51,9 +53,9 @@ $ bin/fusepatch.sh --query-repository
 fuse-patch-distro-wildfly-1.5.0
 ```
 
-### Installing a package
+### Installing a Package
 
-Lets assume we work with WildFly and want to use fusepatch from within WildFly.
+Lets assume we work with WildFly and want to use fusepatch with WildFly.
 
 ```
 $ bin/fusepatch.sh --server ../wildfly-8.2.0.Final --update fuse-patch-distro-wildfly
@@ -106,7 +108,7 @@ $ bin/fusepatch.sh --remove foo-1.0.0
 Removed foo-1.0.0
 ```
 
-###  Updating the Server
+###  Upgrading a Package
 
 The server can be updated with packages from the repository.
 
@@ -143,7 +145,7 @@ DEL lib/foo-1.0.0.jar 2509787836
 ADD lib/foo-1.1.0.jar 2509787836
 ```
 
-###  Downgrading the Server
+###  Downgrading a Package
 
 The server can be reset to any given version
 
@@ -168,6 +170,10 @@ ADD config/remove-me.properties 1684822571
 ADD lib/foo-1.0.0.jar 2509787836
 DEL lib/foo-1.1.0.jar 2509787836
 ```
+
+###  Uninstalling a Package
+
+Packageds can be unsinstalled from the server.
 
 ### Conflicting Packages
 

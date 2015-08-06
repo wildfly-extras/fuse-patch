@@ -61,11 +61,13 @@ public class SimpleRepositoryTest {
         PatchTool patchTool = new PatchToolBuilder().repositoryUrl(urlA).build();
         Repository repo = patchTool.getRepository();
 
+        // Add archive foo-1.0.0
         PatchId patchId = repo.addArchive(Archives.getZipUrlFoo100());
         Package patchSet = repo.getPackage(patchId);
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patchSet.getPatchId());
         Assert.assertEquals(4, patchSet.getRecords().size());
 
+        // Add archive foo-1.1.0
         patchId = repo.addArchive(Archives.getZipUrlFoo110());
         repo.addPostCommand(patchId, new String[] { "bin/fusepatch.sh", "--query-server" });
         patchSet = repo.getPackage(patchId);
@@ -74,6 +76,7 @@ public class SimpleRepositoryTest {
         Assert.assertEquals(1, patchSet.getPostCommands().size());
         Assert.assertEquals("bin/fusepatch.sh --query-server", patchSet.getPostCommands().get(0));
 
+        // Query available
         List<PatchId> patches = repo.queryAvailable(null);
         Assert.assertEquals("Patch available", 2, patches.size());
 
@@ -82,6 +85,16 @@ public class SimpleRepositoryTest {
         Assert.assertEquals(PatchId.fromString("foo-1.1.0"), repo.getLatestAvailable("foo"));
         Assert.assertNull(repo.getLatestAvailable("bar"));
 
+        // Cannot remove non-existing archive
+        try {
+            repo.removeArchive(PatchId.fromString("xxx-1.0.0"));
+            Assert.fail("IllegalStateException expected");
+        } catch (IllegalStateException ex) {
+            String message = ex.getMessage();
+            Assert.assertTrue(message, message.contains("not exist: xxx-1.0.0"));
+        }
+        
+        // Remove archive
         Assert.assertTrue(repo.removeArchive(PatchId.fromString("foo-1.1.0")));
         patches = repo.queryAvailable(null);
         Assert.assertEquals("Patch available", 1, patches.size());
