@@ -34,6 +34,12 @@
     <dependencies>
         <dependency>
             <groupId>org.wildfly.extras.patch</groupId>
+            <artifactId>fuse-patch-config</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.extras.patch</groupId>
             <artifactId>fuse-patch-core</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>

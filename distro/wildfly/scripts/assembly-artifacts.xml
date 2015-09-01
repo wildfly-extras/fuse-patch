@@ -31,15 +31,24 @@
 	<!-- Dependency Sets -->
 	<dependencySets>
 		<dependencySet>
-			<outputDirectory>/modules/system/layers/fuse/org/wildfly/extras/patch/main</outputDirectory>
+			<outputDirectory>/modules/system/layers/fuse/org/wildfly/extras/config/main</outputDirectory>
             <includes>
-                <include>org.wildfly.extras.patch:fuse-patch-core:jar</include>
-                <include>args4j:args4j:jar</include>
+                <include>org.wildfly.extras.patch:fuse-patch-config:jar</include>
             </includes>
 			<useStrictFiltering>true</useStrictFiltering>
 			<scope>provided</scope>
 			<unpack>false</unpack>
 		</dependencySet>
+        <dependencySet>
+            <outputDirectory>/modules/system/layers/fuse/org/wildfly/extras/patch/main</outputDirectory>
+            <includes>
+                <include>org.wildfly.extras.patch:fuse-patch-core:jar</include>
+                <include>args4j:args4j:jar</include>
+            </includes>
+            <useStrictFiltering>true</useStrictFiltering>
+            <scope>provided</scope>
+            <unpack>false</unpack>
+        </dependencySet>
 	</dependencySets>
 
 	<fileSets>
