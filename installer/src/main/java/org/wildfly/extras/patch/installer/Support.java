@@ -75,7 +75,7 @@ final class Support {
     }
 
     static Process exec(String[] args, File dir) throws IOException, InterruptedException {
-        Process process = Runtime.getRuntime().exec(args, new String[0], dir);
+        Process process = Runtime.getRuntime().exec(args, null, dir);
         startPump(process.getInputStream(), System.out);
         startPump(process.getErrorStream(), System.err);
         return process;

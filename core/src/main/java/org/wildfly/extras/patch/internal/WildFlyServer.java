@@ -274,9 +274,8 @@ final class WildFlyServer implements Server {
                 File procdir = homePath.toFile();
                 for (String cmd : smartPatch.getPostCommands()) {
                     LOG.info("Run: {}", cmd);
-                    String[] envarr = {};
                     String[] cmdarr = cmd.split("\\s") ;
-                    Process proc = runtime.exec(cmdarr, envarr, procdir);
+                    Process proc = runtime.exec(cmdarr, null, procdir);
                     try {
                         startStreaming(proc.getInputStream(), System.out);
                         startStreaming(proc.getErrorStream(), System.err);
