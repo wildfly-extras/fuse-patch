@@ -98,10 +98,10 @@ public class SimpleUpdateTest {
         // Verify managed paths for foo-1.0.0
         List<ManagedPath> mpaths = server.queryManagedPaths(null);
         Assert.assertEquals(4, mpaths.size());
-        Assert.assertEquals("config/propsA.properties [foo-1.0.0]", mpaths.get(0).toString());
-        Assert.assertEquals("config/propsB.properties [foo-1.0.0]", mpaths.get(1).toString());
-        Assert.assertEquals("config/remove-me.properties [foo-1.0.0]", mpaths.get(2).toString());
-        Assert.assertEquals("lib/foo-1.0.0.jar [foo-1.0.0]", mpaths.get(3).toString());
+        Assert.assertEquals(ManagedPath.fromString("config/propsA.properties [foo-1.0.0]"), mpaths.get(0));
+        Assert.assertEquals(ManagedPath.fromString("config/propsB.properties [foo-1.0.0]"), mpaths.get(1));
+        Assert.assertEquals(ManagedPath.fromString("config/remove-me.properties [foo-1.0.0]"), mpaths.get(2));
+        Assert.assertEquals(ManagedPath.fromString("lib/foo-1.0.0.jar [foo-1.0.0]"), mpaths.get(3));
         
         // Verify smart patch to update to foo-1.1.0
         Package setB = ParserAccess.getPackage(Archives.getZipUrlFoo110());
@@ -125,15 +125,15 @@ public class SimpleUpdateTest {
         // Verify managed paths for foo-1.1.0
         mpaths = server.queryManagedPaths(null);
         Assert.assertEquals(3, mpaths.size());
-        Assert.assertEquals("config/propsA.properties [foo-1.1.0]", mpaths.get(0).toString());
-        Assert.assertEquals("config/propsB.properties [foo-1.0.0]", mpaths.get(1).toString());
-        Assert.assertEquals("lib/foo-1.1.0.jar [foo-1.1.0]", mpaths.get(2).toString());
+        Assert.assertEquals(ManagedPath.fromString("config/propsA.properties [foo-1.1.0]"), mpaths.get(0));
+        Assert.assertEquals(ManagedPath.fromString("config/propsB.properties [foo-1.0.0]"), mpaths.get(1));
+        Assert.assertEquals(ManagedPath.fromString("lib/foo-1.1.0.jar [foo-1.1.0]"), mpaths.get(2));
         
         // Verify selected managed paths for foo-1.1.0
-        mpaths = server.queryManagedPaths("config/props");
+        mpaths = server.queryManagedPaths("config" + File.separator + "props");
         Assert.assertEquals(2, mpaths.size());
-        Assert.assertEquals("config/propsA.properties [foo-1.1.0]", mpaths.get(0).toString());
-        Assert.assertEquals("config/propsB.properties [foo-1.0.0]", mpaths.get(1).toString());
+        Assert.assertEquals(ManagedPath.fromString("config/propsA.properties [foo-1.1.0]"), mpaths.get(0));
+        Assert.assertEquals(ManagedPath.fromString("config/propsB.properties [foo-1.0.0]"), mpaths.get(1));
         
         // Query applied packages
         patches = server.queryAppliedPackages();
@@ -186,10 +186,10 @@ public class SimpleUpdateTest {
         // Verify managed paths for foo-1.0.0
         mpaths = server.queryManagedPaths(null);
         Assert.assertEquals(4, mpaths.size());
-        Assert.assertEquals("config/propsA.properties [foo-1.0.0]", mpaths.get(0).toString());
-        Assert.assertEquals("config/propsB.properties [foo-1.0.0]", mpaths.get(1).toString());
-        Assert.assertEquals("config/remove-me.properties [foo-1.0.0]", mpaths.get(2).toString());
-        Assert.assertEquals("lib/foo-1.0.0.jar [foo-1.0.0]", mpaths.get(3).toString());
+        Assert.assertEquals(ManagedPath.fromString("config/propsA.properties [foo-1.0.0]"), mpaths.get(0));
+        Assert.assertEquals(ManagedPath.fromString("config/propsB.properties [foo-1.0.0]"), mpaths.get(1));
+        Assert.assertEquals(ManagedPath.fromString("config/remove-me.properties [foo-1.0.0]"), mpaths.get(2));
+        Assert.assertEquals(ManagedPath.fromString("lib/foo-1.0.0.jar [foo-1.0.0]"), mpaths.get(3));
         
         // Uninstall the package
         curSet = patchTool.uninstall(idA, false);
