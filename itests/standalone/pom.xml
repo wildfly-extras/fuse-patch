@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.wildfly.extras.patch</groupId>
         <artifactId>fuse-patch-itests</artifactId>
-        <version>1.5.0</version>
+        <version>1.6.0-SNAPSHOT</version>
     </parent>
 
     <name>Fuse Patch :: Integration Tests :: Standalone</name>
