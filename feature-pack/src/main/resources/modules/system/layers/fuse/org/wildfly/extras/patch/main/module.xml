@@ -28,7 +28,7 @@
     <main-class name="org.wildfly.extras.patch.internal.Main"/>
     
     <resources>
-        <resource-root path="fuse-patch-core-@project.version@.jar"/>
+        <artifact name="${org.wildfly.extras.patch:fuse-patch-core}" />
     </resources>
 
     <dependencies>

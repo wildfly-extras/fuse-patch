@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,20 +31,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.Record.Action;
+import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 
 /**
  * A package.
  *
- * A package associates a patch id with a list of artefacts ids. 
+ * A package associates a patch id with a list of artefacts ids.
  *
  * A {@code Package} is immutable.
- * 
+ *
  * @author thomas.diesler@jboss.com
  * @since 10-Jun-2015
  */
 public final class Package {
+
 
     private final PatchId identity;
     private final Map<Path, Record> recordsMap = new LinkedHashMap<>();
@@ -78,7 +79,7 @@ public final class Package {
                 removeMap.put(rec.getPath(), Record.create(null, Action.DEL, rec.getPath(), rec.getChecksum()));
             }
         }
-        
+
         Set<Record> records = new HashSet<>();
         for (Record rec : targetSet.getRecords()) {
             Path path = rec.getPath();
@@ -94,7 +95,7 @@ public final class Package {
                 }
             }
         }
-        
+
         records.addAll(removeMap.values());
         return new Package(targetSet.identity, records, targetSet.dependencies, targetSet.commands);
     }

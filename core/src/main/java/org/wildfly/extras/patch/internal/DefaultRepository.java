@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -52,7 +52,8 @@ import org.wildfly.extras.patch.utils.PatchAssertion;
 final class DefaultRepository implements Repository {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultRepository.class);
-    
+
+    private final URL baseURL;
     private final Path rootPath;
 
     DefaultRepository(URL repoUrl) {
@@ -60,11 +61,17 @@ final class DefaultRepository implements Repository {
             repoUrl = getConfiguredUrl();
         }
         IllegalStateAssertion.assertNotNull(repoUrl, "Cannot obtain repository URL");
+        this.baseURL = repoUrl;
 
         Path path = getAbsolutePath(repoUrl);
         PatchAssertion.assertTrue(path.toFile().isDirectory(), "Repository root does not exist: " + path);
         LOG.debug("Repository location: {}", path);
         this.rootPath = path;
+    }
+
+    @Override
+    public URL getBaseURL() {
+        return baseURL;
     }
 
     @Override
@@ -106,12 +113,12 @@ final class DefaultRepository implements Repository {
     public PatchId addArchive(URL fileUrl) throws IOException {
         return addArchive(fileUrl, null, Collections.<PatchId>emptySet(), false);
     }
-    
+
     @Override
     public PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException {
         return addArchive(fileUrl, oneoffId, Collections.<PatchId>emptySet(), false);
     }
-    
+
     @Override
     public PatchId addArchive(URL fileUrl, PatchId oneoffId, Set<PatchId> dependencies, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(fileUrl, "fileUrl");
@@ -127,7 +134,7 @@ final class DefaultRepository implements Repository {
                 File metadataFile = Parser.getMetadataFile(rootPath, oneoffId);
                 PatchAssertion.assertTrue(metadataFile.isFile(), "Cannot obtain target patch for: " + oneoffId);
             }
-            
+
             // Collect the paths from the latest other patch sets
             Map<Path, Record> combinedPathsMap = new HashMap<>();
             for (PatchId auxid : Parser.queryAppliedPackages(rootPath, null, false)) {
@@ -137,7 +144,7 @@ final class DefaultRepository implements Repository {
                     }
                 }
             }
-            
+
             // Build the patch set
             Package patchSet;
             try (ZipInputStream zipInput = new ZipInputStream(new FileInputStream(sourcePath.toFile()))) {
@@ -159,7 +166,7 @@ final class DefaultRepository implements Repository {
                     patchSet = Package.create(patchId, sourceSet.getRecords(), dependencies);
                 }
             }
-            
+
             // Assert no duplicate paths
             Set<PatchId> duplicates = new HashSet<>();
             for (Record rec : patchSet.getRecords()) {
@@ -178,18 +185,18 @@ final class DefaultRepository implements Repository {
                 }
             }
             PatchAssertion.assertTrue(force || duplicates.isEmpty(), "Cannot add " + patchId + " because of duplicate paths in " + duplicates);
-            
+
             // Add to repository
             File targetFile = getPackagePath(patchId).toFile();
             targetFile.getParentFile().mkdirs();
             Files.copy(sourcePath, targetFile.toPath());
             Parser.writePackage(rootPath, patchSet);
-            
-            // Remove the source file when it was placed in the repository 
+
+            // Remove the source file when it was placed in the repository
             if (sourcePath.startsWith(rootPath)) {
                 sourcePath.toFile().delete();
             }
-            
+
             String message = "Added " + patchId;
             if (oneoffId != null) {
                 message += " patching " + oneoffId;
@@ -198,7 +205,7 @@ final class DefaultRepository implements Repository {
                 message += " with dependencies on " + dependencies;
             }
             LOG.info(message);
-            
+
             return patchId;
         } finally {
             Lock.unlock();
@@ -213,7 +220,7 @@ final class DefaultRepository implements Repository {
             File patchdir = Parser.getMetadataDirectory(rootPath, patchId);
             PatchAssertion.assertTrue(patchdir.isDirectory(), "Archive does not exist: " + patchId);
             IOUtils.rmdirs(patchdir.toPath());
-            LOG.info("Removed " + patchId);
+            LOG.info("Removed {}", patchId);
             return true;
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
@@ -237,7 +244,7 @@ final class DefaultRepository implements Repository {
             } catch (IOException ex) {
                 throw new IllegalStateException(ex);
             }
-            LOG.info("Added post install command to " + patchId);
+            LOG.info("Added post install command to {}", patchId);
         } finally {
             Lock.unlock();
         }

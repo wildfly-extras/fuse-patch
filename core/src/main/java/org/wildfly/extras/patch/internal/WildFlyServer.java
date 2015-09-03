@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -73,7 +73,7 @@ final class WildFlyServer implements Server {
     public Path getDefaultRepositoryPath() {
         return homePath.resolve(Paths.get("fusepatch", "repository"));
     }
-    
+
     @Override
     public Path getServerHome() {
         return homePath;
@@ -139,16 +139,16 @@ final class WildFlyServer implements Server {
     @Override
     public Package applySmartPatch(SmartPatch smartPatch, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(smartPatch, "smartPatch");
-        
+
         // Do nothing on empty smart patch
         if (smartPatch.getRecords().isEmpty()) {
             LOG.warn("Patch {} has already been applied", smartPatch.getPatchId());
             return null;
         }
-        
+
         Lock.tryLock();
         try {
-            
+
             // Verify dependencies
             List<PatchId> appliedPatches = queryAppliedPackages();
             List<PatchId> unsatisfied = new ArrayList<>();
@@ -158,7 +158,7 @@ final class WildFlyServer implements Server {
                 }
             }
             PatchAssertion.assertTrue(unsatisfied.isEmpty(), "Unsatisfied dependencies: " + unsatisfied);
-            
+
             PatchId patchId = smartPatch.getPatchId();
             Package serverSet = getPackage(patchId.getName());
             PatchId serverId = serverSet != null ? serverSet.getPatchId() : null;
@@ -170,7 +170,7 @@ final class WildFlyServer implements Server {
                     serverRecords.put(rec.getPath(), rec);
                 }
             }
-            
+
             // Remove all records in the remove set
             for (Record rec : smartPatch.getRemoveSet()) {
                 Path path = getServerHome().resolve(rec.getPath());
@@ -179,20 +179,20 @@ final class WildFlyServer implements Server {
                 }
                 serverRecords.remove(rec.getPath());
             }
-            
+
             // Replace records in the replace set
             for (Record rec : smartPatch.getReplaceSet()) {
                 Path path = getServerHome().resolve(rec.getPath());
                 String filename = path.getFileName().toString();
                 if (!path.toFile().exists()) {
-                    LOG.warn("Attempt to replace a non existing file: ", rec.getPath());
+                    LOG.warn("Attempt to replace a non existing file: {}", rec.getPath());
                 } else if (filename.endsWith(".xml") || filename.endsWith(".properties")) {
                     Record exprec = serverRecords.get(rec.getPath());
                     Long expcheck = exprec != null ? exprec.getChecksum() : 0L;
                     Long wasCheck = IOUtils.getCRC32(path);
                     if (!expcheck.equals(wasCheck)) {
                         PatchAssertion.assertTrue(force, "Attempt to override an already modified file " + rec.getPath());
-                        LOG.warn("Overriding an already modified file: ", rec.getPath());
+                        LOG.warn("Overriding an already modified file: {}", rec.getPath());
                     }
                 }
                 serverRecords.put(rec.getPath(), rec);
@@ -206,7 +206,7 @@ final class WildFlyServer implements Server {
                     Long wasCheck = IOUtils.getCRC32(path);
                     if (!expcheck.equals(wasCheck)) {
                         PatchAssertion.assertTrue(force, "Attempt to add an already existing file " + rec.getPath());
-                        LOG.warn("Overriding an already existing file: ", rec.getPath());
+                        LOG.warn("Overriding an already existing file: {}", rec.getPath());
                     }
                 }
                 serverRecords.put(rec.getPath(), rec);
@@ -217,10 +217,10 @@ final class WildFlyServer implements Server {
             updateManagedPaths(smartPatch);
 
             Package infoset;
-            
+
             // Update server side metadata
             if (!smartPatch.isUninstall()) {
-                
+
                 // Remove higer versions on downgrade
                 if (serverId != null && serverId.compareTo(patchId) > 0) {
                     for (PatchId auxId : Parser.queryAppliedPackages(getWorkspace(), patchId.getName(), false)) {
@@ -230,7 +230,7 @@ final class WildFlyServer implements Server {
                         }
                     }
                 }
-                
+
                 Set<Record> inforecs = new HashSet<>();
                 for (Record rec : serverRecords.values()) {
                     inforecs.add(Record.create(rec.getPath(), rec.getChecksum()));
@@ -238,7 +238,7 @@ final class WildFlyServer implements Server {
                 infoset = Package.create(patchId, inforecs);
                 Parser.writePackage(getWorkspace(), infoset);
             }
-            
+
             // Remove metadata on uninstall
             else {
                 infoset = Package.create(patchId, smartPatch.getRecords());
@@ -264,10 +264,10 @@ final class WildFlyServer implements Server {
                 }
             }
             Parser.writeAuditLog(getWorkspace(), message, smartPatch);
-           
+
             // Write the log message
             LOG.info(message);
-            
+
             // Run post install commands
             if (!smartPatch.isUninstall()) {
                 Runtime runtime = Runtime.getRuntime();
@@ -280,7 +280,7 @@ final class WildFlyServer implements Server {
                         startStreaming(proc.getInputStream(), System.out);
                         startStreaming(proc.getErrorStream(), System.err);
                         if (proc.waitFor() != 0) {
-                            LOG.error("Command did not terminate normally: " + cmd);
+                            LOG.error("Command did not terminate normally: {}" + cmd);
                             break;
                         }
                     } catch (InterruptedException ex) {
@@ -288,7 +288,7 @@ final class WildFlyServer implements Server {
                     }
                 }
             }
-            
+
             return infoset;
         } finally {
             Lock.unlock();
@@ -308,7 +308,7 @@ final class WildFlyServer implements Server {
         thread.start();
         return thread;
     }
-    
+
     private void updateServerFiles(SmartPatch smartPatch) throws IOException {
 
         // Verify that the zip contains all expected add/replace paths
@@ -332,13 +332,13 @@ final class WildFlyServer implements Server {
             }
         }
         IllegalStateAssertion.assertTrue(addupdPaths.isEmpty(), "Patch file does not contain expected paths: " + addupdPaths);
-        
+
         // Remove all files in the remove set
         for (Record rec : smartPatch.getRemoveSet()) {
             Path path = getServerHome().resolve(rec.getPath());
             Files.deleteIfExists(path);
         }
-        
+
         // Handle replace and add sets
         if (!smartPatch.isUninstall()) {
             try (ZipInputStream zip = getZipInputStream(smartPatch)) {
@@ -366,7 +366,7 @@ final class WildFlyServer implements Server {
                 }
             }
         }
-        
+
         // Ensure Fuse layer exists
         Path modulesPath = homePath.resolve("modules");
         if (modulesPath.toFile().isDirectory()) {
@@ -404,13 +404,13 @@ final class WildFlyServer implements Server {
         ManagedPaths managedPaths = Parser.readManagedPaths(getWorkspace());
         Parser.writeManagedPaths(getWorkspace(), managedPaths.updatePaths(smartPatch));
     }
-    
+
     private ZipInputStream getZipInputStream(SmartPatch smartPatch) throws IOException {
         URL patchURL = smartPatch.getPatchURL();
         IllegalStateAssertion.assertEquals("file", patchURL.getProtocol(), "Usupported protocol: " + patchURL);
         return new ZipInputStream(patchURL.openStream());
     }
-    
+
     private Path getWorkspace() {
         return homePath.resolve(Paths.get("fusepatch", "workspace"));
     }

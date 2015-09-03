@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,13 +34,13 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.PatchAssertion;
 
 
-public final class DefaultPatchTool implements PatchTool {
+public final class DefaultPatchTool extends PatchTool {
 
     private Server server;
     private Repository repository;
     private Path serverPath;
     private URL repoUrl;
-    
+
 	public DefaultPatchTool(Path serverPath, URL repoUrl) {
 	    this.serverPath = serverPath;
 	    this.repoUrl = repoUrl;
@@ -71,7 +71,7 @@ public final class DefaultPatchTool implements PatchTool {
         }
         return repository;
     }
-    
+
     @Override
     public Package install(PatchId patchId, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
@@ -95,7 +95,7 @@ public final class DefaultPatchTool implements PatchTool {
             Lock.unlock();
         }
     }
-    
+
     @Override
     public Package uninstall(PatchId patchId, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
@@ -113,7 +113,7 @@ public final class DefaultPatchTool implements PatchTool {
     }
 
     private Package installInternal(PatchId patchId, boolean force) throws IOException {
-        
+
         PatchId serverId = null;
         String prefix = patchId.getName();
         for (PatchId pid : getServer().queryAppliedPackages()) {
@@ -122,7 +122,7 @@ public final class DefaultPatchTool implements PatchTool {
                 break;
             }
         }
-        
+
         Package seedPatch = serverId != null ? getServer().getPackage(serverId) : null;
         SmartPatch smartPatch = getRepository().getSmartPatch(seedPatch, patchId);
         return getServer().applySmartPatch(smartPatch, force);

@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,8 +25,6 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -53,36 +51,16 @@ import java.util.zip.ZipInputStream;
 import org.wildfly.extras.patch.ManagedPath;
 import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchId;
+import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.Record;
 import org.wildfly.extras.patch.SmartPatch;
-import org.wildfly.extras.patch.Version;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.IllegalStateAssertion;
-import org.wildfly.extras.patch.utils.PatchAssertion;
 
 final class Parser {
 
     private static final String AUDIT_LOG = "audit.log";
     private static final String MANAGED_PATHS = "managed-paths.metadata";
-
-    static Version VERSION;
-    static {
-        try (InputStream input = SmartPatch.class.getResourceAsStream("version.properties")) {
-            BufferedReader br = new BufferedReader(new InputStreamReader(input));
-            String line = br.readLine();
-            while (line != null) {
-                line = line.trim();
-                if (line.length() > 0 && !line.startsWith("#")) {
-                    VERSION = Version.parseVersion(line);
-                    break;
-                }
-                line = br.readLine();
-            }
-        } catch (IOException ex) {
-            throw new IllegalStateException(ex);
-        }
-        PatchAssertion.assertNotNull(VERSION, "Cannot obtain fusepatch version");
-    }
 
     static final String VERSION_PREFIX = "# fusepatch:";
     static final String PATCHID_PREFIX = "# patch id:";
@@ -225,7 +203,7 @@ final class Parser {
         IllegalStateAssertion.assertTrue(metadataDir.isDirectory(), "Cannot obtain metadata directory: " + metadataDir);
         return metadataDir;
     }
-    
+
     static File getMetadataFile(Path rootPath, PatchId patchId) {
         return getMetadataDirectory(rootPath, patchId).toPath().resolve(patchId + ".metadata").toFile();
     }
@@ -242,7 +220,7 @@ final class Parser {
         try (PrintStream pw = new PrintStream(outstream)) {
 
             if (addHeader) {
-                pw.println(VERSION_PREFIX + " " + VERSION);
+                pw.println(VERSION_PREFIX + " " + PatchTool.VERSION);
                 pw.println(PATCHID_PREFIX + " " + patchSet.getPatchId());
             }
 

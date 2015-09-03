@@ -19,23 +19,22 @@
   #L%
   -->
 
-<module xmlns="urn:jboss:module:1.1" name="org.wildfly.extras.patch">
+<module xmlns="urn:jboss:module:1.1" name="org.wildfly.extras.config">
 
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
 
-    <main-class name="org.wildfly.extras.patch.internal.Main"/>
+    <main-class name="org.wildfly.extras.config.internal.Main"/>
     
     <resources>
-        <resource-root path="fuse-patch-core-@project.version@.jar"/>
+        <artifact name="${org.wildfly.extras.patch:fuse-patch-config}" />
     </resources>
 
     <dependencies>
         <module name="args4j"/>
-        <module name="javax.api"/>
-        <module name="org.jboss.logmanager" services="import"/>
-        <module name="org.slf4j"/>
+        <module name="org.jboss.modules" />
+        <module name="org.jdom" />
     </dependencies>
 
 </module>

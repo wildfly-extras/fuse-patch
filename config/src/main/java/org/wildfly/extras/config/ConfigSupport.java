@@ -73,7 +73,7 @@ public class ConfigSupport {
             List<ConfigPlugin> plugins = new ArrayList<>();
             for (String config : configs) {
                 ModuleLoader moduleLoader = Module.getCallerModuleLoader();
-                ModuleIdentifier modid = ModuleIdentifier.create("org.wildfly.extension.camel.config.plugin." + config);
+                ModuleIdentifier modid = ModuleIdentifier.create("org.wildfly.extras.config.plugin." + config);
                 ModuleClassLoader modcl = moduleLoader.loadModule(modid).getClassLoader();
                 Iterator<ConfigPlugin> auxit = ServiceLoader.load(ConfigPlugin.class, modcl).iterator();
                 while (auxit.hasNext()) {
@@ -261,34 +261,36 @@ public class ConfigSupport {
         SAXBuilder jdom = new SAXBuilder();
         for (Path p : standalonePaths) {
             Path path = jbossHome.resolve(p);
+            if (path.toFile().isFile()) {
+                ConfigLogger.info(message + path);
+                Document doc = jdom.build(path.toUri().toURL());
 
-            ConfigLogger.info(message + path);
-            Document doc = jdom.build(path.toUri().toURL());
+                ConfigContext context = new ConfigContext(jbossHome, path, doc);
+                plugin.applyStandaloneConfigChange(context, enable);
 
-            ConfigContext context = new ConfigContext(jbossHome, path, doc);
-            plugin.applyStandaloneConfigChange(context, enable);
-
-            XMLOutputter output = new XMLOutputter();
-            output.setFormat(Format.getRawFormat().setLineSeparator(lineSeparator));
-            String newXML = output.outputString(doc);
-            backup(path);
-            writeFile(path, newXML, "UTF-8");
+                XMLOutputter output = new XMLOutputter();
+                output.setFormat(Format.getRawFormat().setLineSeparator(lineSeparator));
+                String newXML = output.outputString(doc);
+                backup(path);
+                writeFile(path, newXML, "UTF-8");
+            }
         }
 
         for (Path p : domainPaths) {
             Path path = jbossHome.resolve(p);
+            if (path.toFile().isFile()) {
+                ConfigLogger.info(message + path);
+                Document doc = jdom.build(path.toUri().toURL());
 
-            ConfigLogger.info(message + path);
-            Document doc = jdom.build(path.toUri().toURL());
+                ConfigContext context = new ConfigContext(jbossHome, path, doc);
+                plugin.applyDomainConfigChange(context, enable);
 
-            ConfigContext context = new ConfigContext(jbossHome, path, doc);
-            plugin.applyDomainConfigChange(context, enable);
-
-            XMLOutputter output = new XMLOutputter();
-            output.setFormat(Format.getRawFormat().setLineSeparator(lineSeparator));
-            String newXML = output.outputString(doc);
-            backup(path);
-            writeFile(path, newXML, "UTF-8");
+                XMLOutputter output = new XMLOutputter();
+                output.setFormat(Format.getRawFormat().setLineSeparator(lineSeparator));
+                String newXML = output.outputString(doc);
+                backup(path);
+                writeFile(path, newXML, "UTF-8");
+            }
         }
     }
 

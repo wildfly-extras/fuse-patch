@@ -21,6 +21,7 @@
 package org.wildfly.extras.patch.test;
 
 import java.io.InputStream;
+import java.net.URL;
 import java.util.List;
 
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -33,8 +34,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.extras.patch.PatchId;
+import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
+import org.wildfly.extras.patch.Repository;
+import org.wildfly.extras.patch.Server;
 
 @RunWith(Arquillian.class)
 public class SimplePatchAccessTest {
@@ -54,17 +58,27 @@ public class SimplePatchAccessTest {
     }
 
     @Test
-    public void testQueryServer() throws Exception {
+    public void testSimpleUpdate() throws Exception {
         PatchTool patchTool = new PatchToolBuilder().build();
-        List<PatchId> pids = patchTool.getServer().queryAppliedPackages();
-        Assert.assertEquals(1, pids.size());
-        Assert.assertEquals("fuse-patch-distro-wildfly", pids.get(0).getName());
-    }
+        Repository repository = patchTool.getRepository();
+        Server server = patchTool.getServer();
 
-    @Test
-    public void testQueryRepository() throws Exception {
-        PatchTool patchTool = new PatchToolBuilder().build();
-        List<PatchId> pids = patchTool.getRepository().queryAvailable(null);
+        PatchId pid = PatchId.fromString("fuse-patch-distro-wildfly-" + PatchTool.VERSION);
+        List<PatchId> pids = repository.queryAvailable(null);
+
+        // With the feature pack runtime we need to install the fuse-patch package
+        if (pids.size() == 0) {
+            URL fileUrl = new URL(repository.getBaseURL() + "/" + pid + ".zip");
+            Assert.assertEquals(pid, repository.addArchive(fileUrl));
+            Package upd = patchTool.update("fuse-patch-distro-wildfly", true);
+            Assert.assertEquals(pid, upd.getPatchId());
+        }
+        pids = repository.queryAvailable(null);
         Assert.assertEquals(1, pids.size());
+        Assert.assertEquals(pid, pids.get(0));
+
+        pids = server.queryAppliedPackages();
+        Assert.assertEquals(1, pids.size());
+        Assert.assertEquals(pid, pids.get(0));
     }
 }

@@ -30,6 +30,15 @@
 
 	<!-- Dependency Sets -->
 	<dependencySets>
+        <dependencySet>
+            <outputDirectory>/modules/system/layers/fuse/args4j/main</outputDirectory>
+            <includes>
+                <include>args4j:args4j:jar</include>
+            </includes>
+            <useStrictFiltering>true</useStrictFiltering>
+            <scope>provided</scope>
+            <unpack>false</unpack>
+        </dependencySet>
 		<dependencySet>
 			<outputDirectory>/modules/system/layers/fuse/org/wildfly/extras/config/main</outputDirectory>
             <includes>
@@ -43,7 +52,6 @@
             <outputDirectory>/modules/system/layers/fuse/org/wildfly/extras/patch/main</outputDirectory>
             <includes>
                 <include>org.wildfly.extras.patch:fuse-patch-core:jar</include>
-                <include>args4j:args4j:jar</include>
             </includes>
             <useStrictFiltering>true</useStrictFiltering>
             <scope>provided</scope>
@@ -55,15 +63,23 @@
 		<fileSet>
 			<outputDirectory>/</outputDirectory>
 			<directory>etc/wildfly</directory>
-            <excludes>
-                <exclude>bin/*</exclude>
-            </excludes>
 			<filtered>true</filtered>
 		</fileSet>
         <fileSet>
-            <outputDirectory>/bin</outputDirectory>
-            <directory>etc/wildfly/bin</directory>
-            <filtered>true</filtered>
+            <outputDirectory>/</outputDirectory>
+            <directory>../../feature-pack/src/main/resources/content</directory>
+            <excludes>
+                <exclude>bin/*.bat</exclude>
+                <exclude>bin/*.sh</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>/</outputDirectory>
+            <directory>../../feature-pack/src/main/resources/content</directory>
+            <includes>
+                <include>bin/*.bat</include>
+                <include>bin/*.sh</include>
+            </includes>
             <fileMode>755</fileMode>
         </fileSet>
 	</fileSets>
