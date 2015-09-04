@@ -22,8 +22,10 @@ package org.wildfly.extras.patch.internal;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -305,7 +307,11 @@ final class DefaultRepository implements Repository {
 
     private Path getAbsolutePath(URL url) {
         IllegalArgumentAssertion.assertTrue("file".equals(url.getProtocol()), "Unsupported protocol: " + url);
-        return new File(url.getPath()).getAbsoluteFile().toPath();
+        try {
+            return new File(URLDecoder.decode(url.getPath(), "UTF-8")).getAbsoluteFile().toPath();
+        } catch (UnsupportedEncodingException ex) {
+            throw new IllegalArgumentException(ex);
+        }
     }
 
     @Override

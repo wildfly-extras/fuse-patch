@@ -21,6 +21,8 @@ package org.wildfly.extras.patch.test;
 
 import java.io.File;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -56,9 +58,9 @@ public class SimpleRepositoryTest {
     @Test
     public void testSimpleAccess() throws Exception {
 
-        URL urlA = new URL("file:./" + repoPaths[0].toString());
+        URL url = new URL("file:./" + repoPaths[0].toString());
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryUrl(urlA).build();
+        PatchTool patchTool = new PatchToolBuilder().repositoryUrl(url).build();
         Repository repo = patchTool.getRepository();
 
         // Add archive foo-1.0.0
@@ -103,6 +105,22 @@ public class SimpleRepositoryTest {
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), repo.getLatestAvailable("foo"));
     }
 
+    @Test
+    public void testRepoUrlWithSpaces() throws Exception {
+
+        Path path = Paths.get("target/repos/SimpleRepositoryTest", "repo && path");
+        IOUtils.rmdirs(path);
+        path.toFile().mkdirs();
+        
+        URL url = new URL("file:./target/repos/SimpleRepositoryTest/" + URLEncoder.encode("repo && path", "UTF-8"));
+        PatchTool patchTool = new PatchToolBuilder().repositoryUrl(url).build();
+        Repository repo = patchTool.getRepository();
+        
+        // Add archive foo-1.0.0
+        PatchId patchId = repo.addArchive(Archives.getZipUrlFoo100());
+        Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patchId);
+    }
+    
     @Test
     public void testFileMove() throws Exception {
 
