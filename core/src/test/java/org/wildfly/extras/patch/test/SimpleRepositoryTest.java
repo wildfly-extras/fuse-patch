@@ -19,9 +19,10 @@
  */
 package org.wildfly.extras.patch.test;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
 import java.io.File;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,8 +40,6 @@ import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.utils.IOUtils;
-
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class SimpleRepositoryTest {
 
@@ -78,6 +77,10 @@ public class SimpleRepositoryTest {
         Assert.assertEquals(1, patchSet.getPostCommands().size());
         Assert.assertEquals("bin/fusepatch.sh --query-server", patchSet.getPostCommands().get(0));
 
+        // Add archive foo-1.1.0 again
+        patchId = repo.addArchive(Archives.getZipUrlFoo110());
+        Assert.assertEquals(PatchId.fromString("foo-1.1.0"), patchSet.getPatchId());
+        
         // Query available
         List<PatchId> patches = repo.queryAvailable(null);
         Assert.assertEquals("Patch available", 2, patches.size());

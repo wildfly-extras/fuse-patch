@@ -129,7 +129,12 @@ final class DefaultRepository implements Repository {
         try {
             Path sourcePath = getAbsolutePath(fileUrl);
             PatchId patchId = PatchId.fromURL(fileUrl);
-            PatchAssertion.assertFalse(queryAvailable(null).contains(patchId), "Repository already contains " + patchId);
+            
+            // Cannot add already existing archive
+            if (queryAvailable(null).contains(patchId)) {
+                LOG.warn("Repository already contains {}", patchId);
+                return patchId;
+            }
 
             // Verify one-off id
             if (oneoffId != null) {
