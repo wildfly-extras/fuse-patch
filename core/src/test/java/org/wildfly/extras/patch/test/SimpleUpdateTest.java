@@ -30,6 +30,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import javax.activation.DataHandler;
+import javax.activation.URLDataSource;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -41,7 +44,7 @@ import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.Server;
 import org.wildfly.extras.patch.SmartPatch;
-import org.wildfly.extras.patch.internal.ParserAccess;
+import org.wildfly.extras.patch.repository.ParserAccess;
 import org.wildfly.extras.patch.utils.IOUtils;
 
 public class SimpleUpdateTest {
@@ -84,7 +87,7 @@ public class SimpleUpdateTest {
         // Verify smart patch to install foo-1.0.0
         Package setA = ParserAccess.getPackage(Archives.getZipUrlFoo100());
         PatchId idA = setA.getPatchId();
-        SmartPatch smartPatch = SmartPatch.forInstall(setA, Archives.getZipUrlFoo100());
+        SmartPatch smartPatch = SmartPatch.forInstall(setA, new DataHandler(new URLDataSource(Archives.getZipUrlFoo100())));
         Assert.assertEquals(idA, smartPatch.getPatchId());
         Assert.assertEquals(setA.getRecords(), smartPatch.getRecords());
         
@@ -107,7 +110,7 @@ public class SimpleUpdateTest {
         Package setB = ParserAccess.getPackage(Archives.getZipUrlFoo110());
         PatchId idB = setB.getPatchId();
         Package smartSet = Package.smartSet(setA, setB);
-        smartPatch = SmartPatch.forInstall(smartSet, Archives.getZipUrlFoo110());
+        smartPatch = SmartPatch.forInstall(smartSet, new DataHandler(new URLDataSource(Archives.getZipUrlFoo110())));
         Assert.assertEquals(4, smartPatch.getRecords().size());
         Archives.assertActionPathEquals("UPD config/propsA.properties", smartPatch.getRecords().get(0));
         Archives.assertActionPathEquals("DEL config/remove-me.properties", smartPatch.getRecords().get(1));
@@ -162,7 +165,7 @@ public class SimpleUpdateTest {
         
         // Verify smart patch to downgrade to foo-1.0.0
         smartSet = Package.smartSet(setB, setA);
-        smartPatch = SmartPatch.forInstall(smartSet, Archives.getZipUrlFoo100());
+        smartPatch = SmartPatch.forInstall(smartSet, new DataHandler(new URLDataSource(Archives.getZipUrlFoo100())));
         Assert.assertEquals(4, smartPatch.getRecords().size());
         Archives.assertActionPathEquals("UPD config/propsA.properties", smartPatch.getRecords().get(0));
         Archives.assertActionPathEquals("ADD config/remove-me.properties", smartPatch.getRecords().get(1));

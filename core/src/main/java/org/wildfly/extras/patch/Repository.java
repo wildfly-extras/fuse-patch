@@ -24,6 +24,8 @@ import java.net.URL;
 import java.util.List;
 import java.util.Set;
 
+import javax.activation.DataHandler;
+
 /**
  * A package repository.
  *
@@ -32,6 +34,9 @@ import java.util.Set;
  */
 public interface Repository {
 
+	String SYSTEM_PROPERTY_REPOSITORY_URL = "fusepatch.repository";
+	String ENV_PROPERTY_REPOSITORY_URL = "FUSEPATCH_REPOSITORY";
+	
     /**
      * Get the repository base URL
      */
@@ -69,11 +74,12 @@ public interface Repository {
 
     /**
      * Add the given patch archive
-     * @param fileUrl The file URL to the patch archive
+     * @param patchId The target patch id
+     * @param dataHandler The data handler to the patch archive
      * @param oneoffId An optional patch id if the given URL is a one-off patch
      * @param dependencies An optional set of patch dependencies
      */
-    PatchId addArchive(URL fileUrl, PatchId oneoffId, Set<PatchId> dependencies, boolean force) throws IOException;
+    PatchId addArchive(PatchId patchId, DataHandler dataHandler, PatchId oneoffId, Set<PatchId> dependencies, boolean force) throws IOException;
 
     /**
      * Remove the given patch id

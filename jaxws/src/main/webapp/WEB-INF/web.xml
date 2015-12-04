@@ -1,0 +1,17 @@
+<web-app>
+    <!-- 
+    <context-param>
+        <param-name>fusepatch.repository</param-name>
+        <param-value>file:///some.repo.location</param-value>
+    </context-param>
+    -->
+    <servlet>
+        <servlet-name>RepositoryEndpoint</servlet-name>
+        <servlet-class>org.wildfly.extras.patch.jaxws.RepositoryEndpoint</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>RepositoryEndpoint</servlet-name>
+        <url-pattern>/RepositoryEndpoint/*</url-pattern>
+    </servlet-mapping>
+</web-app>

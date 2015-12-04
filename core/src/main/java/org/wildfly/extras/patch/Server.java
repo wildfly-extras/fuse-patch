@@ -36,11 +36,6 @@ public interface Server {
 	 */
 	Path getServerHome();
 	
-	/**
-	 * Get the default repository path
-	 */
-    Path getDefaultRepositoryPath();
-    
     /**
      * Get the audit log
      */

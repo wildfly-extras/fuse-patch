@@ -19,7 +19,6 @@
  */
 package org.wildfly.extras.patch;
 
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,6 +27,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.activation.DataHandler;
 
 import org.wildfly.extras.patch.Record.Action;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
@@ -45,15 +46,15 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
  */
 public final class SmartPatch {
 
-    private final URL patchURL;
     private final Package patchSet;
+    private final DataHandler dataHandler;
     private final Map<Path, Record> delMap = new HashMap<>();
     private final Map<Path, Record> updMap = new HashMap<>();
     private final Map<Path, Record> addMap = new HashMap<>();
     
-    public static SmartPatch forInstall(Package patchSet, URL patchURL) {
-        IllegalArgumentAssertion.assertNotNull(patchURL, "patchURL");
-        return new SmartPatch(patchSet, patchURL);
+    public static SmartPatch forInstall(Package patchSet, DataHandler dataHandler) {
+        IllegalArgumentAssertion.assertNotNull(dataHandler, "dataHandler");
+        return new SmartPatch(patchSet, dataHandler);
     }
     
     public static SmartPatch forUninstall(Package patchSet) {
@@ -66,10 +67,10 @@ public final class SmartPatch {
         return new SmartPatch(Package.create(patchId, records), null);
     }
     
-    private SmartPatch(Package patchSet, URL patchURL) {
+    private SmartPatch(Package patchSet, DataHandler dataHandler) {
         IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
         this.patchSet = patchSet;
-        this.patchURL = patchURL;
+        this.dataHandler = dataHandler;
         for (Record rec : patchSet.getRecords()) {
             Record.Action action = rec.getAction();
             switch (rec.getAction()) {
@@ -92,12 +93,16 @@ public final class SmartPatch {
         return patchSet.getPatchId();
     }
 
-    public URL getPatchURL() {
-        return patchURL;
+    public Package getPatchSet() {
+        return patchSet;
+    }
+
+    public DataHandler getDataHandler() {
+        return dataHandler;
     }
 
     public boolean isUninstall() {
-        return patchURL == null;
+        return dataHandler == null;
     }
     
     public List<Record> getRecords() {
@@ -138,6 +143,6 @@ public final class SmartPatch {
     
     @Override
     public String toString() {
-        return "SmartPatch[id=" + patchSet.getPatchId() + ",url=" + patchURL + ",add=" + addMap.size() + ",upd=" + updMap.size() + ",del=" + delMap.size() + "]";
+        return "SmartPatch[id=" + patchSet.getPatchId() + ",add=" + addMap.size() + ",upd=" + updMap.size() + ",del=" + delMap.size() + "]";
     }
 }

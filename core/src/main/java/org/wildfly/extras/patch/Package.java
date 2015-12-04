@@ -46,7 +46,6 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
  */
 public final class Package {
 
-
     private final PatchId identity;
     private final Map<Path, Record> recordsMap = new LinkedHashMap<>();
     private final List<String> commands = new ArrayList<>();

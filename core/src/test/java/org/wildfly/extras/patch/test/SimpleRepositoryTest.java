@@ -30,6 +30,9 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 
+import javax.activation.DataHandler;
+import javax.activation.URLDataSource;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -59,7 +62,7 @@ public class SimpleRepositoryTest {
 
         URL url = new URL("file:./" + repoPaths[0].toString());
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryUrl(url).build();
+        PatchTool patchTool = new PatchToolBuilder().localRepository(url).build();
         Repository repo = patchTool.getRepository();
 
         // Add archive foo-1.0.0
@@ -116,7 +119,7 @@ public class SimpleRepositoryTest {
         path.toFile().mkdirs();
         
         URL url = new URL("file:./target/repos/SimpleRepositoryTest/" + URLEncoder.encode("repo && path", "UTF-8"));
-        PatchTool patchTool = new PatchToolBuilder().repositoryUrl(url).build();
+        PatchTool patchTool = new PatchToolBuilder().localRepository(url).build();
         Repository repo = patchTool.getRepository();
         
         // Add archive foo-1.0.0
@@ -153,8 +156,9 @@ public class SimpleRepositoryTest {
         repo.addArchive(Archives.getZipUrlFoo100());
         Path copyPath = Paths.get("target/foo-copy-1.1.0.zip");
         Files.copy(Paths.get(Archives.getZipUrlFoo110().toURI()), copyPath, REPLACE_EXISTING);
+        URL fileUrl = copyPath.toUri().toURL();
         try {
-            repo.addArchive(copyPath.toUri().toURL());
+            repo.addArchive(fileUrl);
             Assert.fail("PatchException expected");
         } catch (PatchException ex) {
             String message = ex.getMessage();
@@ -162,7 +166,9 @@ public class SimpleRepositoryTest {
         }
 
         // Force
-        PatchId patchId = repo.addArchive(copyPath.toUri().toURL(), null, Collections.<PatchId> emptySet(), true);
+        PatchId patchId = PatchId.fromURL(fileUrl);
+        DataHandler dataHandler = new DataHandler(new URLDataSource(fileUrl));
+        patchId = repo.addArchive(patchId, dataHandler, null, Collections.<PatchId> emptySet(), true);
         Assert.assertEquals(PatchId.fromString("foo-copy-1.1.0"), patchId);
     }
 
