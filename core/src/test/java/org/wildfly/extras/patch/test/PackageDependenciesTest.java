@@ -19,9 +19,13 @@
  */
 package org.wildfly.extras.patch.test;
 
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+
+import javax.activation.DataHandler;
+import javax.activation.URLDataSource;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -46,7 +50,10 @@ public class PackageDependenciesTest {
         serverPath.toFile().mkdirs();
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).build();
         PatchId idA = patchTool.getRepository().addArchive(Archives.getZipUrlFoo100());
-        patchTool.getRepository().addArchive(Archives.getZipUrlFoo110(), null, Collections.singleton(idA), false);
+        URL url110 = Archives.getZipUrlFoo110();
+        PatchId pid110 = PatchId.fromURL(url110);
+        DataHandler data110 = new DataHandler(new URLDataSource(url110));
+        patchTool.getRepository().addArchive(pid110, data110, null, Collections.singleton(idA), false);
     }
 
     @Test

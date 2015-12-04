@@ -20,11 +20,15 @@
 package org.wildfly.extras.patch.internal;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+
+import javax.activation.DataHandler;
+import javax.activation.URLDataSource;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -35,6 +39,7 @@ import org.wildfly.extras.patch.PatchException;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
+import org.wildfly.extras.patch.repository.LocalFileRepository;
 
 public class Main {
 
@@ -74,25 +79,28 @@ public class Main {
 
 	private static void run(CmdLineParser cmdParser, Options options) throws IOException {
 		
+        URL repoUrl = options.repositoryUrl != null ? options.repositoryUrl : LocalFileRepository.getDefaultRepositoryURL();
+        PatchToolBuilder builder = new PatchToolBuilder().localRepository(repoUrl);
+        
 	    boolean opfound = false;
 	    
         // Query the repository
-        if (options.queryRepository) {
-            PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
+		if (options.queryRepository) {
+            PatchTool patchTool = builder.build();
             printPatches(patchTool.getRepository().queryAvailable(null));
             opfound = true;
         } 
         
         // Query the server
         if (options.queryServer) {
-            PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).build();
+            PatchTool patchTool = builder.serverPath(options.serverHome).build();
             printPatches(patchTool.getServer().queryAppliedPackages());
             opfound = true;
         } 
         
         // Query the server paths
         if (options.queryServerPaths != null) {
-            PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).build();
+            PatchTool patchTool = builder.serverPath(options.serverHome).build();
             List<String> managedPaths = new ArrayList<>();
             for (ManagedPath managedPath : patchTool.getServer().queryManagedPaths(options.queryServerPaths)) {
                 managedPaths.add(managedPath.toString());
@@ -103,7 +111,7 @@ public class Main {
         
         // Add to repository
         if (options.addUrl != null) {
-            PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
+            PatchTool patchTool = builder.build();
             PatchId oneoffId = null;
             Set<PatchId> dependencies = new LinkedHashSet<>();
             if (options.oneoffId != null) {
@@ -115,20 +123,22 @@ public class Main {
                     dependencies.add(PatchId.fromString(depid));
                 }
             }
-            patchTool.getRepository().addArchive(options.addUrl, oneoffId, dependencies, options.force);
+            PatchId patchId = PatchId.fromURL(options.addUrl);
+            DataHandler dataHandler = new DataHandler(new URLDataSource(options.addUrl));
+            patchTool.getRepository().addArchive(patchId, dataHandler, oneoffId, dependencies, options.force);
             opfound = true;
         }
         
         // Remove from repository
         if (options.removeId != null) {
-            PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
+            PatchTool patchTool = builder.build();
             patchTool.getRepository().removeArchive(PatchId.fromString(options.removeId));
             opfound = true;
         }
         
         // Add post install command
         if (options.addCmd != null) {
-            PatchTool patchTool = new PatchToolBuilder().repositoryUrl(options.repositoryUrl).build();
+            PatchTool patchTool = builder.build();
             PatchId patchId;
             String[] cmdarr;
             if (options.addUrl != null) {
@@ -144,28 +154,28 @@ public class Main {
         
         // Install to server
         if (options.installId != null) {
-            PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).repositoryUrl(options.repositoryUrl).build();
+            PatchTool patchTool = builder.serverPath(options.serverHome).build();
             patchTool.install(PatchId.fromString(options.installId), options.force);
             opfound = true;
         }
         
         // Update the server
         if (options.updateName != null) {
-            PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).repositoryUrl(options.repositoryUrl).build();
+            PatchTool patchTool = builder.serverPath(options.serverHome).build();
             patchTool.update(options.updateName, options.force);
             opfound = true;
         } 
         
         // Install to server
         if (options.uninstallId != null) {
-            PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).build();
+            PatchTool patchTool = builder.serverPath(options.serverHome).build();
             patchTool.uninstall(PatchId.fromString(options.uninstallId), options.force);
             opfound = true;
         }
         
         // Print the audit log
         if (options.auditLog) {
-            PatchTool patchTool = new PatchToolBuilder().serverPath(options.serverHome).build();
+            PatchTool patchTool = builder.serverPath(options.serverHome).build();
             printLines(patchTool.getServer().getAuditLog());
             opfound = true;
         } 

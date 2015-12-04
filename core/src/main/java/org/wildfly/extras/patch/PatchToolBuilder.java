@@ -23,6 +23,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 
+import javax.xml.namespace.QName;
+
 import org.wildfly.extras.patch.internal.DefaultPatchTool;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 
@@ -37,6 +39,7 @@ public final class PatchToolBuilder {
 
     private Path serverPath;
     private URL repoUrl;
+    private QName serviceName;
 
     public PatchToolBuilder serverPath(Path serverPath) {
         this.serverPath = serverPath;
@@ -53,14 +56,21 @@ public final class PatchToolBuilder {
         return this;
     }
 
-    public PatchToolBuilder repositoryUrl(URL repoUrl) {
-        if (repoUrl != null) {
-            this.repoUrl = repoUrl;
-        }
+    public PatchToolBuilder localRepository(URL repoUrl) {
+        IllegalArgumentAssertion.assertNotNull(repoUrl, "repoUrl");
+        this.repoUrl = repoUrl;
+        return this;
+    }
+
+    public PatchToolBuilder jaxwsRepository(QName serviceName, URL wsdlUrl) {
+        IllegalArgumentAssertion.assertNotNull(serviceName, "serviceName");
+        IllegalArgumentAssertion.assertNotNull(wsdlUrl, "wsdlUrl");
+        this.serviceName = serviceName;
+        this.repoUrl = wsdlUrl;
         return this;
     }
 
     public PatchTool build() {
-        return new DefaultPatchTool(serverPath, repoUrl);
+        return new DefaultPatchTool(serverPath, serviceName, repoUrl);
     }
 }

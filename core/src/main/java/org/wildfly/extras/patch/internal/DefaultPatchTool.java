@@ -20,9 +20,11 @@
 package org.wildfly.extras.patch.internal;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.concurrent.locks.ReentrantLock;
+
+import javax.xml.namespace.QName;
 
 import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchId;
@@ -30,76 +32,89 @@ import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.Server;
 import org.wildfly.extras.patch.SmartPatch;
+import org.wildfly.extras.patch.repository.LocalFileRepository;
+import org.wildfly.extras.patch.repository.RepositoryClient;
+import org.wildfly.extras.patch.server.WildFlyServer;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.PatchAssertion;
 
 
 public final class DefaultPatchTool extends PatchTool {
 
+    // All default patch tool instances share this lock
+    private static ReentrantLock lock = new ReentrantLock();
+    
+    private final Path serverPath;
+    private final URL repoUrl;
+    private final QName serviceName;
+
     private Server server;
     private Repository repository;
-    private Path serverPath;
-    private URL repoUrl;
-
-	public DefaultPatchTool(Path serverPath, URL repoUrl) {
+    
+	public DefaultPatchTool(Path serverPath, QName serviceName, URL repoUrl) {
 	    this.serverPath = serverPath;
 	    this.repoUrl = repoUrl;
+        this.serviceName = serviceName;
     }
 
     @Override
     public Server getServer() {
-        if (server == null) {
-            server = new WildFlyServer(serverPath);
+        lock.tryLock();
+        try {
+            if (server == null) {
+                server = new WildFlyServer(lock, serverPath);
+            }
+            return server;
+        } finally {
+            lock.unlock();
         }
-        return server;
     }
 
     @Override
     public Repository getRepository() {
-        if (repository == null) {
-            if (repoUrl == null) {
-                repoUrl = DefaultRepository.getConfiguredUrl();
-                if (repoUrl == null) {
-                    try {
-                        repoUrl = getServer().getDefaultRepositoryPath().toUri().toURL();
-                    } catch (MalformedURLException ex) {
-                        throw new IllegalStateException(ex);
-                    }
+        lock.tryLock();
+        try {
+            if (repository == null) {
+                if (serviceName != null) {
+                    repository = new RepositoryClient(lock, serviceName, repoUrl);
+                } else {
+                    repository = new LocalFileRepository(lock, repoUrl);
                 }
             }
-            repository = new DefaultRepository(repoUrl);
+            return repository;
+        } finally {
+            lock.unlock();
         }
-        return repository;
     }
 
     @Override
     public Package install(PatchId patchId, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
-        Lock.tryLock();
+        lock.tryLock();
         try {
             return installInternal(patchId, force);
         } finally {
-            Lock.unlock();
+            lock.unlock();
         }
     }
 
     @Override
     public Package update(String prefix, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
-        Lock.tryLock();
+        lock.tryLock();
         try {
             PatchId latestId = getRepository().getLatestAvailable(prefix);
             PatchAssertion.assertNotNull(latestId, "Cannot obtain patch id for prefix: " + prefix);
             return installInternal(latestId, force);
         } finally {
-            Lock.unlock();
+            lock.unlock();
         }
     }
 
     @Override
     public Package uninstall(PatchId patchId, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
-        Lock.tryLock();
+        lock.tryLock();
         try {
             Package installed = getServer().getPackage(patchId);
             PatchAssertion.assertNotNull(installed, "Package not installed: " + patchId);
@@ -108,7 +123,7 @@ public final class DefaultPatchTool extends PatchTool {
             SmartPatch smartPatch = SmartPatch.forUninstall(installed);
             return getServer().applySmartPatch(smartPatch, force);
         } finally {
-            Lock.unlock();
+            lock.unlock();
         }
     }
 
