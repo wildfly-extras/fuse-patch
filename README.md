@@ -2,7 +2,7 @@
 
 A Fuse installer and patch utility.
 
-The patch tool interacts with a target [server](core/src/main/java/org/wildfly/extras/patch/ServerInstance.java) and a [repository](core/src/main/java/org/wildfly/extras/patch/PatchRepository.java) that contains available packages.
+The patch tool interacts with a target [server](core/src/main/java/org/wildfly/extras/patch/Server.java) and a [repository](core/src/main/java/org/wildfly/extras/patch/Repository.java) that contains available packages.
 
 The server and the repository can be queried like this respectively
 

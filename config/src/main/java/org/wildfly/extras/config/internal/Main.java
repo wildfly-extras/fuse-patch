@@ -30,8 +30,6 @@ import org.wildfly.extras.config.ConfigSupport;
  */
 public class Main {
 
-    static String PROCESS_NAME = "wildfly-camel-config.jar";
-
     public static void main(String[] args) {
         try {
             mainInternal(args);
