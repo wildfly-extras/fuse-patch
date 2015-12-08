@@ -48,6 +48,7 @@ import org.wildfly.extras.patch.MetadataParser;
 import org.wildfly.extras.patch.Package;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Record;
+import org.wildfly.extras.patch.Record.Action;
 import org.wildfly.extras.patch.Server;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.utils.IOUtils;
@@ -173,7 +174,7 @@ public final class WildFlyServer implements Server {
 
             // Remove all records in the remove set
             for (Record rec : smartPatch.getRemoveSet()) {
-                Path path = getServerHome().resolve(rec.getPath());
+                Path path = homePath.resolve(rec.getPath());
                 if (!path.toFile().exists()) {
                     LOG.warn("Attempt to delete a non existing file: {}", rec.getPath());
                 }
@@ -182,7 +183,7 @@ public final class WildFlyServer implements Server {
 
             // Replace records in the replace set
             for (Record rec : smartPatch.getReplaceSet()) {
-                Path path = getServerHome().resolve(rec.getPath());
+                Path path = homePath.resolve(rec.getPath());
                 String filename = path.getFileName().toString();
                 if (!path.toFile().exists()) {
                     LOG.warn("Attempt to replace a non existing file: {}", rec.getPath());
@@ -200,7 +201,7 @@ public final class WildFlyServer implements Server {
 
             // Add records in the add set
             for (Record rec : smartPatch.getAddSet()) {
-                Path path = getServerHome().resolve(rec.getPath());
+                Path path = homePath.resolve(rec.getPath());
                 if (path.toFile().exists()) {
                     Long expcheck = rec.getChecksum();
                     Long wasCheck = IOUtils.getCRC32(path);
@@ -212,9 +213,16 @@ public final class WildFlyServer implements Server {
                 serverRecords.put(rec.getPath(), rec);
             }
 
-            // Update the server files
-            updateServerFiles(smartPatch);
-            updateManagedPaths(smartPatch);
+            // Update managed paths
+            ManagedPaths managedPaths = MetadataParser.readManagedPaths(getWorkspace());
+            managedPaths.updatePaths(homePath, smartPatch, Action.ADD, Action.UPD);
+            
+            // Update server files
+            updateServerFiles(smartPatch, managedPaths);
+            
+            // Write managed paths
+            managedPaths.updatePaths(homePath, smartPatch, Action.DEL);
+            MetadataParser.writeManagedPaths(getWorkspace(), managedPaths);
 
             Package infoset;
 
@@ -309,7 +317,7 @@ public final class WildFlyServer implements Server {
         return thread;
     }
 
-    private void updateServerFiles(SmartPatch smartPatch) throws IOException {
+    private void updateServerFiles(SmartPatch smartPatch, ManagedPaths managedPaths) throws IOException {
 
         // Verify that the zip contains all expected add/replace paths
         Set<Path> addupdPaths = new HashSet<>();
@@ -335,8 +343,8 @@ public final class WildFlyServer implements Server {
 
         // Remove all files in the remove set
         for (Record rec : smartPatch.getRemoveSet()) {
-            Path path = getServerHome().resolve(rec.getPath());
-            Files.deleteIfExists(path);
+            Path path = rec.getPath();
+            removeServerFile(managedPaths, path);
         }
 
         // Handle replace and add sets
@@ -400,9 +408,18 @@ public final class WildFlyServer implements Server {
         }
     }
 
-    private void updateManagedPaths(SmartPatch smartPatch) throws IOException {
-        ManagedPaths managedPaths = MetadataParser.readManagedPaths(getWorkspace());
-        MetadataParser.writeManagedPaths(getWorkspace(), managedPaths.updatePaths(smartPatch));
+    private void removeServerFile(ManagedPaths managedPaths, Path path) throws IOException {
+        Path resolved = homePath.resolve(path);
+        Files.deleteIfExists(resolved);
+        
+        // Recursively remove managed dirs that are empty 
+        Path parent = path.getParent();
+        if (parent != null && managedPaths.getManagedPath(parent) != null) {
+            File dir = homePath.resolve(parent).toFile();
+            if (dir.isDirectory() && dir.list().length == 0) {
+                removeServerFile(managedPaths, parent);
+            }
+        }
     }
 
     private ZipInputStream getZipInputStream(SmartPatch smartPatch) throws IOException {

@@ -131,7 +131,7 @@ public final class MetadataParser {
         try {
             List<ManagedPath> result = new ArrayList<>();
             ManagedPaths mpaths = readManagedPaths(rootPath);
-            for (ManagedPath aux : mpaths.getPaths()) {
+            for (ManagedPath aux : mpaths.getManagedPaths()) {
                 String path = aux.getPath().toString();
                 if (pattern == null || path.startsWith(pattern)) {
                     result.add(aux);
@@ -214,7 +214,7 @@ public final class MetadataParser {
         File metadataFile = rootPath.resolve(MANAGED_PATHS).toFile();
         metadataFile.getParentFile().mkdirs();
         try (PrintWriter pw = new PrintWriter(new FileWriter(metadataFile))) {
-            for (ManagedPath path : managedPaths.getPaths()) {
+            for (ManagedPath path : managedPaths.getManagedPaths()) {
                 pw.println(path.toString());
             }
         }
