@@ -150,7 +150,7 @@ public class SimpleUpdateTest {
         
         // Cannot uninstall non-existing package
         try {
-            patchTool.uninstall(PatchId.fromString("xxx-1.0.0"), false);
+            patchTool.uninstall(PatchId.fromString("xxx-1.0.0"));
             Assert.fail("PatchException expected");
         } catch (PatchException ex) {
             String message = ex.getMessage();
@@ -159,7 +159,7 @@ public class SimpleUpdateTest {
         
         // Cannot uninstall old package
         try {
-            patchTool.uninstall(setA.getPatchId(), false);
+            patchTool.uninstall(setA.getPatchId());
             Assert.fail("PatchException expected");
         } catch (PatchException ex) {
             String message = ex.getMessage();
@@ -201,7 +201,7 @@ public class SimpleUpdateTest {
         Assert.assertEquals(ManagedPath.fromString("lib/foo-1.0.0.jar [foo-1.0.0]"), mpaths.get(5));
         
         // Uninstall the package
-        curSet = patchTool.uninstall(idA, false);
+        curSet = patchTool.uninstall(idA);
         Assert.assertEquals(idA, curSet.getPatchId());
         Assert.assertEquals(4, curSet.getRecords().size());
         Archives.assertActionPathEquals("DEL config/propsA.properties", curSet.getRecords().get(0));

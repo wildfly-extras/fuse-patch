@@ -78,5 +78,5 @@ public abstract class PatchTool {
     /**
      * Uninstall the given patch id from the server
      */
-    public abstract Package uninstall(PatchId patchId, boolean force) throws IOException;
+    public abstract Package uninstall(PatchId patchId) throws IOException;
 }

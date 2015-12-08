@@ -68,6 +68,12 @@ public interface Repository {
     /**
      * Add the given patch archive
      * @param fileUrl The file URL to the patch archive
+     */
+    PatchId addArchive(URL fileUrl, boolean force) throws IOException;
+
+    /**
+     * Add the given patch archive
+     * @param fileUrl The file URL to the patch archive
      * @param oneoffId An optional patch id if the given URL is a one-off patch
      */
     PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException;

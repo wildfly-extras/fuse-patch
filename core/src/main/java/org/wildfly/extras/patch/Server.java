@@ -31,6 +31,8 @@ import java.util.List;
  */
 public interface Server {
 
+    PatchId SERVER_ID = PatchId.fromString("server");
+    
 	/**
 	 * Get the server home path
 	 */

@@ -158,6 +158,18 @@ public final class LocalFileRepository implements Repository {
     }
 
     @Override
+    public PatchId addArchive(URL fileUrl, boolean force) throws IOException {
+        lock.tryLock();
+        try {
+            PatchId patchId = PatchId.fromURL(fileUrl);
+            DataHandler dataHandler = new DataHandler(new URLDataSource(fileUrl));
+            return addArchive(patchId, dataHandler, null, Collections.<PatchId>emptySet(), force);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
     public PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException {
         lock.tryLock();
         try {

@@ -69,22 +69,15 @@ public final class ManagedPaths {
             Action act = rec.getAction();
             if (actlist.contains(act)) {
                 if (act == Action.ADD) {
-                    addPathOwner(rootPath, rec);
+                    addPathOwner(rootPath, rec.getPath(), rec.getPatchId());
                 } else if (act == Action.UPD) {
-                    addPathOwner(rootPath, rec);
+                    addPathOwner(rootPath, rec.getPath(), rec.getPatchId());
                 } else if (act == Action.DEL) {
-                    removePathOwner(rootPath, rec);
+                    removePathOwner(rootPath, rec.getPath(), rec.getPatchId());
                 }
             }
         }
         return this;
-    }
-
-    private void addPathOwner(Path rootPath, Record rec) {
-        IllegalArgumentAssertion.assertNotNull(rec, "rec");
-        Path path = rec.getPath();
-        PatchId owner = rec.getPatchId();
-        addPathOwner(rootPath, path, owner);
     }
 
     private void addPathOwner(Path rootPath, Path path, PatchId owner) {
@@ -100,7 +93,13 @@ public final class ManagedPaths {
         
         ManagedPath mpath = managedPaths.get(path);
         if (mpath == null) {
-            mpath = ManagedPath.create(path, Collections.singletonList(owner));
+            List<PatchId> owners = Collections.singletonList(owner);
+            File file = rootPath.resolve(path).toFile();
+            if (file.isFile()) {
+                owners = new ArrayList<>(owners);
+                owners.add(0, Server.SERVER_ID);
+            }
+            mpath = ManagedPath.create(path, owners);
             managedPaths.put(path, mpath);
         } else {
             List<PatchId> owners = new ArrayList<>(mpath.getOwners());
@@ -111,19 +110,15 @@ public final class ManagedPaths {
         }
     }
 
-    private void removePathOwner(Path rootPath, Record rec) {
-        IllegalArgumentAssertion.assertNotNull(rec, "rec");
-        Path path = rec.getPath();
-        PatchId owner = rec.getPatchId();
-        removePathOwner(rootPath, path, owner);
-    }
-
     private void removePathOwner(Path rootPath, Path path, PatchId owner) {
         
         ManagedPath mpath = managedPaths.get(path);
         if (mpath != null) {
             List<PatchId> owners = new ArrayList<>(mpath.getOwners());
             removeOwner(owners, owner);
+            if (owners.size() == 1 && owners.contains(Server.SERVER_ID)) {
+                owners.clear();
+            }
             if (!owners.isEmpty()) {
                 mpath = ManagedPath.create(mpath.getPath(), owners);
                 managedPaths.put(mpath.getPath(), mpath);

@@ -108,6 +108,18 @@ public class RepositoryClient implements Repository {
     }
 
     @Override
+    public PatchId addArchive(URL fileUrl, boolean force) throws IOException {
+        lock.tryLock();
+        try {
+            PatchId patchId = PatchId.fromURL(fileUrl);
+            DataHandler dataHandler = new DataHandler(new URLDataSource(fileUrl));
+            return addArchive(patchId, dataHandler, null, null, force);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
     public PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException {
         lock.tryLock();
         try {

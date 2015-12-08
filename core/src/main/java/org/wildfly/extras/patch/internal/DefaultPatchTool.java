@@ -112,7 +112,7 @@ public final class DefaultPatchTool extends PatchTool {
     }
 
     @Override
-    public Package uninstall(PatchId patchId, boolean force) throws IOException {
+    public Package uninstall(PatchId patchId) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         lock.tryLock();
         try {
@@ -121,7 +121,7 @@ public final class DefaultPatchTool extends PatchTool {
             PatchId latestId = getServer().getPackage(patchId.getName()).getPatchId();
             PatchAssertion.assertEquals(patchId, latestId, "Active package is " + latestId + ", cannot uninstall: " + patchId);
             SmartPatch smartPatch = SmartPatch.forUninstall(installed);
-            return getServer().applySmartPatch(smartPatch, force);
+            return getServer().applySmartPatch(smartPatch, false);
         } finally {
             lock.unlock();
         }

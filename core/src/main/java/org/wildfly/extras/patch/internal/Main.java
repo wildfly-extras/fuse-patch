@@ -169,7 +169,7 @@ public class Main {
         // Install to server
         if (options.uninstallId != null) {
             PatchTool patchTool = builder.serverPath(options.serverHome).build();
-            patchTool.uninstall(PatchId.fromString(options.uninstallId), options.force);
+            patchTool.uninstall(PatchId.fromString(options.uninstallId));
             opfound = true;
         }
         

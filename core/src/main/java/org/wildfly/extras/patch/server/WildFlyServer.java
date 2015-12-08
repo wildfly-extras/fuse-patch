@@ -409,8 +409,12 @@ public final class WildFlyServer implements Server {
     }
 
     private void removeServerFile(ManagedPaths managedPaths, Path path) throws IOException {
-        Path resolved = homePath.resolve(path);
-        Files.deleteIfExists(resolved);
+        
+        ManagedPath managedPath = managedPaths.getManagedPath(path);
+        List<PatchId> owners = managedPath.getOwners();
+        if (!owners.contains(Server.SERVER_ID)) {
+            Files.deleteIfExists(homePath.resolve(path));
+        }
         
         // Recursively remove managed dirs that are empty 
         Path parent = path.getParent();
