@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<package>
+    <patchId>foo-1.0.0</patchId>
+    <post-commands>
+        <command>echo hello world</command>
+    </post-commands>
+</package>

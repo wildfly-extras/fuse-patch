@@ -31,6 +31,8 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.PackageMetadata;
+import org.wildfly.extras.patch.PackageMetadataBuilder;
 import org.wildfly.extras.patch.PatchException;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
@@ -49,11 +51,12 @@ public class PackageDependenciesTest {
         IOUtils.rmdirs(serverPath);
         serverPath.toFile().mkdirs();
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).build();
-        PatchId idA = patchTool.getRepository().addArchive(Archives.getZipUrlFoo100());
+        PatchId pid100 = patchTool.getRepository().addArchive(Archives.getZipUrlFoo100());
         URL url110 = Archives.getZipUrlFoo110();
         PatchId pid110 = PatchId.fromURL(url110);
         DataHandler data110 = new DataHandler(new URLDataSource(url110));
-        patchTool.getRepository().addArchive(pid110, data110, null, Collections.singleton(idA), false);
+        PackageMetadata md110 = new PackageMetadataBuilder().patchId(pid110).dependencies(Collections.singleton(pid100)).build();
+        patchTool.getRepository().addArchive(md110, data110, false);
     }
 
     @Test

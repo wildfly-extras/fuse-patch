@@ -29,6 +29,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import javax.activation.DataHandler;
+import javax.activation.URLDataSource;
+
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -45,6 +48,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.PackageMetadata;
+import org.wildfly.extras.patch.PackageMetadataBuilder;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
@@ -109,7 +114,7 @@ public class RepositoryEndpointTest {
         Package pack100 = repository.getPackage(pid100);
         Assert.assertEquals(pid100, pack100.getPatchId());
         Assert.assertEquals(4, pack100.getRecords().size());
-        Assert.assertEquals(0, pack100.getPostCommands().size());
+        Assert.assertEquals(0, pack100.getMetadata().getPostCommands().size());
         
         // Remove foo-1.0.0
         Assert.assertTrue(repository.removeArchive(pid100));
@@ -121,24 +126,24 @@ public class RepositoryEndpointTest {
         pack100 = repository.getPackage(pid100);
         Assert.assertEquals(pid100, pack100.getPatchId());
         Assert.assertEquals(4, pack100.getRecords().size());
-        Assert.assertEquals(0, pack100.getPostCommands().size());
+        Assert.assertEquals(0, pack100.getMetadata().getPostCommands().size());
         
         // Add foo-1.1.0
         fileUrl = getArchiveURL("foo-1.1.0");
-        PatchId pid110 = repository.addArchive(fileUrl);
+        PatchId pid110 = PatchId.fromURL(fileUrl);
+        PackageMetadata md110 = new PackageMetadataBuilder().patchId(pid110).postCommands("echo hell world").build();
+        DataHandler data110 = new DataHandler(new URLDataSource(fileUrl));
+        repository.addArchive(md110, data110, false);
         Package pack110 = repository.getPackage(pid110);
         Assert.assertEquals(pid110, pack110.getPatchId());
         Assert.assertEquals(3, pack110.getRecords().size());
-        Assert.assertEquals(0, pack110.getPostCommands().size());
-        
-        // Add post install commands
-        repository.addPostCommand(pid110, new String[]{"echo hello world"});
+        Assert.assertEquals(1, pack110.getMetadata().getPostCommands().size());
         
         // Install foo-1.0.0
         pack100 = patchTool.install(pid100, false);
         Assert.assertEquals(pid100, pack100.getPatchId());
         Assert.assertEquals(4, pack100.getRecords().size());
-        Assert.assertEquals(0, pack100.getPostCommands().size());
+        Assert.assertEquals(0, pack100.getMetadata().getPostCommands().size());
     }
 
     private URL getArchiveURL(String name) throws IOException {

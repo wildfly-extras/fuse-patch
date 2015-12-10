@@ -63,25 +63,18 @@ public interface RepositoryService {
 
     /**
      * Add the given patch archive
-     * @param patchId The patch id
-     * @param archiveData The data of the patch archive
-     * @param oneoffId An optional patch id if the given URL is a one-off patch
-     * @param dependencies An optional set of patch dependencies
+     * @param metadata The package metadata
+     * @param dataHandler The data of the patch archive
+     * @param force Force the add operation
      */
     @WebMethod
-    String addArchive(String patchId, DataHandler patchContent, String oneoffId, String[] dependencies, boolean force) throws IOException;
+    String addArchive(PackageMetadataAdapter metadata, DataHandler dataHandler, boolean force) throws IOException;
 
     /**
      * Remove the given patch id
      */
     @WebMethod
     boolean removeArchive(String removeId);
-
-    /**
-     * Add a post-install command for the given patch id
-     */
-    @WebMethod
-    void addPostCommand(String patchId, String[] cmdarr);
 
     /**
      * Get the smart patch for the given seed.

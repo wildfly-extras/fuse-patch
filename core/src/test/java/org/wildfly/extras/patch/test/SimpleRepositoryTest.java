@@ -27,7 +27,6 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.List;
 
 import javax.activation.DataHandler;
@@ -37,6 +36,8 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.PackageMetadata;
+import org.wildfly.extras.patch.PackageMetadataBuilder;
 import org.wildfly.extras.patch.PatchException;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
@@ -72,18 +73,20 @@ public class SimpleRepositoryTest {
         Assert.assertEquals(4, patchSet.getRecords().size());
 
         // Add archive foo-1.1.0
-        patchId = repo.addArchive(Archives.getZipUrlFoo110());
-        repo.addPostCommand(patchId, new String[] { "bin/fusepatch.sh", "--query-server" });
+        patchId = PatchId.fromString("foo-1.1.0");
+        PackageMetadata metadata = new PackageMetadataBuilder().patchId(patchId).postCommands("bin/fusepatch.sh --query-server").build();
+        DataHandler dataHandler = new DataHandler(new URLDataSource(Archives.getZipUrlFoo110()));
+        patchId = repo.addArchive(metadata, dataHandler, false);
         patchSet = repo.getPackage(patchId);
         Assert.assertEquals(PatchId.fromString("foo-1.1.0"), patchSet.getPatchId());
         Assert.assertEquals(3, patchSet.getRecords().size());
-        Assert.assertEquals(1, patchSet.getPostCommands().size());
-        Assert.assertEquals("bin/fusepatch.sh --query-server", patchSet.getPostCommands().get(0));
+        Assert.assertEquals(1, patchSet.getMetadata().getPostCommands().size());
+        Assert.assertEquals("bin/fusepatch.sh --query-server", patchSet.getMetadata().getPostCommands().get(0));
 
         // Add archive foo-1.1.0 again
         patchId = repo.addArchive(Archives.getZipUrlFoo110());
         Assert.assertEquals(PatchId.fromString("foo-1.1.0"), patchSet.getPatchId());
-        
+
         // Query available
         List<PatchId> patches = repo.queryAvailable(null);
         Assert.assertEquals("Patch available", 2, patches.size());
@@ -101,7 +104,7 @@ public class SimpleRepositoryTest {
             String message = ex.getMessage();
             Assert.assertTrue(message, message.contains("not exist: xxx-1.0.0"));
         }
-        
+
         // Remove archive
         Assert.assertTrue(repo.removeArchive(PatchId.fromString("foo-1.1.0")));
         patches = repo.queryAvailable(null);
@@ -117,16 +120,16 @@ public class SimpleRepositoryTest {
         Path path = Paths.get("target/repos/SimpleRepositoryTest", "repo && path");
         IOUtils.rmdirs(path);
         path.toFile().mkdirs();
-        
+
         URL url = new URL("file:./target/repos/SimpleRepositoryTest/" + URLEncoder.encode("repo && path", "UTF-8"));
         PatchTool patchTool = new PatchToolBuilder().localRepository(url).build();
         Repository repo = patchTool.getRepository();
-        
+
         // Add archive foo-1.0.0
         PatchId patchId = repo.addArchive(Archives.getZipUrlFoo100());
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patchId);
     }
-    
+
     @Test
     public void testFileMove() throws Exception {
 
@@ -167,8 +170,7 @@ public class SimpleRepositoryTest {
 
         // Force
         PatchId patchId = PatchId.fromURL(fileUrl);
-        DataHandler dataHandler = new DataHandler(new URLDataSource(fileUrl));
-        patchId = repo.addArchive(patchId, dataHandler, null, Collections.<PatchId> emptySet(), true);
+        patchId = repo.addArchive(fileUrl, true);
         Assert.assertEquals(PatchId.fromString("foo-copy-1.1.0"), patchId);
     }
 
@@ -188,23 +190,27 @@ public class SimpleRepositoryTest {
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[4]).build();
         Repository repo = patchTool.getRepository();
 
+        URL url100sp1 = Archives.getZipUrlFoo100SP1();
+        PatchId pid100sp1 = PatchId.fromURL(url100sp1);
         PatchId oneoffId = PatchId.fromString("foo-1.0.0");
+        PackageMetadata md100sp1 = new PackageMetadataBuilder().patchId(pid100sp1).oneoffId(oneoffId).build();
+        DataHandler data100sp1 = new DataHandler(new URLDataSource(url100sp1));
+
         try {
-            repo.addArchive(Archives.getZipUrlFoo100SP1(), oneoffId);
+            repo.addArchive(md100sp1, data100sp1, false);
             Assert.fail("PatchException expected");
         } catch (PatchException ex) {
             // expected
         }
 
-        PatchId idA = repo.addArchive(Archives.getZipUrlFoo100());
-        Package setA = repo.getPackage(idA);
-        PatchId idB = repo.addArchive(Archives.getZipUrlFoo100SP1(), oneoffId);
-        Package setB = repo.getPackage(idB);
-        Archives.assertPathsEqual(setA.getRecords(), setB.getRecords());
-        Assert.assertEquals(1, setB.getDependencies().size());
-        Assert.assertEquals(idA, setB.getDependencies().iterator().next());
+        PatchId pid100 = repo.addArchive(Archives.getZipUrlFoo100());
+        Package pack100 = repo.getPackage(pid100);
+        repo.addArchive(md100sp1, data100sp1, false);
+        Package pack100sp1 = repo.getPackage(pid100sp1);
+        Archives.assertPathsEqual(pack100.getRecords(), pack100sp1.getRecords());
+        Assert.assertEquals(0, pack100sp1.getMetadata().getDependencies().size());
 
-        Package smartSet = Package.smartSet(setA, setB);
+        Package smartSet = Package.smartSet(pack100, pack100sp1);
         Assert.assertEquals(1, smartSet.getRecords().size());
         Archives.assertActionPathEquals("UPD config/propsA.properties", smartSet.getRecords().get(0));
     }

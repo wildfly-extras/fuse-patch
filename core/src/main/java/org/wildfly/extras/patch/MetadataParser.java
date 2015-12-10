@@ -153,7 +153,10 @@ public final class MetadataParser {
             String date = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss").format(new Date());
             pw.println("# " + date);
             pw.println("# " + message);
-            Package patchSet = Package.create(smartPatch.getPatchId(), smartPatch.getRecords(), smartPatch.getPostCommands());
+            PatchId patchId = smartPatch.getPatchId();
+            List<String> postCommands = smartPatch.getMetadata().getPostCommands();
+            PackageMetadata metadata = new PackageMetadataBuilder().patchId(patchId).postCommands(postCommands).build();
+            Package patchSet = Package.create(metadata, smartPatch.getRecords());
             writePackage(patchSet, fos, false);
         }
     }
@@ -230,7 +233,7 @@ public final class MetadataParser {
                 pw.println(PATCHID_PREFIX + " " + patchSet.getPatchId());
             }
 
-            Set<PatchId> deps = patchSet.getDependencies();
+            Set<PatchId> deps = patchSet.getMetadata().getDependencies();
             if (!deps.isEmpty()) {
                 pw.println();
                 pw.println("[properties]");
@@ -245,7 +248,7 @@ public final class MetadataParser {
                 pw.println(rec.toString());
             }
 
-            List<String> commands = patchSet.getPostCommands();
+            List<String> commands = patchSet.getMetadata().getPostCommands();
             if (!commands.isEmpty()) {
                 pw.println();
                 pw.println("[post-install-commands]");
@@ -302,7 +305,8 @@ public final class MetadataParser {
                 }
                 line = br.readLine();
             }
-            return Package.create(patchId, records, dependencies, commands);
+            PackageMetadata metadata = new PackageMetadataBuilder().patchId(patchId).dependencies(dependencies).postCommands(commands).build();
+            return Package.create(metadata, records);
         }
     }
 }

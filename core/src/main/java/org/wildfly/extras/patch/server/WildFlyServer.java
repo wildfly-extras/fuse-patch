@@ -153,7 +153,7 @@ public final class WildFlyServer implements Server {
             // Verify dependencies
             List<PatchId> appliedPatches = queryAppliedPackages();
             List<PatchId> unsatisfied = new ArrayList<>();
-            for (PatchId depId : smartPatch.getDependencies()) {
+            for (PatchId depId : smartPatch.getMetadata().getDependencies()) {
                 if (!appliedPatches.contains(depId)) {
                     unsatisfied.add(depId);
                 }
@@ -280,7 +280,7 @@ public final class WildFlyServer implements Server {
             if (!smartPatch.isUninstall()) {
                 Runtime runtime = Runtime.getRuntime();
                 File procdir = homePath.toFile();
-                for (String cmd : smartPatch.getPostCommands()) {
+                for (String cmd : smartPatch.getMetadata().getPostCommands()) {
                     LOG.info("Run: {}", cmd);
                     String[] cmdarr = cmd.split("\\s") ;
                     Process proc = runtime.exec(cmdarr, null, procdir);

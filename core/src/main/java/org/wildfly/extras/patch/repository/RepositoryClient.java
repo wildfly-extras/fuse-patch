@@ -24,7 +24,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.locks.Lock;
 
 import javax.activation.DataHandler;
@@ -33,6 +32,8 @@ import javax.xml.namespace.QName;
 import javax.xml.ws.Service;
 
 import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.PackageMetadata;
+import org.wildfly.extras.patch.PackageMetadataBuilder;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.SmartPatch;
@@ -101,7 +102,8 @@ public class RepositoryClient implements Repository {
         try {
             PatchId patchId = PatchId.fromURL(fileUrl);
             DataHandler dataHandler = new DataHandler(new URLDataSource(fileUrl));
-            return addArchive(patchId, dataHandler, null, null, false);
+            PackageMetadata metadata = new PackageMetadataBuilder().patchId(patchId).build();
+            return addArchive(metadata, dataHandler, false);
         } finally {
             lock.unlock();
         }
@@ -113,38 +115,18 @@ public class RepositoryClient implements Repository {
         try {
             PatchId patchId = PatchId.fromURL(fileUrl);
             DataHandler dataHandler = new DataHandler(new URLDataSource(fileUrl));
-            return addArchive(patchId, dataHandler, null, null, force);
+            PackageMetadata metadata = new PackageMetadataBuilder().patchId(patchId).build();
+            return addArchive(metadata, dataHandler, force);
         } finally {
             lock.unlock();
         }
     }
 
     @Override
-    public PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException {
+    public PatchId addArchive(PackageMetadata metadata, DataHandler dataHandler, boolean force) throws IOException {
         lock.tryLock();
         try {
-            PatchId patchId = PatchId.fromURL(fileUrl);
-            DataHandler dataHandler = new DataHandler(new URLDataSource(fileUrl));
-            return addArchive(patchId, dataHandler, oneoffId, null, false);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    @Override
-    public PatchId addArchive(PatchId patchId, DataHandler dataHandler, PatchId oneoffId, Set<PatchId> dependencies, boolean force) throws IOException {
-        lock.tryLock();
-        try {
-            String oneoffSpec = oneoffId != null ? oneoffId.toString() : null;
-            String deps[] = new String[0];
-            if (dependencies != null) {
-                List<PatchId> deplist = new ArrayList<>(dependencies);
-                deps = new String[dependencies.size()];
-                for (int i = 0; i < dependencies.size(); i++) {
-                    deps[i] = deplist.get(i).toString();
-                }
-            }
-            String result = delegate.addArchive(patchId.toString(), dataHandler, oneoffSpec, deps, force);
+            String result = delegate.addArchive(PackageMetadataAdapter.fromPackage(metadata), dataHandler, force);
             return PatchId.fromString(result);
         } finally {
             lock.unlock();
@@ -156,16 +138,6 @@ public class RepositoryClient implements Repository {
         lock.tryLock();
         try {
             return delegate.removeArchive(removeId.toString());
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    @Override
-    public void addPostCommand(PatchId patchId, String[] cmdarr) {
-        lock.tryLock();
-        try {
-            delegate.addPostCommand(patchId.toString(), cmdarr);
         } finally {
             lock.unlock();
         }

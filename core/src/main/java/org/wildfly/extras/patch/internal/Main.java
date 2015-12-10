@@ -22,19 +22,23 @@ package org.wildfly.extras.patch.internal;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 import javax.activation.DataHandler;
 import javax.activation.URLDataSource;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wildfly.extras.patch.ManagedPath;
+import org.wildfly.extras.patch.PackageMetadata;
+import org.wildfly.extras.patch.PackageMetadataBuilder;
 import org.wildfly.extras.patch.PatchException;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
@@ -60,9 +64,9 @@ public class Main {
         CmdLineParser parser = new CmdLineParser(options);
         try {
             parser.parseArgument(args);
-        } catch (CmdLineException e) {
+        } catch (CmdLineException ex) {
             helpScreen(parser);
-            return;
+            throw ex;
         }
 
         try {
@@ -77,7 +81,7 @@ public class Main {
         }
     }
 
-	private static void run(CmdLineParser cmdParser, Options options) throws IOException {
+	private static void run(CmdLineParser cmdParser, Options options) throws IOException, JAXBException {
 		
         URL repoUrl = options.repositoryUrl != null ? options.repositoryUrl : LocalFileRepository.getDefaultRepositoryURL();
         PatchToolBuilder builder = new PatchToolBuilder().localRepository(repoUrl);
@@ -111,21 +115,7 @@ public class Main {
         
         // Add to repository
         if (options.addUrl != null) {
-            PatchTool patchTool = builder.build();
-            PatchId oneoffId = null;
-            Set<PatchId> dependencies = new LinkedHashSet<>();
-            if (options.oneoffId != null) {
-                oneoffId = PatchId.fromString(options.oneoffId);
-                dependencies.add(oneoffId);
-            }
-            if (options.dependencies != null) {
-                for (String depid : options.dependencies) {
-                    dependencies.add(PatchId.fromString(depid));
-                }
-            }
-            PatchId patchId = PatchId.fromURL(options.addUrl);
-            DataHandler dataHandler = new DataHandler(new URLDataSource(options.addUrl));
-            patchTool.getRepository().addArchive(patchId, dataHandler, oneoffId, dependencies, options.force);
+            addArchive(builder.build(), options);
             opfound = true;
         }
         
@@ -133,22 +123,6 @@ public class Main {
         if (options.removeId != null) {
             PatchTool patchTool = builder.build();
             patchTool.getRepository().removeArchive(PatchId.fromString(options.removeId));
-            opfound = true;
-        }
-        
-        // Add post install command
-        if (options.addCmd != null) {
-            PatchTool patchTool = builder.build();
-            PatchId patchId;
-            String[] cmdarr;
-            if (options.addUrl != null) {
-                patchId = PatchId.fromURL(options.addUrl);
-                cmdarr = options.addCmd;
-            } else {
-                patchId = PatchId.fromString(options.addCmd[0]);
-                cmdarr = Arrays.copyOfRange(options.addCmd, 1, options.addCmd.length);
-            }
-            patchTool.getRepository().addPostCommand(patchId, cmdarr);
             opfound = true;
         }
         
@@ -185,6 +159,42 @@ public class Main {
             helpScreen(cmdParser);
 		}
 	}
+
+    private static void addArchive(PatchTool patchTool, Options options) throws IOException, JAXBException {
+        
+        PatchId patchId = PatchId.fromURL(options.addUrl);
+        PackageMetadataBuilder mdbuilder = new PackageMetadataBuilder().patchId(patchId);
+        
+        if (options.metadataUrl != null) {
+            Unmarshaller unmarshaller = JAXBContext.newInstance(PackageMetadataModel.class).createUnmarshaller();
+            PackageMetadataModel model = (PackageMetadataModel) unmarshaller.unmarshal(options.metadataUrl);
+            PackageMetadata metadata = model.toPackageMetadata();
+            mdbuilder = new PackageMetadataBuilder().patchId(metadata.getPatchId());
+            mdbuilder.oneoffId(metadata.getOneoffId());
+            mdbuilder.dependencies(metadata.getDependencies());
+            mdbuilder.postCommands(metadata.getPostCommands());
+        }
+        
+        if (options.oneoffId != null) {
+            PatchId oneoffId = PatchId.fromString(options.oneoffId);
+            mdbuilder.oneoffId(oneoffId);
+        }
+        
+        Set<PatchId> dependencies = new LinkedHashSet<>();
+        if (options.dependencies != null) {
+            for (String depid : options.dependencies) {
+                dependencies.add(PatchId.fromString(depid));
+            }
+        }
+        
+        if (options.addCmd != null) {
+            mdbuilder.postCommands(options.addCmd);
+        }
+        
+        PackageMetadata metadata = mdbuilder.dependencies(dependencies).build();
+        DataHandler dataHandler = new DataHandler(new URLDataSource(options.addUrl));
+        patchTool.getRepository().addArchive(metadata, dataHandler, options.force);
+    }
 
     private static void helpScreen(CmdLineParser cmdParser) {
         System.err.println("fusepatch [options...]");

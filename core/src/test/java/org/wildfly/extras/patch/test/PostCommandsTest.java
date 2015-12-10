@@ -23,14 +23,19 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import javax.activation.DataHandler;
+import javax.activation.URLDataSource;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.wildfly.extras.patch.PatchId;
-import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.PackageMetadata;
+import org.wildfly.extras.patch.PackageMetadataBuilder;
+import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
+import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.Server;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.internal.Main;
@@ -59,9 +64,10 @@ public class PostCommandsTest {
         Server server = patchTool.getServer();
         Repository repo = patchTool.getRepository();
         
-        repo.addArchive(Archives.getZipUrlFoo100());
-        repo.addPostCommand(PatchId.fromString("foo-1.0.0"), new String[]{"echo", "Do", "first"});
-        repo.addPostCommand(PatchId.fromString("foo-1.0.0"), new String[]{"echo", "Do", "after"});
+        PatchId pid100 = PatchId.fromURL(Archives.getZipUrlFoo100());
+        PackageMetadata md100 = new PackageMetadataBuilder().patchId(pid100).postCommands("echo Do first", "echo Do after").build();
+        DataHandler data100 = new DataHandler(new URLDataSource(Archives.getZipUrlFoo100()));
+        repo.addArchive(md100, data100, false);
 
         // Verify clean server
         List<PatchId> patches = server.queryAppliedPackages();
@@ -72,7 +78,7 @@ public class PostCommandsTest {
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), smartPatch.getPatchId());
         
         // Verify post install commands
-        List<String> cmds = smartPatch.getPostCommands();
+        List<String> cmds = smartPatch.getMetadata().getPostCommands();
         Assert.assertEquals(2, cmds.size());
         Assert.assertEquals("echo Do first", cmds.get(0));
         Assert.assertEquals("echo Do after", cmds.get(1));
@@ -83,7 +89,7 @@ public class PostCommandsTest {
     }
 
     @Test
-    public void testAddWithCmd() throws Exception {
+    public void testAddThroughMainWithCmd() throws Exception {
 
         String fileUrl = Archives.getZipUrlFoo100().toString();
         String repoUrl = repoPaths[1].toUri().toURL().toString();
@@ -93,23 +99,23 @@ public class PostCommandsTest {
         Repository repo = patchTool.getRepository();
         
         Package patchSet = repo.getPackage(PatchId.fromString("foo-1.0.0"));
-        Assert.assertEquals(1, patchSet.getPostCommands().size());
-        Assert.assertEquals("echo hello world", patchSet.getPostCommands().get(0));
+        Assert.assertEquals(1, patchSet.getMetadata().getPostCommands().size());
+        Assert.assertEquals("echo hello world", patchSet.getMetadata().getPostCommands().get(0));
     }
 
     @Test
-    public void testAddWithExisting() throws Exception {
+    public void testAddThroughMainWithMetadata() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[2]).build();
+        String fileUrl = Archives.getZipUrlFoo100().toString();
+        String repoUrl = repoPaths[1].toUri().toURL().toString();
+        String metadataUrl = Paths.get("src/test/resources/simple-metadata.xml").toUri().toString();
+        Main.mainInternal(new String[] {"--repository", repoUrl, "--add", fileUrl, "--metadata", metadataUrl});
+        
+        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[1]).build();
         Repository repo = patchTool.getRepository();
         
-        PatchId patchId = repo.addArchive(Archives.getZipUrlFoo100());
-        
-        String repoUrl = repoPaths[2].toUri().toURL().toString();
-        Main.mainInternal(new String[] {"--repository", repoUrl, "--add-cmd", "foo-1.0.0", "echo hello world"});
-        
-        Package patchSet = repo.getPackage(patchId);
-        Assert.assertEquals(1, patchSet.getPostCommands().size());
-        Assert.assertEquals("echo hello world", patchSet.getPostCommands().get(0));
+        Package patchSet = repo.getPackage(PatchId.fromString("foo-1.0.0"));
+        Assert.assertEquals(1, patchSet.getMetadata().getPostCommands().size());
+        Assert.assertEquals("echo hello world", patchSet.getMetadata().getPostCommands().get(0));
     }
 }

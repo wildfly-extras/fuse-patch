@@ -19,13 +19,19 @@
  */
 package org.wildfly.extras.patch.test;
 
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import javax.activation.DataHandler;
+import javax.activation.URLDataSource;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.PackageMetadata;
+import org.wildfly.extras.patch.PackageMetadataBuilder;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
@@ -43,8 +49,12 @@ public class OneOffPatchTest {
         IOUtils.rmdirs(serverPath);
         serverPath.toFile().mkdirs();
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).build();
-        PatchId idA = patchTool.getRepository().addArchive(Archives.getZipUrlFoo100());
-        patchTool.getRepository().addArchive(Archives.getZipUrlFoo100SP1(), idA);
+        PatchId oneoffId = patchTool.getRepository().addArchive(Archives.getZipUrlFoo100());
+        URL url100sp1 = Archives.getZipUrlFoo100SP1();
+        PatchId pid100sp1 = PatchId.fromURL(url100sp1);
+        PackageMetadata md100sp1 = new PackageMetadataBuilder().patchId(pid100sp1).oneoffId(oneoffId).build();
+        DataHandler data100sp1 = new DataHandler(new URLDataSource(url100sp1));
+        patchTool.getRepository().addArchive(md100sp1, data100sp1, false);
     }
 
     @Test

@@ -51,13 +51,16 @@ final class Options {
     @Option(name = "--add", forbids = { "--remove" },  usage = "Add the given archive to the repository")
     URL addUrl;
     
-    @Option(name = "--add-cmd", handler = StringArrayOptionHandler.class, usage = "Add a post-install command for a given patch id")
-    String[] addCmd;
+    @Option(name = "--metadata", depends = { "--add" }, usage = "A subcommand for --add that points to a metadata descriptor")
+    URL metadataUrl;
+    
+    @Option(name = "--add-cmd", depends = { "--add" }, usage = "A subcommand for --add that adds a post-install command")
+    String addCmd;
     
     @Option(name = "--one-off", depends = { "--add" }, usage = "A subcommand for --add that names the target id for a one-off patch")
     String oneoffId;
     
-    @Option(name = "--dependencies", depends = { "--add" }, usage = "A subcommand for --add that defines an array of dependencies")
+    @Option(name = "--dependencies", handler = StringArrayOptionHandler.class, depends = { "--add" }, usage = "A subcommand for --add that defines an array of dependencies")
     String[]  dependencies;
     
     @Option(name = "--remove", forbids = { "--add" },  usage = "Remove the given patch id from the repository")

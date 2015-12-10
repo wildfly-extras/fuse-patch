@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,26 +45,17 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
  */
 public final class Package {
 
-    private final PatchId identity;
+    private final PackageMetadata metadata;
     private final Map<Path, Record> recordsMap = new LinkedHashMap<>();
-    private final List<String> commands = new ArrayList<>();
-    private final Set<PatchId> dependencies = new LinkedHashSet<>();
     private int hashCache;
 
     public static Package create(PatchId patchId, Collection<Record> records) {
-        return new Package(patchId, records, Collections.<PatchId>emptySet(), Collections.<String>emptyList());
+        PackageMetadata metadata = new PackageMetadataBuilder().patchId(patchId).build();
+        return new Package(metadata, records);
     }
 
-    public static Package create(PatchId patchId, Collection<Record> records, Set<PatchId> dependencies) {
-        return new Package(patchId, records, dependencies, Collections.<String>emptyList());
-    }
-
-    public static Package create(PatchId patchId, Collection<Record> records, List<String> commands) {
-        return new Package(patchId, records, Collections.<PatchId>emptySet(), commands);
-    }
-
-    public static Package create(PatchId patchId, Collection<Record> records, Set<PatchId> dependencies, List<String> commands) {
-        return new Package(patchId, records, dependencies, commands);
+    public static Package create(PackageMetadata metadata, Collection<Record> records) {
+        return new Package(metadata, records);
     }
 
     public static Package smartSet(Package seedPatch, Package targetSet) {
@@ -96,22 +86,18 @@ public final class Package {
         }
 
         records.addAll(removeMap.values());
-        return new Package(targetSet.identity, records, targetSet.dependencies, targetSet.commands);
+        return new Package(targetSet.metadata, records);
     }
 
-    private Package(PatchId patchId, Collection<Record> records, Set<PatchId> dependencies, List<String> commands) {
-        IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
+    private Package(PackageMetadata metadata, Collection<Record> records) {
+        IllegalArgumentAssertion.assertNotNull(metadata, "metadata");
         IllegalArgumentAssertion.assertNotNull(records, "records");
-        IllegalArgumentAssertion.assertNotNull(dependencies, "dependencies");
-        IllegalArgumentAssertion.assertNotNull(commands, "commands");
-        this.dependencies.addAll(dependencies);
-        this.commands.addAll(commands);
-        this.identity = patchId;
+        this.metadata = metadata;
 
         // Sort the records by path
         Map<Path, Record> auxmap = new HashMap<>();
         for (Record aux : records) {
-            auxmap.put(aux.getPath(), Record.create(patchId, aux.getAction(), aux.getPath(), aux.getChecksum()));
+            auxmap.put(aux.getPath(), Record.create(metadata.getPatchId(), aux.getAction(), aux.getPath(), aux.getChecksum()));
         }
         List<Path> paths = new ArrayList<>(auxmap.keySet());
         Collections.sort(paths);
@@ -120,8 +106,12 @@ public final class Package {
         }
     }
 
+    public PackageMetadata getMetadata() {
+        return metadata;
+    }
+
     public PatchId getPatchId() {
-        return identity;
+        return metadata.getPatchId();
     }
 
     public List<Record> getRecords() {
@@ -136,18 +126,10 @@ public final class Package {
         return recordsMap.get(path);
     }
 
-    public Set<PatchId> getDependencies() {
-        return dependencies;
-    }
-
-    public List<String> getPostCommands() {
-        return Collections.unmodifiableList(commands);
-    }
-
     @Override
     public int hashCode() {
         if (hashCache == 0) {
-            hashCache = ("" + identity + recordsMap + commands).hashCode();
+            hashCache = ("" + metadata + recordsMap).hashCode();
         }
         return hashCache;
     }
@@ -157,15 +139,13 @@ public final class Package {
         if (this == obj) return true;
         if (!(obj instanceof Package)) return false;
         Package other = (Package) obj;
-        boolean result = identity.equals(other.identity);
+        boolean result = metadata.equals(other.metadata);
         result &= recordsMap.equals(other.recordsMap);
-        result &= dependencies.equals(other.dependencies);
-        result &= commands.equals(other.commands);
         return result;
     }
 
     @Override
     public String toString() {
-        return "Package[" + identity + ",recs=" + recordsMap.size() + ",deps=" + dependencies + ",cmds=" + commands.size() + "]";
+        return "Package[" + metadata + ",recs=" + recordsMap.size() + "]";
     }
 }

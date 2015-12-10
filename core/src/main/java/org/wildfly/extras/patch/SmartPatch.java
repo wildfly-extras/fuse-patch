@@ -64,7 +64,7 @@ public final class SmartPatch {
         for (Record rec : patchSet.getRecords()) {
             records.add(Record.create(patchId, Action.DEL, rec.getPath(), rec.getChecksum()));
         }
-        return new SmartPatch(Package.create(patchId, records), null);
+        return new SmartPatch(Package.create(patchSet.getMetadata(), records), null);
     }
     
     private SmartPatch(Package patchSet, DataHandler dataHandler) {
@@ -109,8 +109,8 @@ public final class SmartPatch {
         return patchSet.getRecords();
     }
     
-    public Set<PatchId> getDependencies() {
-        return patchSet.getDependencies();
+    public PackageMetadata getMetadata() {
+        return patchSet.getMetadata();
     }
     
     public Set<Record> getRemoveSet() {
@@ -137,10 +137,6 @@ public final class SmartPatch {
         return addMap.containsKey(path);
     }
 
-    public List<String> getPostCommands() {
-        return patchSet.getPostCommands();
-    }
-    
     @Override
     public String toString() {
         return "SmartPatch[id=" + patchSet.getPatchId() + ",add=" + addMap.size() + ",upd=" + updMap.size() + ",del=" + delMap.size() + "]";

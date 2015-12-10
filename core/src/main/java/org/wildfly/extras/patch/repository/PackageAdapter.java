@@ -20,21 +20,16 @@
 package org.wildfly.extras.patch.repository;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.wildfly.extras.patch.Package;
-import org.wildfly.extras.patch.PatchId;
+import org.wildfly.extras.patch.PackageMetadata;
 import org.wildfly.extras.patch.Record;
 
 public class PackageAdapter {
 
-    private String identity;
+    private PackageMetadataAdapter metadataSpec;
     private String[] recordSpecs;
-    private String[] dependencySpecs;
-    private String[] commandArray;
     
     public static PackageAdapter fromPackage(Package patch) {
     	
@@ -42,71 +37,37 @@ public class PackageAdapter {
     		return null;
     	
     	PackageAdapter result = new PackageAdapter();
-    	result.identity = patch.getPatchId().toString();
+    	result.metadataSpec = PackageMetadataAdapter.fromPackage(patch.getMetadata());
     	List<Record> records = patch.getRecords();
 		result.recordSpecs = new String[records.size()];
     	for (int i = 0; i < records.size(); i++) {
     		result.recordSpecs[i] = records.get(i).toString();
     	}
-    	List<PatchId> dependencies = new ArrayList<>(patch.getDependencies());
-    	result.dependencySpecs = new String[dependencies.size()];
-    	for (int i = 0; i < dependencies.size(); i++) {
-    		result.dependencySpecs[i] = dependencies.get(i).toString();
-    	}
-    	List<String> commands = patch.getPostCommands();
-    	result.commandArray = new String[commands.size()];
-    	commands.toArray(result.commandArray);
     	return result;
     }
     
     public Package toPackage() {
-    	PatchId patchId = PatchId.fromString(identity);
+        PackageMetadata metadata = metadataSpec.toPackageMetadata();
     	List<Record> records = new ArrayList<>();
     	for (String spec : recordSpecs) {
     		records.add(Record.fromString(spec));
     	}
-    	Set<PatchId> dependencies = new HashSet<>();
-    	if (dependencySpecs != null) {
-        	for (String spec : dependencySpecs) {
-        		dependencies.add(PatchId.fromString(spec));
-        	}
-    	}
-    	List<String> commands = new ArrayList<>();
-    	if (commandArray != null) {
-    		commands = Arrays.asList(commandArray);
-    	}
-    	return Package.create(patchId, records, dependencies, commands);
+    	return Package.create(metadata, records);
     }
     
-    public String getIdentity() {
-		return identity;
-	}
+	public PackageMetadataAdapter getMetadata() {
+        return metadataSpec;
+    }
 
-	public void setIdentity(String identity) {
-		this.identity = identity;
-	}
+    public void setMetadata(PackageMetadataAdapter metadata) {
+        this.metadataSpec = metadata;
+    }
 
-	public String[] getRecords() {
+    public String[] getRecords() {
 		return recordSpecs;
 	}
 
 	public void setRecords(String[] records) {
 		this.recordSpecs = records;
-	}
-
-	public String[] getDependencies() {
-		return dependencySpecs;
-	}
-
-	public void setDependencies(String[] dependencies) {
-		this.dependencySpecs = dependencies;
-	}
-
-	public String[] getCommands() {
-		return commandArray;
-	}
-
-	public void setCommands(String[] commands) {
-		this.commandArray = commands;
 	}
 }

@@ -23,9 +23,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.activation.DataHandler;
@@ -42,6 +40,7 @@ import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.repository.LocalFileRepository;
 import org.wildfly.extras.patch.repository.PackageAdapter;
+import org.wildfly.extras.patch.repository.PackageMetadataAdapter;
 import org.wildfly.extras.patch.repository.RepositoryService;
 import org.wildfly.extras.patch.repository.SmartPatchAdapter;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
@@ -103,19 +102,12 @@ public class RepositoryEndpoint implements RepositoryService {
 	}
 
 	@Override
-	public String addArchive(String patchId, DataHandler dataHandler, String oneoffSpec, String[] deps, boolean force) throws IOException {
-        IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
+	public String addArchive(PackageMetadataAdapter metadata, DataHandler dataHandler, boolean force) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(metadata, "metadata");
         IllegalArgumentAssertion.assertNotNull(dataHandler, "dataHandler");
         lock.tryLock();
         try {
-            PatchId oneoffId = oneoffSpec != null ? PatchId.fromString(oneoffSpec) : null;
-            Set<PatchId> dependencies = new HashSet<>();
-            if (deps != null) {
-                for (String pidSpec : deps) {
-                    dependencies.add(PatchId.fromString(pidSpec));
-                }
-            }
-            return delegate.addArchive(PatchId.fromString(patchId), dataHandler, oneoffId, dependencies, force).toString();
+            return delegate.addArchive(metadata.toPackageMetadata(), dataHandler, force).toString();
         } finally {
             lock.unlock();
         }
@@ -127,18 +119,6 @@ public class RepositoryEndpoint implements RepositoryService {
         lock.tryLock();
         try {
             return delegate.removeArchive(PatchId.fromString(patchId));
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    @Override
-    public void addPostCommand(String patchId, String[] cmdarr) {
-        IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
-        IllegalArgumentAssertion.assertNotNull(cmdarr, "cmdarr");
-        lock.tryLock();
-        try {
-            delegate.addPostCommand(PatchId.fromString(patchId), cmdarr);
         } finally {
             lock.unlock();
         }

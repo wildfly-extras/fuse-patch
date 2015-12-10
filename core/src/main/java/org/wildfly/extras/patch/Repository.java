@@ -22,7 +22,6 @@ package org.wildfly.extras.patch;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
-import java.util.Set;
 
 import javax.activation.DataHandler;
 
@@ -68,34 +67,22 @@ public interface Repository {
     /**
      * Add the given patch archive
      * @param fileUrl The file URL to the patch archive
+     * @param force Force the add operation
      */
     PatchId addArchive(URL fileUrl, boolean force) throws IOException;
 
     /**
      * Add the given patch archive
-     * @param fileUrl The file URL to the patch archive
-     * @param oneoffId An optional patch id if the given URL is a one-off patch
-     */
-    PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException;
-
-    /**
-     * Add the given patch archive
-     * @param patchId The target patch id
+     * @param metadata An optional patch id if the given URL is a one-off patch
      * @param dataHandler The data handler to the patch archive
-     * @param oneoffId An optional patch id if the given URL is a one-off patch
-     * @param dependencies An optional set of patch dependencies
+     * @param force Force the add operation
      */
-    PatchId addArchive(PatchId patchId, DataHandler dataHandler, PatchId oneoffId, Set<PatchId> dependencies, boolean force) throws IOException;
+    PatchId addArchive(PackageMetadata metadata, DataHandler dataHandler, boolean force) throws IOException;
 
     /**
      * Remove the given patch id
      */
     boolean removeArchive(PatchId removeId);
-
-    /**
-     * Add a post-install command for the given patch id
-     */
-    void addPostCommand(PatchId patchId, String[] cmdarr);
 
 	/**
 	 * Get the smart patch for the given seed.

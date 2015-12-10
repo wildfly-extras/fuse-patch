@@ -31,8 +31,6 @@ import java.net.URLDecoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.CodeSource;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -49,6 +47,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wildfly.extras.patch.MetadataParser;
 import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.PackageMetadata;
+import org.wildfly.extras.patch.PackageMetadataBuilder;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Record;
 import org.wildfly.extras.patch.Repository;
@@ -151,7 +151,8 @@ public final class LocalFileRepository implements Repository {
         try {
             PatchId patchId = PatchId.fromURL(fileUrl);
             DataHandler dataHandler = new DataHandler(new URLDataSource(fileUrl));
-            return addArchive(patchId, dataHandler, null, Collections.<PatchId>emptySet(), false);
+            PackageMetadata metadata = new PackageMetadataBuilder().patchId(patchId).build();
+            return addArchive(metadata, dataHandler, false);
         } finally {
             lock.unlock();
         }
@@ -163,27 +164,23 @@ public final class LocalFileRepository implements Repository {
         try {
             PatchId patchId = PatchId.fromURL(fileUrl);
             DataHandler dataHandler = new DataHandler(new URLDataSource(fileUrl));
-            return addArchive(patchId, dataHandler, null, Collections.<PatchId>emptySet(), force);
+            PackageMetadata metadata = new PackageMetadataBuilder().patchId(patchId).build();
+            return addArchive(metadata, dataHandler, force);
         } finally {
             lock.unlock();
         }
     }
 
     @Override
-    public PatchId addArchive(URL fileUrl, PatchId oneoffId) throws IOException {
-        lock.tryLock();
-        try {
-            PatchId patchId = PatchId.fromURL(fileUrl);
-            DataHandler dataHandler = new DataHandler(new URLDataSource(fileUrl));
-            return addArchive(patchId, dataHandler, oneoffId, Collections.<PatchId>emptySet(), false);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    @Override
-    public PatchId addArchive(PatchId patchId, DataHandler dataHandler, PatchId oneoffId, Set<PatchId> dependencies, boolean force) throws IOException {
+    public PatchId addArchive(PackageMetadata metadata, DataHandler dataHandler, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(dataHandler, "dataHandler");
+        IllegalArgumentAssertion.assertNotNull(metadata, "metadata");
+        
+        // Unwrap the package metadata
+        PatchId patchId = metadata.getPatchId();
+        PatchId oneoffId = metadata.getOneoffId();
+        Set<PatchId> dependencies = metadata.getDependencies();
+        
         lock.tryLock();
         try {
             // Cannot add already existing archive
@@ -228,6 +225,7 @@ public final class LocalFileRepository implements Repository {
             Package patchSet;
             try {
                 try (ZipInputStream zipInput = new ZipInputStream(new FileInputStream(targetFile))) {
+                    Set<PatchId> depids = new LinkedHashSet<>(dependencies);
                     if (oneoffId != null) {
                         Package oneoffSet = getPackage(oneoffId);
                         Map<Path, Record> records = new HashMap<>();
@@ -238,12 +236,11 @@ public final class LocalFileRepository implements Repository {
                         for (Record rec : sourceSet.getRecords()) {
                             records.put(rec.getPath(), rec);
                         }
-                        Set<PatchId> depids = new LinkedHashSet<>(dependencies);
                         depids.add(oneoffId);
-                        patchSet = Package.create(patchId, records.values(), depids);
+                        patchSet = Package.create(metadata, records.values());
                     } else {
                         Package sourceSet = MetadataParser.buildPackageFromZip(patchId, Record.Action.INFO, zipInput);
-                        patchSet = Package.create(patchId, sourceSet.getRecords(), dependencies);
+                        patchSet = Package.create(metadata, sourceSet.getRecords());
                     }
                 }
 
@@ -309,27 +306,6 @@ public final class LocalFileRepository implements Repository {
     }
 
     @Override
-    public void addPostCommand(PatchId patchId, String[] cmdarr) {
-        IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
-        IllegalArgumentAssertion.assertNotNull(cmdarr, "cmdarr");
-        lock.tryLock();
-        try {
-            Package patchSet = getPackage(patchId);
-            List<String> commands = new ArrayList<>(patchSet.getPostCommands());
-            commands.add(commandString(cmdarr));
-            patchSet = Package.create(patchId, patchSet.getRecords(), commands);
-            try {
-                MetadataParser.writePackage(rootPath, patchSet);
-            } catch (IOException ex) {
-                throw new IllegalStateException(ex);
-            }
-            LOG.info("Added post install command to {}", patchId);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    @Override
     public SmartPatch getSmartPatch(Package seedPatch, PatchId patchId) {
         lock.tryLock();
         try {
@@ -345,14 +321,6 @@ public final class LocalFileRepository implements Repository {
         } finally {
             lock.unlock();
         }
-    }
-
-    private String commandString(String[] cmdarr) {
-        StringBuffer result = new StringBuffer();
-        for (String tok : cmdarr) {
-            result.append(tok + " ");
-        }
-        return result.toString().trim();
     }
 
     private Path getPackagePath(PatchId patchId) {
