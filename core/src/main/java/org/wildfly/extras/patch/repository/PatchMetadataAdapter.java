@@ -25,22 +25,22 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.wildfly.extras.patch.PackageMetadata;
-import org.wildfly.extras.patch.PackageMetadataBuilder;
+import org.wildfly.extras.patch.PatchMetadata;
+import org.wildfly.extras.patch.PatchMetadataBuilder;
 import org.wildfly.extras.patch.PatchId;
 
-public class PackageMetadataAdapter {
+public class PatchMetadataAdapter {
 
     private String identity;
     private String[] dependencySpecs;
     private String[] commandArray;
     
-    public static PackageMetadataAdapter fromPackage(PackageMetadata metadata) {
+    public static PatchMetadataAdapter fromPatchMetadata(PatchMetadata metadata) {
     	
     	if (metadata == null)
     		return null;
     	
-    	PackageMetadataAdapter result = new PackageMetadataAdapter();
+    	PatchMetadataAdapter result = new PatchMetadataAdapter();
     	result.identity = metadata.getPatchId().toString();
     	List<PatchId> dependencies = new ArrayList<>(metadata.getDependencies());
     	result.dependencySpecs = new String[dependencies.size()];
@@ -53,7 +53,7 @@ public class PackageMetadataAdapter {
     	return result;
     }
     
-    public PackageMetadata toPackageMetadata() {
+    public PatchMetadata toPatchMetadata() {
     	PatchId patchId = PatchId.fromString(identity);
     	Set<PatchId> dependencies = new HashSet<>();
     	if (dependencySpecs != null) {
@@ -65,7 +65,7 @@ public class PackageMetadataAdapter {
     	if (commandArray != null) {
     		commands = Arrays.asList(commandArray);
     	}
-    	return new PackageMetadataBuilder().patchId(patchId).dependencies(dependencies).postCommands(commands).build();
+    	return new PatchMetadataBuilder().patchId(patchId).dependencies(dependencies).postCommands(commands).build();
     }
     
     public String getIdentity() {

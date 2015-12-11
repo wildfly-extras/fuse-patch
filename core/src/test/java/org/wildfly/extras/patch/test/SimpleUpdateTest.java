@@ -37,7 +37,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.extras.patch.ManagedPath;
-import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.Patch;
 import org.wildfly.extras.patch.PatchException;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
@@ -72,7 +72,7 @@ public class SimpleUpdateTest {
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).serverPath(serverPaths[0]).build();
         Server server = patchTool.getServer();
         
-        List<PatchId> patches = server.queryAppliedPackages();
+        List<PatchId> patches = server.queryAppliedPatches();
         Assert.assertTrue("Patch set empty", patches.isEmpty());
         
         // Cannot install non-existing package
@@ -85,17 +85,17 @@ public class SimpleUpdateTest {
         }
         
         // Verify smart patch to install foo-1.0.0
-        Package setA = ParserAccess.getPackage(Archives.getZipUrlFoo100());
+        Patch setA = ParserAccess.getPatch(Archives.getZipUrlFoo100());
         PatchId idA = setA.getPatchId();
         SmartPatch smartPatch = SmartPatch.forInstall(setA, new DataHandler(new URLDataSource(Archives.getZipUrlFoo100())));
         Assert.assertEquals(idA, smartPatch.getPatchId());
         Assert.assertEquals(setA.getRecords(), smartPatch.getRecords());
         
         // Install foo-1.0.0
-        Package curSet = patchTool.install(idA, false);
+        Patch curSet = patchTool.install(idA, false);
         Assert.assertEquals(idA, curSet.getPatchId());
         Assert.assertEquals(setA.getRecords(), curSet.getRecords());
-        Archives.assertPathsEqual(setA.getRecords(), server.getPackage(idA).getRecords());
+        Archives.assertPathsEqual(setA.getRecords(), server.getPatch(idA).getRecords());
         Archives.assertPathsEqual(setA, serverPaths[0]);
 
         // Verify managed paths for foo-1.0.0
@@ -109,9 +109,9 @@ public class SimpleUpdateTest {
         Assert.assertEquals(ManagedPath.fromString("lib/foo-1.0.0.jar [foo-1.0.0]"), mpaths.get(5));
         
         // Verify smart patch to update to foo-1.1.0
-        Package setB = ParserAccess.getPackage(Archives.getZipUrlFoo110());
+        Patch setB = ParserAccess.getPatch(Archives.getZipUrlFoo110());
         PatchId idB = setB.getPatchId();
-        Package smartSet = Package.smartDelta(setA, setB);
+        Patch smartSet = Patch.smartDelta(setA, setB);
         smartPatch = SmartPatch.forInstall(smartSet, new DataHandler(new URLDataSource(Archives.getZipUrlFoo110())));
         Assert.assertEquals(4, smartPatch.getRecords().size());
         Archives.assertActionPathEquals("UPD config/propsA.properties", smartPatch.getRecords().get(0));
@@ -124,7 +124,7 @@ public class SimpleUpdateTest {
         Assert.assertEquals(idB, curSet.getPatchId());
         Assert.assertEquals(3, curSet.getRecords().size());
         Assert.assertEquals(setB.getRecords(), curSet.getRecords());
-        Archives.assertPathsEqual(setB.getRecords(), server.getPackage(idB).getRecords());
+        Archives.assertPathsEqual(setB.getRecords(), server.getPatch(idB).getRecords());
         Archives.assertPathsEqual(setB, serverPaths[0]);
         
         // Verify managed paths for foo-1.1.0
@@ -143,10 +143,10 @@ public class SimpleUpdateTest {
         Assert.assertEquals(ManagedPath.fromString("config/propsB.properties [foo-1.0.0]"), mpaths.get(1));
         
         // Query applied packages
-        patches = server.queryAppliedPackages();
+        patches = server.queryAppliedPatches();
         Assert.assertEquals(1, patches.size());
         Assert.assertEquals(idB, patches.get(0));
-        Assert.assertEquals(setB, server.getPackage("foo"));
+        Assert.assertEquals(setB, server.getPatch("foo"));
         
         // Cannot uninstall non-existing package
         try {
@@ -168,7 +168,7 @@ public class SimpleUpdateTest {
         }
         
         // Verify smart patch to downgrade to foo-1.0.0
-        smartSet = Package.smartDelta(setB, setA);
+        smartSet = Patch.smartDelta(setB, setA);
         smartPatch = SmartPatch.forInstall(smartSet, new DataHandler(new URLDataSource(Archives.getZipUrlFoo100())));
         Assert.assertEquals(4, smartPatch.getRecords().size());
         Archives.assertActionPathEquals("UPD config/propsA.properties", smartPatch.getRecords().get(0));
@@ -181,14 +181,14 @@ public class SimpleUpdateTest {
         Assert.assertEquals(idA, curSet.getPatchId());
         Assert.assertEquals(4, curSet.getRecords().size());
         Assert.assertEquals(setA.getRecords(), curSet.getRecords());
-        Archives.assertPathsEqual(setA.getRecords(), server.getPackage(idA).getRecords());
+        Archives.assertPathsEqual(setA.getRecords(), server.getPatch(idA).getRecords());
         Archives.assertPathsEqual(setA, serverPaths[0]);
         
         // Query applied packages
-        patches = server.queryAppliedPackages();
+        patches = server.queryAppliedPatches();
         Assert.assertEquals(1, patches.size());
         Assert.assertEquals(idA, patches.get(0));
-        Assert.assertEquals(setA, server.getPackage("foo"));
+        Assert.assertEquals(setA, server.getPatch("foo"));
         
         // Verify managed paths for foo-1.0.0
         mpaths = server.queryManagedPaths(null);
@@ -214,7 +214,7 @@ public class SimpleUpdateTest {
         Assert.assertEquals(0, mpaths.size());
 
         // Verify query
-        patches = server.queryAppliedPackages();
+        patches = server.queryAppliedPatches();
         Assert.assertEquals(0, patches.size());
     }
     
@@ -246,11 +246,11 @@ public class SimpleUpdateTest {
         
         // Delete the workspace
         IOUtils.rmdirs(serverPaths[1].resolve("fusepatch"));
-        Assert.assertTrue("No patches applied", server.queryAppliedPackages().isEmpty());
+        Assert.assertTrue("No patches applied", server.queryAppliedPatches().isEmpty());
         
         // Verify that the files can be added if they have the same checksum
         patchTool.install(idA, false);
-        Assert.assertEquals(1, server.queryAppliedPackages().size());
+        Assert.assertEquals(1, server.queryAppliedPatches().size());
     }
 
     @Test

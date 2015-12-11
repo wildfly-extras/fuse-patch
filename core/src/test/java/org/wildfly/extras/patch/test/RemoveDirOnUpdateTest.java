@@ -36,7 +36,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.extras.patch.ManagedPath;
-import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.Patch;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
@@ -77,7 +77,7 @@ public class RemoveDirOnUpdateTest {
         Path configPath = serverPaths[0].resolve("config");
         Path subPath = configPath.resolve("sub");
         
-        Package curSet = patchTool.install(PatchId.fromString("rdou-1.0.0"), false);
+        Patch curSet = patchTool.install(PatchId.fromString("rdou-1.0.0"), false);
         Assert.assertEquals(2, curSet.getRecords().size());
         
         // Verify managed paths for rdou-1.0.0
@@ -119,7 +119,7 @@ public class RemoveDirOnUpdateTest {
         // Create the config path upfront
         configPath.toFile().mkdirs();
         
-        Package curSet = patchTool.install(PatchId.fromString("rdou-1.0.0"), false);
+        Patch curSet = patchTool.install(PatchId.fromString("rdou-1.0.0"), false);
         Assert.assertEquals(2, curSet.getRecords().size());
         
         // Verify managed paths for rdou-1.0.0

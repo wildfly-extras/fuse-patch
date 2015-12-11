@@ -26,7 +26,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.xml.namespace.QName;
 
-import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.Patch;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.Repository;
@@ -88,7 +88,7 @@ public final class DefaultPatchTool extends PatchTool {
     }
 
     @Override
-    public Package install(PatchId patchId, boolean force) throws IOException {
+    public Patch install(PatchId patchId, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         lock.tryLock();
         try {
@@ -99,7 +99,7 @@ public final class DefaultPatchTool extends PatchTool {
     }
 
     @Override
-    public Package update(String prefix, boolean force) throws IOException {
+    public Patch update(String prefix, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
         lock.tryLock();
         try {
@@ -112,13 +112,13 @@ public final class DefaultPatchTool extends PatchTool {
     }
 
     @Override
-    public Package uninstall(PatchId patchId) throws IOException {
+    public Patch uninstall(PatchId patchId) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         lock.tryLock();
         try {
-            Package installed = getServer().getPackage(patchId);
-            PatchAssertion.assertNotNull(installed, "Package not installed: " + patchId);
-            PatchId latestId = getServer().getPackage(patchId.getName()).getPatchId();
+            Patch installed = getServer().getPatch(patchId);
+            PatchAssertion.assertNotNull(installed, "Patch not installed: " + patchId);
+            PatchId latestId = getServer().getPatch(patchId.getName()).getPatchId();
             PatchAssertion.assertEquals(patchId, latestId, "Active package is " + latestId + ", cannot uninstall: " + patchId);
             SmartPatch smartPatch = SmartPatch.forUninstall(installed);
             return getServer().applySmartPatch(smartPatch, false);
@@ -127,18 +127,18 @@ public final class DefaultPatchTool extends PatchTool {
         }
     }
 
-    private Package installInternal(PatchId patchId, boolean force) throws IOException {
+    private Patch installInternal(PatchId patchId, boolean force) throws IOException {
 
         PatchId serverId = null;
         String prefix = patchId.getName();
-        for (PatchId pid : getServer().queryAppliedPackages()) {
+        for (PatchId pid : getServer().queryAppliedPatches()) {
             if (pid.getName().equals(prefix)) {
                 serverId = pid;
                 break;
             }
         }
 
-        Package seedPatch = serverId != null ? getServer().getPackage(serverId) : null;
+        Patch seedPatch = serverId != null ? getServer().getPatch(serverId) : null;
         SmartPatch smartPatch = getRepository().getSmartPatch(seedPatch, patchId);
         return getServer().applySmartPatch(smartPatch, force);
     }

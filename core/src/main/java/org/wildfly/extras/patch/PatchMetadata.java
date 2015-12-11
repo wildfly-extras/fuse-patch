@@ -27,15 +27,18 @@ import java.util.Set;
 
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 
-public final class PackageMetadata {
+/**
+ * {@code PatchMetadata} are immutable.
+ */
+public final class PatchMetadata {
 
     private final PatchId patchId;
     private final PatchId oneoffId;
     private final Set<PatchId> dependencies = new LinkedHashSet<>();
     private final List<String> commands = new ArrayList<>();
-    private String tostring;
+    private final String stringCache;
     
-    PackageMetadata(PatchId patchId, PatchId oneoffId, Set<PatchId> dependencies, List<String> commands) {
+    PatchMetadata(PatchId patchId, PatchId oneoffId, Set<PatchId> dependencies, List<String> commands) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         this.patchId = patchId;
         this.oneoffId = oneoffId;
@@ -45,8 +48,8 @@ public final class PackageMetadata {
         if (commands != null) {
             this.commands.addAll(commands);
         }
+        this.stringCache = "[" + patchId + ",oneoff=" + oneoffId + ",deps=" + dependencies + ",cmds=" + commands + "]"; 
     }
-
 
     public PatchId getPatchId() {
         return patchId;
@@ -75,16 +78,13 @@ public final class PackageMetadata {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof PackageMetadata)) return false;
-        PackageMetadata other = (PackageMetadata) obj;
+        if (!(obj instanceof PatchMetadata)) return false;
+        PatchMetadata other = (PatchMetadata) obj;
         return toString().equals(other.toString());
     }
 
     @Override
     public String toString() {
-        if (tostring == null) {
-            tostring = "[" + patchId + ",oneoff=" + oneoffId + ",deps=" + dependencies + ",cmds=" + commands + "]"; 
-        }
-        return tostring;
+        return stringCache;
     }
 }

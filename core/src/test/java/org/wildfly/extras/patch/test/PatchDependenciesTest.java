@@ -30,16 +30,16 @@ import javax.activation.URLDataSource;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.wildfly.extras.patch.Package;
-import org.wildfly.extras.patch.PackageMetadata;
-import org.wildfly.extras.patch.PackageMetadataBuilder;
+import org.wildfly.extras.patch.Patch;
+import org.wildfly.extras.patch.PatchMetadata;
+import org.wildfly.extras.patch.PatchMetadataBuilder;
 import org.wildfly.extras.patch.PatchException;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.utils.IOUtils;
 
-public class PackageDependenciesTest {
+public class PatchDependenciesTest {
 
     final static Path repoPath = Paths.get("target/repos/PatchDependenciesTest/repo");
     final static Path serverPath = Paths.get("target/servers/PatchDependenciesTest/srvA");
@@ -55,7 +55,7 @@ public class PackageDependenciesTest {
         URL url110 = Archives.getZipUrlFoo110();
         PatchId pid110 = PatchId.fromURL(url110);
         DataHandler data110 = new DataHandler(new URLDataSource(url110));
-        PackageMetadata md110 = new PackageMetadataBuilder().patchId(pid110).dependencies(Collections.singleton(pid100)).build();
+        PatchMetadata md110 = new PatchMetadataBuilder().patchId(pid110).dependencies(Collections.singleton(pid100)).build();
         patchTool.getRepository().addArchive(md110, data110, false);
     }
 
@@ -67,7 +67,7 @@ public class PackageDependenciesTest {
         PatchId idA = PatchId.fromURL(Archives.getZipUrlFoo100());
         PatchId idB = PatchId.fromURL(Archives.getZipUrlFoo110());
 
-        Package setB;
+        Patch setB;
         try {
             setB = patchTool.install(idB, false);
             Assert.fail("PatchException expected");

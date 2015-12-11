@@ -29,33 +29,33 @@ import javax.xml.bind.Unmarshaller;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.wildfly.extras.patch.PackageMetadata;
-import org.wildfly.extras.patch.PackageMetadataBuilder;
+import org.wildfly.extras.patch.PatchMetadata;
+import org.wildfly.extras.patch.PatchMetadataBuilder;
 import org.wildfly.extras.patch.PatchId;
-import org.wildfly.extras.patch.internal.PackageMetadataModel;
+import org.wildfly.extras.patch.internal.PatchMetadataModel;
 
-public class PackageMetadataModelTest {
+public class PatchMetadataModelTest {
 
     @Test
     public void testMarshallUnmarshalConfiguration() throws Exception {
 
-        PackageMetadataBuilder builder = new PackageMetadataBuilder();
+        PatchMetadataBuilder builder = new PatchMetadataBuilder();
         builder.patchId(PatchId.fromString("foo-1.0.0.SP1"));
         builder.oneoffId(PatchId.fromString("foo-1.0.0"));
         builder.dependencies(PatchId.fromString("aaa"), PatchId.fromString("bbb"));
         builder.postCommands("xxx", "yyy");
-        PackageMetadata metadata = builder.build();
+        PatchMetadata metadata = builder.build();
         
-        JAXBContext jaxbContext = JAXBContext.newInstance(PackageMetadataModel.class);
+        JAXBContext jaxbContext = JAXBContext.newInstance(PatchMetadataModel.class);
         Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
         jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 
         File outfile = new File("target/test-configuration.xml");
-        jaxbMarshaller.marshal(PackageMetadataModel.fromPackageMetadata(metadata), new FileOutputStream(outfile));
+        jaxbMarshaller.marshal(PatchMetadataModel.fromPatchMetadata(metadata), new FileOutputStream(outfile));
 
         Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-        PackageMetadataModel model = (PackageMetadataModel) unmarshaller.unmarshal(new FileInputStream(outfile));
-        PackageMetadata was = model.toPackageMetadata();
+        PatchMetadataModel model = (PatchMetadataModel) unmarshaller.unmarshal(new FileInputStream(outfile));
+        PatchMetadata was = model.toPatchMetadata();
 
         Assert.assertEquals(metadata.getPatchId(), was.getPatchId());
         Assert.assertEquals(metadata.getOneoffId(), was.getOneoffId());

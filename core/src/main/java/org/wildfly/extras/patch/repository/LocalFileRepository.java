@@ -53,9 +53,9 @@ import javax.activation.URLDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wildfly.extras.patch.MetadataParser;
-import org.wildfly.extras.patch.Package;
-import org.wildfly.extras.patch.PackageMetadata;
-import org.wildfly.extras.patch.PackageMetadataBuilder;
+import org.wildfly.extras.patch.Patch;
+import org.wildfly.extras.patch.PatchMetadata;
+import org.wildfly.extras.patch.PatchMetadataBuilder;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Record;
 import org.wildfly.extras.patch.Record.Action;
@@ -124,7 +124,7 @@ public final class LocalFileRepository implements Repository {
     public List<PatchId> queryAvailable(final String prefix) {
         lock.tryLock();
         try {
-            return MetadataParser.queryAvailablePackages(rootPath, prefix, false);
+            return MetadataParser.queryAvailablePatches(rootPath, prefix, false);
         } finally {
             lock.unlock();
         }
@@ -135,7 +135,7 @@ public final class LocalFileRepository implements Repository {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
         lock.tryLock();
         try {
-            List<PatchId> list = MetadataParser.queryAvailablePackages(rootPath, prefix, true);
+            List<PatchId> list = MetadataParser.queryAvailablePatches(rootPath, prefix, true);
             return list.isEmpty() ? null : list.get(0);
         } finally {
             lock.unlock();
@@ -143,11 +143,11 @@ public final class LocalFileRepository implements Repository {
     }
 
     @Override
-    public Package getPackage(PatchId patchId) {
+    public Patch getPatch(PatchId patchId) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         lock.tryLock();
         try {
-            return MetadataParser.readPackage(rootPath, patchId);
+            return MetadataParser.readPatch(rootPath, patchId);
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         } finally {
@@ -161,7 +161,7 @@ public final class LocalFileRepository implements Repository {
         try {
             PatchId patchId = PatchId.fromURL(fileUrl);
             DataHandler dataHandler = new DataHandler(new URLDataSource(fileUrl));
-            PackageMetadata metadata = new PackageMetadataBuilder().patchId(patchId).build();
+            PatchMetadata metadata = new PatchMetadataBuilder().patchId(patchId).build();
             return addArchive(metadata, dataHandler, false);
         } finally {
             lock.unlock();
@@ -174,7 +174,7 @@ public final class LocalFileRepository implements Repository {
         try {
             PatchId patchId = PatchId.fromURL(fileUrl);
             DataHandler dataHandler = new DataHandler(new URLDataSource(fileUrl));
-            PackageMetadata metadata = new PackageMetadataBuilder().patchId(patchId).build();
+            PatchMetadata metadata = new PatchMetadataBuilder().patchId(patchId).build();
             return addArchive(metadata, dataHandler, force);
         } finally {
             lock.unlock();
@@ -182,7 +182,7 @@ public final class LocalFileRepository implements Repository {
     }
 
     @Override
-    public PatchId addArchive(PackageMetadata metadata, DataHandler dataHandler, boolean force) throws IOException {
+    public PatchId addArchive(PatchMetadata metadata, DataHandler dataHandler, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(metadata, "metadata");
         IllegalArgumentAssertion.assertNotNull(dataHandler, "dataHandler");
         
@@ -207,20 +207,20 @@ public final class LocalFileRepository implements Repository {
 
             // Collect the paths from the latest other patch sets
             Map<Path, Record> combinedPathsMap = new HashMap<>();
-            for (PatchId auxid : MetadataParser.queryAvailablePackages(rootPath, null, false)) {
+            for (PatchId auxid : MetadataParser.queryAvailablePatches(rootPath, null, false)) {
                 if (!patchId.getName().equals(auxid.getName())) {
-                    for (Record rec : getPackage(auxid).getRecords()) {
+                    for (Record rec : getPatch(auxid).getRecords()) {
                         combinedPathsMap.put(rec.getPath(), rec);
                     }
                 }
             }
 
             // Add to repository
-            Path targetPath = getPackagePath(patchId);
+            Path targetPath = getPatchPath(patchId);
             File targetFile = targetPath.toFile();
             targetFile.getParentFile().mkdirs();
             if (oneoffId != null) {
-                final Path basePath = getPackagePath(oneoffId);
+                final Path basePath = getPatchPath(oneoffId);
                 final Path workspace = targetPath.getParent().resolve("workspace");
                 try {
                     // Unzip the base patch into the workspace
@@ -298,11 +298,11 @@ public final class LocalFileRepository implements Repository {
             }
 
             // Build the patch set
-            Package patchSet;
+            Patch patchSet;
             try {
                 try (ZipInputStream zipInput = new ZipInputStream(new FileInputStream(targetFile))) {
-                    Package sourceSet = MetadataParser.buildPackageFromZip(patchId, Record.Action.INFO, zipInput);
-                    patchSet = Package.create(metadata, sourceSet.getRecords());
+                    Patch sourceSet = MetadataParser.buildPatchFromZip(patchId, Record.Action.INFO, zipInput);
+                    patchSet = Patch.create(metadata, sourceSet.getRecords());
                 }
                 
                 // Assert no duplicate paths
@@ -332,7 +332,7 @@ public final class LocalFileRepository implements Repository {
             }
 
             // Write repository metadata
-            MetadataParser.writePackage(rootPath, patchSet);
+            MetadataParser.writePatch(rootPath, patchSet);
 
             String message = "Added " + patchId;
             if (oneoffId != null) {
@@ -367,7 +367,7 @@ public final class LocalFileRepository implements Repository {
     }
 
     @Override
-    public SmartPatch getSmartPatch(Package seedPatch, PatchId patchId) {
+    public SmartPatch getSmartPatch(Patch seedPatch, PatchId patchId) {
         lock.tryLock();
         try {
             // Derive the target patch id from the seed patch id
@@ -375,9 +375,9 @@ public final class LocalFileRepository implements Repository {
                 IllegalArgumentAssertion.assertNotNull(seedPatch, "seedPatch");
                 patchId = getLatestAvailable(seedPatch.getPatchId().getName());
             }
-            Package targetSet = getPackage(patchId);
+            Patch targetSet = getPatch(patchId);
             PatchAssertion.assertNotNull(targetSet, "Repository does not contain package: " + patchId);
-            Package smartSet = Package.smartDelta(seedPatch, targetSet);
+            Patch smartSet = Patch.smartDelta(seedPatch, targetSet);
             DataSource dataSource = getSmartDataSource(smartSet, patchId);
             DataHandler dataHandler = new DataHandler(dataSource);
             return SmartPatch.forInstall(smartSet, dataHandler);
@@ -388,9 +388,9 @@ public final class LocalFileRepository implements Repository {
         }
     }
 
-    private DataSource getSmartDataSource(Package smartSet, PatchId patchId) throws IOException {
+    private DataSource getSmartDataSource(Patch smartSet, PatchId patchId) throws IOException {
         
-        Path sourcePath = getPackagePath(patchId);
+        Path sourcePath = getPatchPath(patchId);
         Path workspace = sourcePath.getParent().resolve("workspace");
         Path targetPath = workspace.resolve("last-smart-request.zip");
         workspace.toFile().mkdirs();
@@ -418,7 +418,7 @@ public final class LocalFileRepository implements Repository {
         return new FileDataSource(targetPath.toFile());
     }
 
-    private Path getPackagePath(PatchId patchId) {
+    private Path getPatchPath(PatchId patchId) {
         return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString(), patchId + ".zip"));
     }
 

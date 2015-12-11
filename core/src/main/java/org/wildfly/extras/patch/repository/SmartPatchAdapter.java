@@ -30,7 +30,7 @@ import org.wildfly.extras.patch.SmartPatch;
 public class SmartPatchAdapter {
 
     private DataHandler dataHandler;
-    private PackageAdapter patchSet;
+    private PatchAdapter patchSet;
     private String[] removeRecs;
     private String[] replaceRecs;
     private String[] addRecs;
@@ -38,7 +38,7 @@ public class SmartPatchAdapter {
     public static SmartPatchAdapter fromSmartPatch(SmartPatch smartPatch) {
         SmartPatchAdapter result = new SmartPatchAdapter();
         result.dataHandler = smartPatch.getDataHandler();
-        result.patchSet = PackageAdapter.fromPackage(smartPatch.getPatchSet());
+        result.patchSet = PatchAdapter.fromPatch(smartPatch.getPatchSet());
         List<Record> removeSet = new ArrayList<>(smartPatch.getRemoveSet());
         result.removeRecs = new String[removeSet.size()];
         for (int i = 0; i < removeSet.size(); i++) {
@@ -59,9 +59,9 @@ public class SmartPatchAdapter {
     
     public SmartPatch toSmartPatch() {
         if (dataHandler != null) {
-            return SmartPatch.forInstall(patchSet.toPackage(), dataHandler);
+            return SmartPatch.forInstall(patchSet.toPatch(), dataHandler);
         } else {
-            return SmartPatch.forUninstall(patchSet.toPackage());
+            return SmartPatch.forUninstall(patchSet.toPatch());
         }
     }
 
@@ -73,11 +73,11 @@ public class SmartPatchAdapter {
         this.dataHandler = dataHandler;
     }
 
-    public PackageAdapter getPatchSet() {
+    public PatchAdapter getPatchSet() {
         return patchSet;
     }
 
-    public void setPatchSet(PackageAdapter patchSet) {
+    public void setPatchSet(PatchAdapter patchSet) {
         this.patchSet = patchSet;
     }
 

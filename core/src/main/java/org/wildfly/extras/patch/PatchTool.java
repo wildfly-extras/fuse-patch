@@ -68,15 +68,15 @@ public abstract class PatchTool {
     /**
      * Install the given patch id to the server
      */
-    public abstract Package install(PatchId patchId, boolean force) throws IOException;
+    public abstract Patch install(PatchId patchId, boolean force) throws IOException;
 
     /**
      * Update the server for the given patch name
      */
-    public abstract Package update(String symbolicName, boolean force) throws IOException;
+    public abstract Patch update(String symbolicName, boolean force) throws IOException;
 
     /**
      * Uninstall the given patch id from the server
      */
-    public abstract Package uninstall(PatchId patchId) throws IOException;
+    public abstract Patch uninstall(PatchId patchId) throws IOException;
 }

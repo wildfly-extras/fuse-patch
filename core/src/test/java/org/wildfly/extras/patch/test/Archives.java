@@ -39,7 +39,7 @@ import org.jboss.shrinkwrap.api.asset.FileAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
-import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.Patch;
 import org.wildfly.extras.patch.Record;
 import org.wildfly.extras.patch.test.subA.ClassA;
 
@@ -128,7 +128,7 @@ class Archives {
         Assert.assertEquals(exp.getAction() + " " + exp.getPath(), was.getAction() + " " + was.getPath());
     }
 
-    static void assertPathsEqual(final Package expSet, final Path rootPath) throws IOException {
+    static void assertPathsEqual(final Patch expSet, final Path rootPath) throws IOException {
         final Set<Path> expPaths = new HashSet<>();
         for (Record rec : expSet.getRecords()) {
             expPaths.add(rec.getPath());

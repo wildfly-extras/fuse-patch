@@ -37,8 +37,8 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wildfly.extras.patch.ManagedPath;
-import org.wildfly.extras.patch.PackageMetadata;
-import org.wildfly.extras.patch.PackageMetadataBuilder;
+import org.wildfly.extras.patch.PatchMetadata;
+import org.wildfly.extras.patch.PatchMetadataBuilder;
 import org.wildfly.extras.patch.PatchException;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
@@ -99,7 +99,7 @@ public class Main {
         // Query the server
         if (options.queryServer) {
             PatchTool patchTool = builder.serverPath(options.serverHome).build();
-            printPatches(patchTool.getServer().queryAppliedPackages());
+            printPatches(patchTool.getServer().queryAppliedPatches());
             opfound = true;
         } 
         
@@ -164,17 +164,17 @@ public class Main {
     private static void addArchive(PatchTool patchTool, Options options) throws IOException, JAXBException {
         
         PatchId patchId = PatchId.fromURL(options.addUrl);
-        PackageMetadataBuilder mdbuilder = new PackageMetadataBuilder().patchId(patchId);
+        PatchMetadataBuilder mdbuilder = new PatchMetadataBuilder().patchId(patchId);
         if (options.metadataUrl != null) {
-            Unmarshaller unmarshaller = JAXBContext.newInstance(PackageMetadataModel.class).createUnmarshaller();
-            PackageMetadataModel model = (PackageMetadataModel) unmarshaller.unmarshal(options.metadataUrl);
-            PackageMetadata auxmd = model.toPackageMetadata();
-            mdbuilder = new PackageMetadataBuilder().patchId(auxmd.getPatchId());
+            Unmarshaller unmarshaller = JAXBContext.newInstance(PatchMetadataModel.class).createUnmarshaller();
+            PatchMetadataModel model = (PatchMetadataModel) unmarshaller.unmarshal(options.metadataUrl);
+            PatchMetadata auxmd = model.toPatchMetadata();
+            mdbuilder = new PatchMetadataBuilder().patchId(auxmd.getPatchId());
             mdbuilder.oneoffId(auxmd.getOneoffId());
             mdbuilder.dependencies(auxmd.getDependencies());
             mdbuilder.postCommands(auxmd.getPostCommands());
         }
-        PackageMetadata metadata = mdbuilder.build();
+        PatchMetadata metadata = mdbuilder.build();
         
         if (options.oneoffId != null) {
             IllegalStateAssertion.assertNull(metadata.getOneoffId(), "One-Off patch id already defined: " + metadata);

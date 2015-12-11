@@ -35,9 +35,9 @@ import javax.activation.URLDataSource;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.wildfly.extras.patch.Package;
-import org.wildfly.extras.patch.PackageMetadata;
-import org.wildfly.extras.patch.PackageMetadataBuilder;
+import org.wildfly.extras.patch.Patch;
+import org.wildfly.extras.patch.PatchMetadata;
+import org.wildfly.extras.patch.PatchMetadataBuilder;
 import org.wildfly.extras.patch.PatchException;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
@@ -68,16 +68,16 @@ public class SimpleRepositoryTest {
 
         // Add archive foo-1.0.0
         PatchId patchId = repo.addArchive(Archives.getZipUrlFoo100());
-        Package patchSet = repo.getPackage(patchId);
+        Patch patchSet = repo.getPatch(patchId);
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patchSet.getPatchId());
         Assert.assertEquals(4, patchSet.getRecords().size());
 
         // Add archive foo-1.1.0
         patchId = PatchId.fromString("foo-1.1.0");
-        PackageMetadata metadata = new PackageMetadataBuilder().patchId(patchId).postCommands("bin/fusepatch.sh --query-server").build();
+        PatchMetadata metadata = new PatchMetadataBuilder().patchId(patchId).postCommands("bin/fusepatch.sh --query-server").build();
         DataHandler dataHandler = new DataHandler(new URLDataSource(Archives.getZipUrlFoo110()));
         patchId = repo.addArchive(metadata, dataHandler, false);
-        patchSet = repo.getPackage(patchId);
+        patchSet = repo.getPatch(patchId);
         Assert.assertEquals(PatchId.fromString("foo-1.1.0"), patchSet.getPatchId());
         Assert.assertEquals(3, patchSet.getRecords().size());
         Assert.assertEquals(1, patchSet.getMetadata().getPostCommands().size());
@@ -142,7 +142,7 @@ public class SimpleRepositoryTest {
         Files.copy(zipPathA, targetFile.toPath());
 
         PatchId patchId = repo.addArchive(targetFile.toURI().toURL());
-        Package patchSet = repo.getPackage(patchId);
+        Patch patchSet = repo.getPatch(patchId);
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patchSet.getPatchId());
         Assert.assertEquals(4, patchSet.getRecords().size());
 
@@ -193,7 +193,7 @@ public class SimpleRepositoryTest {
         URL url100sp1 = Archives.getZipUrlFoo100SP1();
         PatchId pid100sp1 = PatchId.fromURL(url100sp1);
         PatchId oneoffId = PatchId.fromString("foo-1.0.0");
-        PackageMetadata md100sp1 = new PackageMetadataBuilder().patchId(pid100sp1).oneoffId(oneoffId).build();
+        PatchMetadata md100sp1 = new PatchMetadataBuilder().patchId(pid100sp1).oneoffId(oneoffId).build();
         DataHandler data100sp1 = new DataHandler(new URLDataSource(url100sp1));
 
         try {
@@ -204,13 +204,13 @@ public class SimpleRepositoryTest {
         }
 
         PatchId pid100 = repo.addArchive(Archives.getZipUrlFoo100());
-        Package pack100 = repo.getPackage(pid100);
+        Patch pack100 = repo.getPatch(pid100);
         repo.addArchive(md100sp1, data100sp1, false);
-        Package pack100sp1 = repo.getPackage(pid100sp1);
+        Patch pack100sp1 = repo.getPatch(pid100sp1);
         Archives.assertPathsEqual(pack100.getRecords(), pack100sp1.getRecords());
         Assert.assertEquals(0, pack100sp1.getMetadata().getDependencies().size());
 
-        Package smartSet = Package.smartDelta(pack100, pack100sp1);
+        Patch smartSet = Patch.smartDelta(pack100, pack100sp1);
         Assert.assertEquals(1, smartSet.getRecords().size());
         Archives.assertActionPathEquals("UPD config/propsA.properties", smartSet.getRecords().get(0));
     }

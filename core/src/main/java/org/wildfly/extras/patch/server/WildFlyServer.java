@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
 import org.wildfly.extras.patch.ManagedPath;
 import org.wildfly.extras.patch.ManagedPaths;
 import org.wildfly.extras.patch.MetadataParser;
-import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.Patch;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Record;
 import org.wildfly.extras.patch.Record.Action;
@@ -83,10 +83,10 @@ public final class WildFlyServer implements Server {
     }
 
     @Override
-    public List<PatchId> queryAppliedPackages() {
+    public List<PatchId> queryAppliedPatches() {
         lock.tryLock();
         try {
-            return MetadataParser.queryAvailablePackages(getWorkspace(), null, true);
+            return MetadataParser.queryAvailablePatches(getWorkspace(), null, true);
         } finally {
             lock.unlock();
         }
@@ -103,12 +103,12 @@ public final class WildFlyServer implements Server {
     }
 
     @Override
-    public Package getPackage(String prefix) {
+    public Patch getPatch(String prefix) {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
         lock.tryLock();
         try {
-            List<PatchId> list = MetadataParser.queryAvailablePackages(getWorkspace(), prefix, true);
-            return list.isEmpty() ? null : getPackage(list.get(0));
+            List<PatchId> list = MetadataParser.queryAvailablePatches(getWorkspace(), prefix, true);
+            return list.isEmpty() ? null : getPatch(list.get(0));
         } finally {
             lock.unlock();
         }
@@ -127,11 +127,11 @@ public final class WildFlyServer implements Server {
     }
 
     @Override
-    public Package getPackage(PatchId patchId) {
+    public Patch getPatch(PatchId patchId) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         lock.tryLock();
         try {
-            return MetadataParser.readPackage(getWorkspace(), patchId);
+            return MetadataParser.readPatch(getWorkspace(), patchId);
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         } finally {
@@ -140,7 +140,7 @@ public final class WildFlyServer implements Server {
     }
 
     @Override
-    public Package applySmartPatch(SmartPatch smartPatch, boolean force) throws IOException {
+    public Patch applySmartPatch(SmartPatch smartPatch, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(smartPatch, "smartPatch");
         lock.tryLock();
         try {
@@ -151,7 +151,7 @@ public final class WildFlyServer implements Server {
             }
 
             // Verify dependencies
-            List<PatchId> appliedPatches = queryAppliedPackages();
+            List<PatchId> appliedPatches = queryAppliedPatches();
             List<PatchId> unsatisfied = new ArrayList<>();
             for (PatchId depId : smartPatch.getMetadata().getDependencies()) {
                 if (!appliedPatches.contains(depId)) {
@@ -161,7 +161,7 @@ public final class WildFlyServer implements Server {
             PatchAssertion.assertTrue(unsatisfied.isEmpty(), "Unsatisfied dependencies: " + unsatisfied);
 
             PatchId patchId = smartPatch.getPatchId();
-            Package serverSet = getPackage(patchId.getName());
+            Patch serverSet = getPatch(patchId.getName());
             PatchId serverId = serverSet != null ? serverSet.getPatchId() : null;
 
             // Get the latest applied records
@@ -224,14 +224,14 @@ public final class WildFlyServer implements Server {
             managedPaths.updatePaths(homePath, smartPatch, Action.DEL);
             MetadataParser.writeManagedPaths(getWorkspace(), managedPaths);
 
-            Package infoset;
+            Patch infoset;
 
             // Update server side metadata
             if (!smartPatch.isUninstall()) {
 
                 // Remove higer versions on downgrade
                 if (serverId != null && serverId.compareTo(patchId) > 0) {
-                    for (PatchId auxId : MetadataParser.queryAvailablePackages(getWorkspace(), patchId.getName(), false)) {
+                    for (PatchId auxId : MetadataParser.queryAvailablePatches(getWorkspace(), patchId.getName(), false)) {
                         if (auxId.compareTo(patchId) > 0) {
                             File packageDir = MetadataParser.getMetadataDirectory(getWorkspace(), auxId).getParentFile();
                             IOUtils.rmdirs(packageDir.toPath());
@@ -243,13 +243,13 @@ public final class WildFlyServer implements Server {
                 for (Record rec : serverRecords.values()) {
                     inforecs.add(Record.create(rec.getPath(), rec.getChecksum()));
                 }
-                infoset = Package.create(patchId, inforecs);
-                MetadataParser.writePackage(getWorkspace(), infoset);
+                infoset = Patch.create(patchId, inforecs);
+                MetadataParser.writePatch(getWorkspace(), infoset);
             }
 
             // Remove metadata on uninstall
             else {
-                infoset = Package.create(patchId, smartPatch.getRecords());
+                infoset = Patch.create(patchId, smartPatch.getRecords());
                 File packageDir = MetadataParser.getMetadataDirectory(getWorkspace(), patchId).getParentFile();
                 IOUtils.rmdirs(packageDir.toPath());
             }

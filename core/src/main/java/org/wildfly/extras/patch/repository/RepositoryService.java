@@ -59,7 +59,7 @@ public interface RepositoryService {
      * Get the patch set for the given id
      */
     @WebMethod
-    PackageAdapter getPackage(String patchId);
+    PatchAdapter getPatch(String patchId);
 
     /**
      * Add the given patch archive
@@ -68,7 +68,7 @@ public interface RepositoryService {
      * @param force Force the add operation
      */
     @WebMethod
-    String addArchive(PackageMetadataAdapter metadata, DataHandler dataHandler, boolean force) throws IOException;
+    String addArchive(PatchMetadataAdapter metadata, DataHandler dataHandler, boolean force) throws IOException;
 
     /**
      * Remove the given patch id
@@ -82,5 +82,5 @@ public interface RepositoryService {
      * @param patchId The target patch id - null for the latest
      */
     @WebMethod
-    SmartPatchAdapter getSmartPatch(PackageAdapter seedPatch, String patchId);
+    SmartPatchAdapter getSmartPatch(PatchAdapter seedPatch, String patchId);
 }

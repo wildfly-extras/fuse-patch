@@ -22,22 +22,22 @@ package org.wildfly.extras.patch.repository;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.wildfly.extras.patch.Package;
-import org.wildfly.extras.patch.PackageMetadata;
+import org.wildfly.extras.patch.Patch;
+import org.wildfly.extras.patch.PatchMetadata;
 import org.wildfly.extras.patch.Record;
 
-public class PackageAdapter {
+public class PatchAdapter {
 
-    private PackageMetadataAdapter metadataSpec;
+    private PatchMetadataAdapter metadataSpec;
     private String[] recordSpecs;
     
-    public static PackageAdapter fromPackage(Package patch) {
+    public static PatchAdapter fromPatch(Patch patch) {
     	
     	if (patch == null)
     		return null;
     	
-    	PackageAdapter result = new PackageAdapter();
-    	result.metadataSpec = PackageMetadataAdapter.fromPackage(patch.getMetadata());
+    	PatchAdapter result = new PatchAdapter();
+    	result.metadataSpec = PatchMetadataAdapter.fromPatchMetadata(patch.getMetadata());
     	List<Record> records = patch.getRecords();
 		result.recordSpecs = new String[records.size()];
     	for (int i = 0; i < records.size(); i++) {
@@ -46,20 +46,20 @@ public class PackageAdapter {
     	return result;
     }
     
-    public Package toPackage() {
-        PackageMetadata metadata = metadataSpec.toPackageMetadata();
+    public Patch toPatch() {
+        PatchMetadata metadata = metadataSpec.toPatchMetadata();
     	List<Record> records = new ArrayList<>();
     	for (String spec : recordSpecs) {
     		records.add(Record.fromString(spec));
     	}
-    	return Package.create(metadata, records);
+    	return Patch.create(metadata, records);
     }
     
-	public PackageMetadataAdapter getMetadata() {
+	public PatchMetadataAdapter getMetadata() {
         return metadataSpec;
     }
 
-    public void setMetadata(PackageMetadataAdapter metadata) {
+    public void setMetadata(PatchMetadataAdapter metadata) {
         this.metadataSpec = metadata;
     }
 

@@ -2,23 +2,23 @@
 
 Fuse-Patch is an installer and patch utility for arbitrary servers.
 
-The patch tool interacts with a target server instance and a repository that contains the available packages.
+The patch tool interacts with a target server instance and a repository that contains the available patches.
 
 Here we describe typical workflows and some advanced use cases
 
 ### Contents
 
 1. [Download and Install](UserGuide.md#download-and-install)
-2. [Installing a Package](UserGuide.md#installing-a-package)
+2. [Installing a Patch](UserGuide.md#installing-a-patch)
 3. [Loading the Repository](UserGuide.md#loading-the-repository)
-4. [Upgrading a Package](UserGuide.md#upgrading-a-package)
-5. [Downgrading a Package](UserGuide.md#downgrading-a-package)
-6. [Uninstalling a Package](UserGuide.md#uninstalling-a-package)
-7. [Conflicting Packages](UserGuide.md#conflicting-packages)
+4. [Upgrading a Patch](UserGuide.md#upgrading-a-patch)
+5. [Downgrading a Patch](UserGuide.md#downgrading-a-patch)
+6. [Uninstalling a Patch](UserGuide.md#uninstalling-a-patch)
+7. [Conflicting Patches](UserGuide.md#conflicting-patches)
 8. [Conflicting Server Paths](UserGuide.md#conflicting-server-paths)
 9. [Running Post-Install Commands](UserGuide.md#running-post-install-commands)
 10. [Support for One-Off Patches](UserGuide.md#support-for-one-off-patches)
-11. [Support for Package Dependencies](UserGuide.md#support-for-package-dependencies)
+11. [Support for Patch Dependencies](UserGuide.md#support-for-patch-dependencies)
 
 ### Download and Install
 
@@ -46,14 +46,14 @@ fusepatch [options...]
  --update VAL             : Update the server for the given patch name
  ```
  
-The standalone distribution already contains the fuse-patch wildfly package.
+The standalone distribution already contains the fuse-patch wildfly patch.
 
 ```
 $ bin/fusepatch.sh --query-repository
 fuse-patch-distro-wildfly-1.5.0
 ```
 
-### Installing a Package
+### Installing a Patch
 
 Lets assume we work with WildFly and want to use fusepatch with WildFly.
 
@@ -62,9 +62,9 @@ $ bin/fusepatch.sh --server ../wildfly-8.2.0.Final --update fuse-patch-distro-wi
 Installed fuse-patch-distro-wildfly-1.5.0
 ```
 
-Note, that the above uses `--update` instead of `--install`, which installs the latest available package for a given name.
+Note, that the above uses `--update` instead of `--install`, which installs the latest available patch for a given name.
 
-Now we can switch to WildFly and query the server for installed packages
+Now we can switch to WildFly and query the server for installed patches
 
 ```
 $ cd ../wildfly-8.2.0.Final
@@ -85,9 +85,9 @@ modules/system/layers/fuse/org/wildfly/extras/patch/main/module.xml [fuse-patch-
 
 ###  Loading the Repository
 
-The repository contains packages identified by symbolic-name and version. 
+The repository contains patches identified by symbolic-name and version. 
 
-Lets add two versions of a given package to the repository.
+Lets add two versions of a given patch to the repository.
 
 ```
 $ bin/fusepatch.sh --add file:foo-1.0.0.zip 
@@ -101,16 +101,16 @@ foo-1.1.0
 foo-1.0.0
 ```
 
-Unwanted packages can be removed from the repository.
+Unwanted patches can be removed from the repository.
 
 ```
 $ bin/fusepatch.sh --remove foo-1.0.0 
 Removed foo-1.0.0
 ```
 
-###  Upgrading a Package
+###  Upgrading a Patch
 
-The server can be updated with packages from the repository.
+The server can be updated with patches from the repository.
 
 Lets first install the initial version `foo-1.0.0` and then update it to version `foo-1.1.0`
 
@@ -145,7 +145,7 @@ DEL lib/foo-1.0.0.jar 2509787836
 ADD lib/foo-1.1.0.jar 2509787836
 ```
 
-###  Downgrading a Package
+###  Downgrading a Patch
 
 The server can be reset to any given version
 
@@ -171,9 +171,9 @@ ADD lib/foo-1.0.0.jar 2509787836
 DEL lib/foo-1.1.0.jar 2509787836
 ```
 
-###  Uninstalling a Package
+###  Uninstalling a Patch
 
-Packageds can be unsinstalled from the server.
+Patchds can be unsinstalled from the server.
 
 ```
 $ bin/fusepatch.sh --install foo-1.0.0
@@ -197,11 +197,11 @@ DEL config/remove-me.properties 1396661911
 DEL lib/foo-1.0.0.jar 3303198020
 ```
 
-### Conflicting Packages
+### Conflicting Patches
 
-It is guaranteed that the repository does not contain conflicting packages. Specifically, the set of paths associated with one package cannot overlap with the set of paths from another package. This allows packages to get applied to the server independently without the possibility that content from one package overrides the files from another.
+It is guaranteed that the repository does not contain conflicting patches. Specifically, the set of paths associated with one patch cannot overlap with the set of paths from another patch. This allows patches to get applied to the server independently without the possibility that content from one patch overrides the files from another.
 
-Not enforcing this constraint would mean to create an ordering issue between packages.
+Not enforcing this constraint would mean to create an ordering issue between patches.
 For example: `bar-1.0.0` can only be installed after `foo-1.1.0` 
 
 Lets test this on clean repository
@@ -279,7 +279,7 @@ Upgraded from foo-1.0.0 to foo-1.1.0
 
 ### Running Post-Install Commands
 
-Post install commands can be associated with a package when it is added to the repository
+Post install commands can be associated with a patch when it is added to the repository
 
 ```
 $ bin/fusepatch.sh --add file:foo-1.0.0.zip --add-cmd "echo hello world"
@@ -307,7 +307,7 @@ hello new world
 
 ### Support for One-Off Patches
 
-Already existing packages can be patched by "one-off" patches. A one-off patch does not contain the full set of paths that an ordinary package contains. Instead, it contains a set of files that need to get patched in an already existing package. A one-off patch cannot remove files on the target server.
+Already existing patches can be patched by "one-off" patches. A one-off patch does not contain the full set of paths that an ordinary patch contains. Instead, it contains a set of files that need to get patched in an already existing patch. A one-off patch cannot remove files on the target server.
 
 ```
 $ bin/fusepatch.sh --add file:foo-1.0.0.zip 
@@ -323,9 +323,9 @@ $ bin/fusepatch.sh --update foo
 Upgraded from foo-1.0.0 to foo-1.0.0.SP1
 ```
 
-### Support for Package dependencies
+### Support for Patch dependencies
 
-A package can define dependencies on other packages. 
+A patch can define dependencies on other patches. 
 
 ```
 $ bin/fusepatch.sh --add file:foo-1.0.0.zip 

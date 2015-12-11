@@ -32,9 +32,9 @@ import javax.activation.URLDataSource;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.wildfly.extras.patch.Package;
-import org.wildfly.extras.patch.PackageMetadata;
-import org.wildfly.extras.patch.PackageMetadataBuilder;
+import org.wildfly.extras.patch.Patch;
+import org.wildfly.extras.patch.PatchMetadata;
+import org.wildfly.extras.patch.PatchMetadataBuilder;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
@@ -59,7 +59,7 @@ public class OneOffPatchTest {
         PatchId oneoffId = patchTool.getRepository().addArchive(Archives.getZipUrlFoo100());
         URL url100sp1 = Archives.getZipUrlFoo100SP1();
         PatchId pid100sp1 = PatchId.fromURL(url100sp1);
-        PackageMetadata md100sp1 = new PackageMetadataBuilder().patchId(pid100sp1).oneoffId(oneoffId).build();
+        PatchMetadata md100sp1 = new PatchMetadataBuilder().patchId(pid100sp1).oneoffId(oneoffId).build();
         DataHandler data100sp1 = new DataHandler(new URLDataSource(url100sp1));
         patchTool.getRepository().addArchive(md100sp1, data100sp1, false);
     }
@@ -73,10 +73,10 @@ public class OneOffPatchTest {
         PatchId pid100sp1 = PatchId.fromURL(Archives.getZipUrlFoo100SP1());
         Path filePath = serverPaths[0].resolve("config/propsA.properties");
         
-        Package pack100 = patchTool.install(pid100, false);
+        Patch pack100 = patchTool.install(pid100, false);
         Assert.assertEquals("A1", readProperty("some.prop", filePath));
         
-        Package pack100sp1 = patchTool.install(pid100sp1, false);
+        Patch pack100sp1 = patchTool.install(pid100sp1, false);
         Assert.assertEquals("A2", readProperty("some.prop", filePath));
         Archives.assertPathsEqual(pack100.getRecords(), pack100sp1.getRecords());
     }
@@ -89,7 +89,7 @@ public class OneOffPatchTest {
         PatchId pid100sp1 = PatchId.fromURL(Archives.getZipUrlFoo100SP1());
         Path filePath = serverPaths[1].resolve("config/propsA.properties");
         
-        Package pack100sp1 = patchTool.install(pid100sp1, false);
+        Patch pack100sp1 = patchTool.install(pid100sp1, false);
         Assert.assertEquals("A2", readProperty("some.prop", filePath));
         Archives.assertActionPathEquals("INFO config/propsA.properties", pack100sp1.getRecords().get(0));
         Archives.assertActionPathEquals("INFO config/propsB.properties", pack100sp1.getRecords().get(1));

@@ -34,31 +34,29 @@ import org.wildfly.extras.patch.Record.Action;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 
 /**
- * A package.
+ * A patch associates metadata with a set of records.
  *
- * A package associates a patch id with a list of artefacts ids.
- *
- * A {@code Package} is immutable.
+ * A {@code Patch} is immutable.
  *
  * @author thomas.diesler@jboss.com
  * @since 10-Jun-2015
  */
-public final class Package {
+public final class Patch {
 
-    private final PackageMetadata metadata;
+    private final PatchMetadata metadata;
     private final Map<Path, Record> recordsMap = new LinkedHashMap<>();
     private int hashCache;
 
-    public static Package create(PatchId patchId, Collection<Record> records) {
-        PackageMetadata metadata = new PackageMetadataBuilder().patchId(patchId).build();
-        return new Package(metadata, records);
+    public static Patch create(PatchId patchId, Collection<Record> records) {
+        PatchMetadata metadata = new PatchMetadataBuilder().patchId(patchId).build();
+        return new Patch(metadata, records);
     }
 
-    public static Package create(PackageMetadata metadata, Collection<Record> records) {
-        return new Package(metadata, records);
+    public static Patch create(PatchMetadata metadata, Collection<Record> records) {
+        return new Patch(metadata, records);
     }
 
-    public static Package smartDelta(Package seedPatch, Package targetSet) {
+    public static Patch smartDelta(Patch seedPatch, Patch targetSet) {
         IllegalArgumentAssertion.assertNotNull(targetSet, "targetSet");
 
         // All seed patch records are remove candidates
@@ -86,10 +84,10 @@ public final class Package {
         }
 
         records.addAll(removeMap.values());
-        return new Package(targetSet.metadata, records);
+        return new Patch(targetSet.metadata, records);
     }
 
-    private Package(PackageMetadata metadata, Collection<Record> records) {
+    private Patch(PatchMetadata metadata, Collection<Record> records) {
         IllegalArgumentAssertion.assertNotNull(metadata, "metadata");
         IllegalArgumentAssertion.assertNotNull(records, "records");
         this.metadata = metadata;
@@ -106,7 +104,7 @@ public final class Package {
         }
     }
 
-    public PackageMetadata getMetadata() {
+    public PatchMetadata getMetadata() {
         return metadata;
     }
 
@@ -137,8 +135,8 @@ public final class Package {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof Package)) return false;
-        Package other = (Package) obj;
+        if (!(obj instanceof Patch)) return false;
+        Patch other = (Patch) obj;
         boolean result = metadata.equals(other.metadata);
         result &= recordsMap.equals(other.recordsMap);
         return result;
@@ -146,6 +144,6 @@ public final class Package {
 
     @Override
     public String toString() {
-        return "Package[" + metadata + ",recs=" + recordsMap.size() + "]";
+        return "Patch[" + metadata + ",recs=" + recordsMap.size() + "]";
     }
 }

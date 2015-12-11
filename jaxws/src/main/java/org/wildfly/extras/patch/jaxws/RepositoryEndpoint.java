@@ -34,13 +34,13 @@ import javax.servlet.ServletContext;
 import javax.xml.ws.WebServiceContext;
 import javax.xml.ws.handler.MessageContext;
 
-import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.Patch;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.repository.LocalFileRepository;
-import org.wildfly.extras.patch.repository.PackageAdapter;
-import org.wildfly.extras.patch.repository.PackageMetadataAdapter;
+import org.wildfly.extras.patch.repository.PatchAdapter;
+import org.wildfly.extras.patch.repository.PatchMetadataAdapter;
 import org.wildfly.extras.patch.repository.RepositoryService;
 import org.wildfly.extras.patch.repository.SmartPatchAdapter;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
@@ -91,23 +91,23 @@ public class RepositoryEndpoint implements RepositoryService {
 	}
 
 	@Override
-	public PackageAdapter getPackage(String patchId) {
+	public PatchAdapter getPatch(String patchId) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         lock.tryLock();
         try {
-            return PackageAdapter.fromPackage(delegate.getPackage(PatchId.fromString(patchId)));
+            return PatchAdapter.fromPatch(delegate.getPatch(PatchId.fromString(patchId)));
         } finally {
             lock.unlock();
         }
 	}
 
 	@Override
-	public String addArchive(PackageMetadataAdapter metadata, DataHandler dataHandler, boolean force) throws IOException {
+	public String addArchive(PatchMetadataAdapter metadata, DataHandler dataHandler, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(metadata, "metadata");
         IllegalArgumentAssertion.assertNotNull(dataHandler, "dataHandler");
         lock.tryLock();
         try {
-            return delegate.addArchive(metadata.toPackageMetadata(), dataHandler, force).toString();
+            return delegate.addArchive(metadata.toPatchMetadata(), dataHandler, force).toString();
         } finally {
             lock.unlock();
         }
@@ -125,10 +125,10 @@ public class RepositoryEndpoint implements RepositoryService {
     }
 
     @Override
-    public SmartPatchAdapter getSmartPatch(PackageAdapter seedPatch, String patchId) {
+    public SmartPatchAdapter getSmartPatch(PatchAdapter seedPatch, String patchId) {
         lock.tryLock();
         try {
-            Package seed = seedPatch != null ? seedPatch.toPackage() : null;
+            Patch seed = seedPatch != null ? seedPatch.toPatch() : null;
             PatchId pid = patchId != null ? PatchId.fromString(patchId) : null;
             SmartPatch smartPatch = delegate.getSmartPatch(seed, pid);
             return SmartPatchAdapter.fromSmartPatch(smartPatch);

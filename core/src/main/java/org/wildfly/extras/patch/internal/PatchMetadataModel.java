@@ -28,8 +28,8 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
-import org.wildfly.extras.patch.PackageMetadata;
-import org.wildfly.extras.patch.PackageMetadataBuilder;
+import org.wildfly.extras.patch.PatchMetadata;
+import org.wildfly.extras.patch.PatchMetadataBuilder;
 import org.wildfly.extras.patch.PatchId;
 
 /**
@@ -48,15 +48,15 @@ import org.wildfly.extras.patch.PatchId;
  */
 @XmlType(propOrder = { "patchId", "oneoffId", "dependencies", "postCommands" })
 @XmlRootElement(name = "package")
-public final class PackageMetadataModel {
+public final class PatchMetadataModel {
 
     private String patchId;
     private String oneoffId;
     private Dependencies dependencies;
     private Commands postCommands;
 
-    public static PackageMetadataModel fromPackageMetadata(PackageMetadata metadata) {
-        PackageMetadataModel model = new PackageMetadataModel();
+    public static PatchMetadataModel fromPatchMetadata(PatchMetadata metadata) {
+        PatchMetadataModel model = new PatchMetadataModel();
         model.patchId = metadata.getPatchId().toString();
         model.oneoffId = metadata.getOneoffId() != null ? metadata.getOneoffId().toString() : null;
         model.dependencies = new Dependencies(metadata.getDependencies());
@@ -64,8 +64,8 @@ public final class PackageMetadataModel {
         return model;
     }
     
-    public PackageMetadata toPackageMetadata() {
-        PackageMetadataBuilder builder = new PackageMetadataBuilder().patchId(PatchId.fromString(patchId));
+    public PatchMetadata toPatchMetadata() {
+        PatchMetadataBuilder builder = new PatchMetadataBuilder().patchId(PatchId.fromString(patchId));
         if (oneoffId != null) {
             builder.oneoffId(PatchId.fromString(oneoffId));
         }

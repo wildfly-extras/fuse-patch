@@ -25,52 +25,52 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-public final class PackageMetadataBuilder {
+public final class PatchMetadataBuilder {
 
     private PatchId patchId;
     private PatchId oneoffId;
     private Set<PatchId> dependencies = new LinkedHashSet<>();
     private List<String> postCommands = new ArrayList<>();
 
-    public PackageMetadataBuilder patchId(PatchId patchId) {
+    public PatchMetadataBuilder patchId(PatchId patchId) {
         this.patchId = patchId;
         return this;
     }
 
-    public PackageMetadataBuilder oneoffId(PatchId oneoffId) {
+    public PatchMetadataBuilder oneoffId(PatchId oneoffId) {
         this.oneoffId = oneoffId;
         return this;
     }
 
-    public PackageMetadataBuilder dependencies(PatchId... patchIds) {
+    public PatchMetadataBuilder dependencies(PatchId... patchIds) {
         if (patchIds != null) {
             dependencies.addAll(Arrays.asList(patchIds));
         }
         return this;
     }
 
-    public PackageMetadataBuilder dependencies(Set<PatchId> patchIds) {
+    public PatchMetadataBuilder dependencies(Set<PatchId> patchIds) {
         if (patchIds != null) {
             dependencies.addAll(patchIds);
         }
         return this;
     }
 
-    public PackageMetadataBuilder postCommands(String... commands) {
+    public PatchMetadataBuilder postCommands(String... commands) {
         if (commands != null) {
             postCommands.addAll(Arrays.asList(commands));
         }
         return this;
     }
 
-    public PackageMetadataBuilder postCommands(List<String> commands) {
+    public PatchMetadataBuilder postCommands(List<String> commands) {
         if (commands != null) {
             postCommands.addAll(commands);
         }
         return this;
     }
 
-    public PackageMetadata build() {
-        return new PackageMetadata(patchId, oneoffId, dependencies, postCommands);
+    public PatchMetadata build() {
+        return new PatchMetadata(patchId, oneoffId, dependencies, postCommands);
     }
 }

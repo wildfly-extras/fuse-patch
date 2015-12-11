@@ -59,7 +59,7 @@ public final class MetadataParser {
     static final String VERSION_PREFIX = "# fusepatch:";
     static final String PATCHID_PREFIX = "# patch id:";
 
-    public static Package buildPackageFromZip(PatchId patchId, Record.Action action, ZipInputStream zipInput) throws IOException {
+    public static Patch buildPatchFromZip(PatchId patchId, Record.Action action, ZipInputStream zipInput) throws IOException {
         IllegalArgumentAssertion.assertNotNull(zipInput, "zipInput");
 
         Set<Record> records = new HashSet<>();
@@ -77,17 +77,17 @@ public final class MetadataParser {
             }
             entry = zipInput.getNextEntry();
         }
-        return Package.create(patchId, records);
+        return Patch.create(patchId, records);
     }
 
-    public static Package readPackage(Path rootPath, PatchId patchId) throws IOException {
+    public static Patch readPatch(Path rootPath, PatchId patchId) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         File metadata = getMetadataFile(rootPath, patchId);
-        return metadata.isFile() ? readPackage(metadata) : null;
+        return metadata.isFile() ? readPatch(metadata) : null;
     }
 
-    public static List<PatchId> queryAvailablePackages(Path rootPath, final String prefix, boolean latest) {
+    public static List<PatchId> queryAvailablePatches(Path rootPath, final String prefix, boolean latest) {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
         final Map<String, TreeSet<PatchId>> auxmap = new HashMap<>();
         if (rootPath.toFile().exists()) {
@@ -155,9 +155,9 @@ public final class MetadataParser {
             pw.println("# " + message);
             PatchId patchId = smartPatch.getPatchId();
             List<String> postCommands = smartPatch.getMetadata().getPostCommands();
-            PackageMetadata metadata = new PackageMetadataBuilder().patchId(patchId).postCommands(postCommands).build();
-            Package patchSet = Package.create(metadata, smartPatch.getRecords());
-            writePackage(patchSet, fos, false);
+            PatchMetadata metadata = new PatchMetadataBuilder().patchId(patchId).postCommands(postCommands).build();
+            Patch patchSet = Patch.create(metadata, smartPatch.getRecords());
+            writePatch(patchSet, fos, false);
         }
     }
 
@@ -177,13 +177,13 @@ public final class MetadataParser {
         return Collections.unmodifiableList(lines);
     }
 
-    public static void writePackage(Path rootPath, Package patchSet) throws IOException {
+    public static void writePatch(Path rootPath, Patch patchSet) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
         IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
         File metadataFile = getMetadataFile(rootPath, patchSet.getPatchId());
         metadataFile.getParentFile().mkdirs();
         try (FileOutputStream fos = new FileOutputStream(metadataFile)) {
-            writePackage(patchSet, fos, true);
+            writePatch(patchSet, fos, true);
         }
     }
 
@@ -223,7 +223,7 @@ public final class MetadataParser {
         }
     }
 
-    private static void writePackage(Package patchSet, OutputStream outstream, boolean addHeader) throws IOException {
+    private static void writePatch(Patch patchSet, OutputStream outstream, boolean addHeader) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
         IllegalArgumentAssertion.assertNotNull(outstream, "outstream");
         try (PrintStream pw = new PrintStream(outstream)) {
@@ -259,7 +259,7 @@ public final class MetadataParser {
         }
     }
 
-    private static Package readPackage(File metadataFile) throws IOException {
+    private static Patch readPatch(File metadataFile) throws IOException {
         IllegalArgumentAssertion.assertNotNull(metadataFile, "metadataFile");
         IllegalArgumentAssertion.assertTrue(metadataFile.isFile(), "Cannot find metadata file: " + metadataFile);
 
@@ -305,8 +305,8 @@ public final class MetadataParser {
                 }
                 line = br.readLine();
             }
-            PackageMetadata metadata = new PackageMetadataBuilder().patchId(patchId).dependencies(dependencies).postCommands(commands).build();
-            return Package.create(metadata, records);
+            PatchMetadata metadata = new PatchMetadataBuilder().patchId(patchId).dependencies(dependencies).postCommands(commands).build();
+            return Patch.create(metadata, records);
         }
     }
 }

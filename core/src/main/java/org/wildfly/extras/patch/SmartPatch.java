@@ -35,9 +35,7 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 
 
 /**
- * A smart patch.
- *
- * A smart patch combines remove/replace/add sets. 
+ * A smart patch defines add/update/delete records. 
  *
  * A {@code SmartPatch} is immutable.
  * 
@@ -46,28 +44,28 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
  */
 public final class SmartPatch {
 
-    private final Package patchSet;
+    private final Patch patchSet;
     private final DataHandler dataHandler;
     private final Map<Path, Record> delMap = new HashMap<>();
     private final Map<Path, Record> updMap = new HashMap<>();
     private final Map<Path, Record> addMap = new HashMap<>();
     
-    public static SmartPatch forInstall(Package patchSet, DataHandler dataHandler) {
+    public static SmartPatch forInstall(Patch patchSet, DataHandler dataHandler) {
         IllegalArgumentAssertion.assertNotNull(dataHandler, "dataHandler");
         return new SmartPatch(patchSet, dataHandler);
     }
     
-    public static SmartPatch forUninstall(Package patchSet) {
+    public static SmartPatch forUninstall(Patch patchSet) {
         IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
         PatchId patchId = patchSet.getPatchId();
         List<Record> records = new ArrayList<>();
         for (Record rec : patchSet.getRecords()) {
             records.add(Record.create(patchId, Action.DEL, rec.getPath(), rec.getChecksum()));
         }
-        return new SmartPatch(Package.create(patchSet.getMetadata(), records), null);
+        return new SmartPatch(Patch.create(patchSet.getMetadata(), records), null);
     }
     
-    private SmartPatch(Package patchSet, DataHandler dataHandler) {
+    private SmartPatch(Patch patchSet, DataHandler dataHandler) {
         IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
         this.patchSet = patchSet;
         this.dataHandler = dataHandler;
@@ -93,7 +91,7 @@ public final class SmartPatch {
         return patchSet.getPatchId();
     }
 
-    public Package getPatchSet() {
+    public Patch getPatchSet() {
         return patchSet;
     }
 
@@ -109,7 +107,7 @@ public final class SmartPatch {
         return patchSet.getRecords();
     }
     
-    public PackageMetadata getMetadata() {
+    public PatchMetadata getMetadata() {
         return patchSet.getMetadata();
     }
     

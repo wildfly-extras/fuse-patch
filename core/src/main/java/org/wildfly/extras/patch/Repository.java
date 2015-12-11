@@ -56,7 +56,7 @@ public interface Repository {
     /**
      * Get the patch set for the given id
      */
-    Package getPackage(PatchId patchId);
+    Patch getPatch(PatchId patchId);
 
     /**
      * Add the given patch archive
@@ -77,7 +77,7 @@ public interface Repository {
      * @param dataHandler The data handler to the patch archive
      * @param force Force the add operation
      */
-    PatchId addArchive(PackageMetadata metadata, DataHandler dataHandler, boolean force) throws IOException;
+    PatchId addArchive(PatchMetadata metadata, DataHandler dataHandler, boolean force) throws IOException;
 
     /**
      * Remove the given patch id
@@ -89,5 +89,5 @@ public interface Repository {
      * @param seedPatch The patch set obtained from the server - may be null
      * @param patchId The target patch id - null for the latest
 	 */
-	SmartPatch getSmartPatch(Package seedPatch, PatchId patchId);
+	SmartPatch getSmartPatch(Patch seedPatch, PatchId patchId);
 }

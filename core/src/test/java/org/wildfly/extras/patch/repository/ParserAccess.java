@@ -24,16 +24,16 @@ import java.net.URL;
 import java.util.zip.ZipInputStream;
 
 import org.wildfly.extras.patch.MetadataParser;
-import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.Patch;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Record;
 
 public final class ParserAccess {
 
-    public static Package getPackage(URL zipurl) throws IOException {
+    public static Patch getPatch(URL zipurl) throws IOException {
         PatchId patchId = PatchId.fromURL(zipurl);
         try (ZipInputStream zipInput = new ZipInputStream(zipurl.openStream())) {
-            return MetadataParser.buildPackageFromZip(patchId, Record.Action.ADD, zipInput);
+            return MetadataParser.buildPatchFromZip(patchId, Record.Action.ADD, zipInput);
         }
     }
 

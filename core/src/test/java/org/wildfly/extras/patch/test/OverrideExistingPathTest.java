@@ -37,7 +37,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.extras.patch.ManagedPath;
-import org.wildfly.extras.patch.Package;
+import org.wildfly.extras.patch.Patch;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
@@ -83,7 +83,7 @@ public class OverrideExistingPathTest {
         Assert.assertTrue(filePath.toFile().isFile());
         
         // Install oepbar-1.0.0
-        Package curSet = patchTool.install(PatchId.fromString("oepbar-1.0.0"), false);
+        Patch curSet = patchTool.install(PatchId.fromString("oepbar-1.0.0"), false);
         Assert.assertEquals(1, curSet.getRecords().size());
         
         // Verify managed paths
@@ -134,7 +134,7 @@ public class OverrideExistingPathTest {
         Server server = patchTool.getServer();
         
         // Install oepfoo-1.0.0
-        Package curSet = patchTool.install(PatchId.fromString("oepfoo-1.0.0"), false);
+        Patch curSet = patchTool.install(PatchId.fromString("oepfoo-1.0.0"), false);
         Assert.assertEquals(2, curSet.getRecords().size());
         
         // Verify managed paths

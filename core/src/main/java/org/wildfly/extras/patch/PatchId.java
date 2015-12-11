@@ -27,7 +27,7 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 /**
  * A patch identity.
  *
- * A  {@link Package} is identified by name {@link Version}
+ * A  {@link Patch} is identified by name {@link Version}
  *
  * A {@code PatchId} is immutable.
  * 

@@ -47,9 +47,9 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.extras.patch.Package;
-import org.wildfly.extras.patch.PackageMetadata;
-import org.wildfly.extras.patch.PackageMetadataBuilder;
+import org.wildfly.extras.patch.Patch;
+import org.wildfly.extras.patch.PatchMetadata;
+import org.wildfly.extras.patch.PatchMetadataBuilder;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
@@ -111,7 +111,7 @@ public class RepositoryEndpointTest {
         // Add foo-1.0.0
         URL fileUrl = getArchiveURL("foo-1.0.0");
         PatchId pid100 = repository.addArchive(fileUrl);
-        Package pack100 = repository.getPackage(pid100);
+        Patch pack100 = repository.getPatch(pid100);
         Assert.assertEquals(pid100, pack100.getPatchId());
         Assert.assertEquals(4, pack100.getRecords().size());
         Assert.assertEquals(0, pack100.getMetadata().getPostCommands().size());
@@ -123,7 +123,7 @@ public class RepositoryEndpointTest {
         // Add foo-1.0.0
         fileUrl = getArchiveURL("foo-1.0.0");
         pid100 = repository.addArchive(fileUrl);
-        pack100 = repository.getPackage(pid100);
+        pack100 = repository.getPatch(pid100);
         Assert.assertEquals(pid100, pack100.getPatchId());
         Assert.assertEquals(4, pack100.getRecords().size());
         Assert.assertEquals(0, pack100.getMetadata().getPostCommands().size());
@@ -131,10 +131,10 @@ public class RepositoryEndpointTest {
         // Add foo-1.1.0
         fileUrl = getArchiveURL("foo-1.1.0");
         PatchId pid110 = PatchId.fromURL(fileUrl);
-        PackageMetadata md110 = new PackageMetadataBuilder().patchId(pid110).postCommands("echo hell world").build();
+        PatchMetadata md110 = new PatchMetadataBuilder().patchId(pid110).postCommands("echo hell world").build();
         DataHandler data110 = new DataHandler(new URLDataSource(fileUrl));
         repository.addArchive(md110, data110, false);
-        Package pack110 = repository.getPackage(pid110);
+        Patch pack110 = repository.getPatch(pid110);
         Assert.assertEquals(pid110, pack110.getPatchId());
         Assert.assertEquals(3, pack110.getRecords().size());
         Assert.assertEquals(1, pack110.getMetadata().getPostCommands().size());

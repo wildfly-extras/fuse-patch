@@ -46,7 +46,7 @@ public interface Server {
 	/**
 	 * Query the list of applied packages
 	 */
-	List<PatchId> queryAppliedPackages();
+	List<PatchId> queryAppliedPatches();
 
 	/**
 	 * Query managed server paths
@@ -57,15 +57,15 @@ public interface Server {
      * Get the applied package for a given prefix
      * @return package or null
      */
-	Package getPackage(String prefix);
+	Patch getPatch(String prefix);
 
     /**
      * Get the applied package for the given id
      */
-    Package getPackage(PatchId patchId);
+    Patch getPatch(PatchId patchId);
     
 	/**
 	 * Apply a smart patch and return the result
 	 */
-	Package applySmartPatch(SmartPatch smartPatch, boolean force) throws IOException;
+	Patch applySmartPatch(SmartPatch smartPatch, boolean force) throws IOException;
 }
