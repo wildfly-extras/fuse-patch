@@ -210,7 +210,7 @@ public class SimpleRepositoryTest {
         Archives.assertPathsEqual(pack100.getRecords(), pack100sp1.getRecords());
         Assert.assertEquals(0, pack100sp1.getMetadata().getDependencies().size());
 
-        Package smartSet = Package.smartSet(pack100, pack100sp1);
+        Package smartSet = Package.smartDelta(pack100, pack100sp1);
         Assert.assertEquals(1, smartSet.getRecords().size());
         Archives.assertActionPathEquals("UPD config/propsA.properties", smartSet.getRecords().get(0));
     }

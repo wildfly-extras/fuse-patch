@@ -111,7 +111,7 @@ public class SimpleUpdateTest {
         // Verify smart patch to update to foo-1.1.0
         Package setB = ParserAccess.getPackage(Archives.getZipUrlFoo110());
         PatchId idB = setB.getPatchId();
-        Package smartSet = Package.smartSet(setA, setB);
+        Package smartSet = Package.smartDelta(setA, setB);
         smartPatch = SmartPatch.forInstall(smartSet, new DataHandler(new URLDataSource(Archives.getZipUrlFoo110())));
         Assert.assertEquals(4, smartPatch.getRecords().size());
         Archives.assertActionPathEquals("UPD config/propsA.properties", smartPatch.getRecords().get(0));
@@ -168,7 +168,7 @@ public class SimpleUpdateTest {
         }
         
         // Verify smart patch to downgrade to foo-1.0.0
-        smartSet = Package.smartSet(setB, setA);
+        smartSet = Package.smartDelta(setB, setA);
         smartPatch = SmartPatch.forInstall(smartSet, new DataHandler(new URLDataSource(Archives.getZipUrlFoo100())));
         Assert.assertEquals(4, smartPatch.getRecords().size());
         Archives.assertActionPathEquals("UPD config/propsA.properties", smartPatch.getRecords().get(0));

@@ -58,7 +58,7 @@ public final class Package {
         return new Package(metadata, records);
     }
 
-    public static Package smartSet(Package seedPatch, Package targetSet) {
+    public static Package smartDelta(Package seedPatch, Package targetSet) {
         IllegalArgumentAssertion.assertNotNull(targetSet, "targetSet");
 
         // All seed patch records are remove candidates
@@ -77,8 +77,8 @@ public final class Package {
                 removeMap.remove(path);
             } else {
                 if (removeMap.containsKey(path)) {
-                    removeMap.remove(path);
                     records.add(Record.create(null, Action.UPD, path, checksum));
+                    removeMap.remove(path);
                 } else {
                     records.add(Record.create(null, Action.ADD, path, checksum));
                 }
