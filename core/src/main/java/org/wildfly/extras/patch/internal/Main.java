@@ -44,6 +44,7 @@ import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.repository.LocalFileRepository;
+import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 
 public class Main {
 
@@ -164,36 +165,39 @@ public class Main {
         
         PatchId patchId = PatchId.fromURL(options.addUrl);
         PackageMetadataBuilder mdbuilder = new PackageMetadataBuilder().patchId(patchId);
-        
         if (options.metadataUrl != null) {
             Unmarshaller unmarshaller = JAXBContext.newInstance(PackageMetadataModel.class).createUnmarshaller();
             PackageMetadataModel model = (PackageMetadataModel) unmarshaller.unmarshal(options.metadataUrl);
-            PackageMetadata metadata = model.toPackageMetadata();
-            mdbuilder = new PackageMetadataBuilder().patchId(metadata.getPatchId());
-            mdbuilder.oneoffId(metadata.getOneoffId());
-            mdbuilder.dependencies(metadata.getDependencies());
-            mdbuilder.postCommands(metadata.getPostCommands());
+            PackageMetadata auxmd = model.toPackageMetadata();
+            mdbuilder = new PackageMetadataBuilder().patchId(auxmd.getPatchId());
+            mdbuilder.oneoffId(auxmd.getOneoffId());
+            mdbuilder.dependencies(auxmd.getDependencies());
+            mdbuilder.postCommands(auxmd.getPostCommands());
         }
+        PackageMetadata metadata = mdbuilder.build();
         
         if (options.oneoffId != null) {
+            IllegalStateAssertion.assertNull(metadata.getOneoffId(), "One-Off patch id already defined: " + metadata);
             PatchId oneoffId = PatchId.fromString(options.oneoffId);
             mdbuilder.oneoffId(oneoffId);
         }
         
-        Set<PatchId> dependencies = new LinkedHashSet<>();
         if (options.dependencies != null) {
+            IllegalStateAssertion.assertTrue(metadata.getDependencies().isEmpty(), "Dependencies already defined: " + metadata);
+            Set<PatchId> dependencies = new LinkedHashSet<>();
             for (String depid : options.dependencies) {
                 dependencies.add(PatchId.fromString(depid));
             }
+            mdbuilder.dependencies(dependencies);
         }
         
         if (options.addCmd != null) {
+            IllegalStateAssertion.assertTrue(metadata.getPostCommands().isEmpty(), "Post commands already defined: " + metadata);
             mdbuilder.postCommands(options.addCmd);
         }
         
-        PackageMetadata metadata = mdbuilder.dependencies(dependencies).build();
         DataHandler dataHandler = new DataHandler(new URLDataSource(options.addUrl));
-        patchTool.getRepository().addArchive(metadata, dataHandler, options.force);
+        patchTool.getRepository().addArchive(mdbuilder.build(), dataHandler, options.force);
     }
 
     private static void helpScreen(CmdLineParser cmdParser) {

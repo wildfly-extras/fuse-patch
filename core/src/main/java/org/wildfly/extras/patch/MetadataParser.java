@@ -63,7 +63,7 @@ public final class MetadataParser {
         IllegalArgumentAssertion.assertNotNull(zipInput, "zipInput");
 
         Set<Record> records = new HashSet<>();
-        byte[] buffer = new byte[1024];
+        byte[] buffer = new byte[64 * 1024];
         ZipEntry entry = zipInput.getNextEntry();
         while (entry != null) {
             if (!entry.isDirectory()) {

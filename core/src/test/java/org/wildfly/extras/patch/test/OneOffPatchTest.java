@@ -19,9 +19,15 @@
  */
 package org.wildfly.extras.patch.test;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Properties;
 
 import javax.activation.DataHandler;
 import javax.activation.URLDataSource;
@@ -37,17 +43,21 @@ import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.utils.IOUtils;
 
+
 public class OneOffPatchTest {
 
+    final static Path[] serverPaths = new Path[2];
     final static Path repoPath = Paths.get("target/repos/OneOffPatchTest/repo");
-    final static Path serverPath = Paths.get("target/servers/OneOffPatchTest/srvA");
 
     @BeforeClass
     public static void setUp() throws Exception {
         IOUtils.rmdirs(repoPath);
         repoPath.toFile().mkdirs();
-        IOUtils.rmdirs(serverPath);
-        serverPath.toFile().mkdirs();
+        for (int i = 0; i < 2; i++) {
+            serverPaths[i] = Paths.get("target/repos/OneOffPatchTest/srv" + (i + 1));
+            IOUtils.rmdirs(serverPaths[i]);
+            serverPaths[i].toFile().mkdirs();
+        }
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).build();
         PatchId oneoffId = patchTool.getRepository().addArchive(Archives.getZipUrlFoo100());
         URL url100sp1 = Archives.getZipUrlFoo100SP1();
@@ -60,23 +70,41 @@ public class OneOffPatchTest {
     @Test
     public void testSimpleOneOff() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).serverPath(serverPath).build();
+        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).serverPath(serverPaths[0]).build();
         
-        PatchId idA = PatchId.fromURL(Archives.getZipUrlFoo100());
-        PatchId idB = PatchId.fromURL(Archives.getZipUrlFoo100SP1());
+        PatchId pid100 = PatchId.fromURL(Archives.getZipUrlFoo100());
+        PatchId pid100sp1 = PatchId.fromURL(Archives.getZipUrlFoo100SP1());
+        Path filePath = serverPaths[0].resolve("config/propsA.properties");
+        
+        Package pack100 = patchTool.install(pid100, false);
+        Assert.assertEquals("A1", readProperty("some.prop", filePath));
+        
+        Package pack100sp1 = patchTool.install(pid100sp1, false);
+        Assert.assertEquals("A2", readProperty("some.prop", filePath));
+        Archives.assertPathsEqual(pack100.getRecords(), pack100sp1.getRecords());
+    }
 
-        Package setA = patchTool.install(idA, false);
-        Assert.assertEquals(4, setA.getRecords().size());
-        Archives.assertActionPathEquals("INFO config/propsA.properties", setA.getRecords().get(0));
-        Archives.assertActionPathEquals("INFO config/propsB.properties", setA.getRecords().get(1));
-        Archives.assertActionPathEquals("INFO config/remove-me.properties", setA.getRecords().get(2));
-        Archives.assertActionPathEquals("INFO lib/foo-1.0.0.jar", setA.getRecords().get(3));
+    @Test
+    public void testOneOffWithoutPriorBase() throws Exception {
 
-        Package setB = patchTool.install(idB, false);
-        Assert.assertEquals(4, setB.getRecords().size());
-        Archives.assertActionPathEquals("INFO config/propsA.properties", setB.getRecords().get(0));
-        Archives.assertActionPathEquals("INFO config/propsB.properties", setB.getRecords().get(1));
-        Archives.assertActionPathEquals("INFO config/remove-me.properties", setB.getRecords().get(2));
-        Archives.assertActionPathEquals("INFO lib/foo-1.0.0.jar", setB.getRecords().get(3));
+        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).serverPath(serverPaths[1]).build();
+        
+        PatchId pid100sp1 = PatchId.fromURL(Archives.getZipUrlFoo100SP1());
+        Path filePath = serverPaths[1].resolve("config/propsA.properties");
+        
+        Package pack100sp1 = patchTool.install(pid100sp1, false);
+        Assert.assertEquals("A2", readProperty("some.prop", filePath));
+        Archives.assertActionPathEquals("INFO config/propsA.properties", pack100sp1.getRecords().get(0));
+        Archives.assertActionPathEquals("INFO config/propsB.properties", pack100sp1.getRecords().get(1));
+        Archives.assertActionPathEquals("INFO config/remove-me.properties", pack100sp1.getRecords().get(2));
+        Archives.assertActionPathEquals("INFO lib/foo-1.0.0.jar", pack100sp1.getRecords().get(3));
+    }
+
+    private String readProperty(String key, Path path) throws IOException {
+        Properties properties = new Properties();
+        try (FileInputStream fis = new FileInputStream(path.toFile())) {
+            properties.load(fis);
+        }
+        return properties.getProperty(key);
     }
 }

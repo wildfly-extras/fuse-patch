@@ -28,19 +28,26 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.CodeSource;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import javax.activation.DataHandler;
+import javax.activation.DataSource;
+import javax.activation.FileDataSource;
 import javax.activation.URLDataSource;
 
 import org.slf4j.Logger;
@@ -85,13 +92,15 @@ public final class LocalFileRepository implements Repository {
             repoSpec = System.getenv(Repository.ENV_PROPERTY_REPOSITORY_URL);
         }
         if (repoSpec == null) {
-            String modulePath = "modules/system/layers/" + WildFlyServer.MODULE_LAYER + "/org/wildfly/extras/patch";
             CodeSource codeSource = Main.class.getProtectionDomain().getCodeSource();
             URL codeLocation = codeSource != null ? codeSource.getLocation() : null;
-            if (codeLocation != null && codeLocation.getPath().contains(modulePath)) {
-                Path jbossHome = Paths.get(codeLocation.getPath().substring(0, codeLocation.getPath().indexOf(modulePath)));
-                Path repositoryPath = jbossHome.resolve("fusepatch").resolve("repository");
-                repoSpec = repositoryPath.toString();
+            if (codeLocation != null) {
+                String modulePath = "modules/system/layers/" + WildFlyServer.MODULE_LAYER + "/org/wildfly/extras/patch";
+                if (codeLocation.getPath().contains(modulePath)) {
+                    Path jbossHome = Paths.get(codeLocation.getPath().substring(0, codeLocation.getPath().indexOf(modulePath)));
+                    Path repositoryPath = jbossHome.resolve("fusepatch").resolve("repository");
+                    repoSpec = repositoryPath.toString();
+                }
             }
         }
         URL repoUrl = null;
@@ -173,8 +182,8 @@ public final class LocalFileRepository implements Repository {
 
     @Override
     public PatchId addArchive(PackageMetadata metadata, DataHandler dataHandler, boolean force) throws IOException {
-        IllegalArgumentAssertion.assertNotNull(dataHandler, "dataHandler");
         IllegalArgumentAssertion.assertNotNull(metadata, "metadata");
+        IllegalArgumentAssertion.assertNotNull(dataHandler, "dataHandler");
         
         // Unwrap the package metadata
         PatchId patchId = metadata.getPatchId();
@@ -206,10 +215,73 @@ public final class LocalFileRepository implements Repository {
             }
 
             // Add to repository
-            File targetFile = getPackagePath(patchId).toFile();
+            Path targetPath = getPackagePath(patchId);
+            File targetFile = targetPath.toFile();
             targetFile.getParentFile().mkdirs();
-            try (OutputStream output = new FileOutputStream(targetFile)) {
-                IOUtils.copy(dataHandler.getInputStream(), output);
+            if (oneoffId != null) {
+                final Path basePatchPath = getPackagePath(oneoffId);
+                final Path workspace = targetPath.getParent().resolve("workspace");
+                
+                // Unzip the base patch into the workspace
+                try (ZipInputStream zipInput = new ZipInputStream(new FileInputStream(basePatchPath.toFile()))) {
+                    byte[] buffer = new byte[64 * 1024];
+                    ZipEntry entry = zipInput.getNextEntry();
+                    while (entry != null) {
+                        if (!entry.isDirectory()) {
+                            String name = entry.getName();
+                            File entryFile = workspace.resolve(Paths.get(name)).toFile();
+                            entryFile.getParentFile().mkdirs();
+                            try (FileOutputStream fos = new FileOutputStream(entryFile)) {
+                                int read = zipInput.read(buffer);
+                                while (read > 0) {
+                                    fos.write(buffer, 0, read);
+                                    read = zipInput.read(buffer);
+                                }
+                            }
+                        }
+                        entry = zipInput.getNextEntry();
+                    }
+                }
+
+                // Unzip the one-off patch into the workspace
+                try (ZipInputStream zipInput = new ZipInputStream(dataHandler.getInputStream())) {
+                    byte[] buffer = new byte[64 * 1024];
+                    ZipEntry entry = zipInput.getNextEntry();
+                    while (entry != null) {
+                        if (!entry.isDirectory()) {
+                            String name = entry.getName();
+                            File entryFile = workspace.resolve(Paths.get(name)).toFile();
+                            entryFile.getParentFile().mkdirs();
+                            try (FileOutputStream fos = new FileOutputStream(entryFile)) {
+                                int read = zipInput.read(buffer);
+                                while (read > 0) {
+                                    fos.write(buffer, 0, read);
+                                    read = zipInput.read(buffer);
+                                }
+                            }
+                        }
+                        entry = zipInput.getNextEntry();
+                    }
+                }
+
+                // Create the target zip file
+                try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(targetFile))) {
+                    Files.walkFileTree(workspace, new SimpleFileVisitor<Path>() {
+                        @Override
+                        public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+                            Path relpath = workspace.relativize(path);
+                            zos.putNextEntry(new ZipEntry(relpath.toString()));
+                            try (FileInputStream fis = new FileInputStream(path.toFile())) {
+                                IOUtils.copy(fis, zos);
+                            }
+                            return FileVisitResult.CONTINUE;
+                        }
+                    });
+                }
+            } else {
+                try (OutputStream output = new FileOutputStream(targetFile)) {
+                    IOUtils.copy(dataHandler.getInputStream(), output);
+                }
             }
             
             // Remove the source file when it was placed in the repository
@@ -225,25 +297,10 @@ public final class LocalFileRepository implements Repository {
             Package patchSet;
             try {
                 try (ZipInputStream zipInput = new ZipInputStream(new FileInputStream(targetFile))) {
-                    Set<PatchId> depids = new LinkedHashSet<>(dependencies);
-                    if (oneoffId != null) {
-                        Package oneoffSet = getPackage(oneoffId);
-                        Map<Path, Record> records = new HashMap<>();
-                        for (Record rec : oneoffSet.getRecords()) {
-                            records.put(rec.getPath(), rec);
-                        }
-                        Package sourceSet = MetadataParser.buildPackageFromZip(patchId, Record.Action.INFO, zipInput);
-                        for (Record rec : sourceSet.getRecords()) {
-                            records.put(rec.getPath(), rec);
-                        }
-                        depids.add(oneoffId);
-                        patchSet = Package.create(metadata, records.values());
-                    } else {
-                        Package sourceSet = MetadataParser.buildPackageFromZip(patchId, Record.Action.INFO, zipInput);
-                        patchSet = Package.create(metadata, sourceSet.getRecords());
-                    }
+                    Package sourceSet = MetadataParser.buildPackageFromZip(patchId, Record.Action.INFO, zipInput);
+                    patchSet = Package.create(metadata, sourceSet.getRecords());
                 }
-
+                
                 // Assert no duplicate paths
                 Set<PatchId> duplicates = new HashSet<>();
                 for (Record rec : patchSet.getRecords()) {
@@ -317,22 +374,19 @@ public final class LocalFileRepository implements Repository {
             Package targetSet = getPackage(patchId);
             PatchAssertion.assertNotNull(targetSet, "Repository does not contain package: " + patchId);
             Package smartSet = Package.smartSet(seedPatch, targetSet);
-            return SmartPatch.forInstall(smartSet, new DataHandler(new URLDataSource(getPackageURL(patchId))));
+            return SmartPatch.forInstall(smartSet, new DataHandler(getSmartDataSource(patchId)));
         } finally {
             lock.unlock();
         }
     }
 
-    private Path getPackagePath(PatchId patchId) {
-        return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString(), patchId + ".zip"));
+    private DataSource getSmartDataSource(PatchId patchId) {
+        File file = getPackagePath(patchId).toFile();
+        return new FileDataSource(file);
     }
 
-    private URL getPackageURL(PatchId patchId) {
-        try {
-            return getPackagePath(patchId).toFile().toURI().toURL();
-        } catch (MalformedURLException ex) {
-            throw new IllegalStateException(ex);
-        }
+    private Path getPackagePath(PatchId patchId) {
+        return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString(), patchId + ".zip"));
     }
 
     private Path getAbsolutePath(URL url) {
