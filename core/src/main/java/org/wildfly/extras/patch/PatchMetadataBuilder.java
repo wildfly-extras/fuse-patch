@@ -29,6 +29,7 @@ public final class PatchMetadataBuilder {
 
     private PatchId patchId;
     private PatchId oneoffId;
+    private Set<String> roles = new LinkedHashSet<>();
     private Set<PatchId> dependencies = new LinkedHashSet<>();
     private List<String> postCommands = new ArrayList<>();
 
@@ -37,6 +38,20 @@ public final class PatchMetadataBuilder {
         return this;
     }
 
+    public PatchMetadataBuilder roles(String... roles) {
+        if (roles != null) {
+            this.roles.addAll(Arrays.asList(roles));
+        }
+        return this;
+    }
+    
+    public PatchMetadataBuilder roles(Set<String> roles) {
+        if (roles != null) {
+            this.roles.addAll(roles);
+        }
+        return this;
+    }
+    
     public PatchMetadataBuilder oneoffId(PatchId oneoffId) {
         this.oneoffId = oneoffId;
         return this;
@@ -71,6 +86,6 @@ public final class PatchMetadataBuilder {
     }
 
     public PatchMetadata build() {
-        return new PatchMetadata(patchId, oneoffId, dependencies, postCommands);
+        return new PatchMetadata(patchId, roles, oneoffId, dependencies, postCommands);
     }
 }

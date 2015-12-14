@@ -28,13 +28,14 @@ import java.util.concurrent.locks.Lock;
 
 import javax.activation.DataHandler;
 import javax.activation.URLDataSource;
-import javax.xml.namespace.QName;
+import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Service;
+import javax.xml.ws.WebServiceException;
 
 import org.wildfly.extras.patch.Patch;
+import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchMetadata;
 import org.wildfly.extras.patch.PatchMetadataBuilder;
-import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
@@ -44,17 +45,32 @@ public class RepositoryClient implements Repository {
     private final Lock lock;
     private final RepositoryService delegate;
 
-    public RepositoryClient(Lock lock, QName serviceName, URL wsdlUrl) {
+    public RepositoryClient(Lock lock, URL endpointUrl, String username, String password) {
+        IllegalArgumentAssertion.assertNotNull(endpointUrl, "endpointUrl");
         IllegalArgumentAssertion.assertNotNull(lock, "lock");
-        IllegalArgumentAssertion.assertNotNull(serviceName, "serviceName");
-        IllegalArgumentAssertion.assertNotNull(wsdlUrl, "wsdlUrl");
         this.lock = lock;
-        delegate = Service.create(wsdlUrl, serviceName).getPort(RepositoryService.class);
+
+        URL wsdlUrl = getClass().getClassLoader().getResource("/jaxws/repository-endpoint.wsdl");
+        this.delegate = Service.create(wsdlUrl, RepositoryService.SERVICE_QNAME).getPort(RepositoryService.class);
+
+        if (username != null && password != null) {
+            BindingProvider bp = (BindingProvider) delegate;
+            bp.getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, endpointUrl.toString());
+            bp.getRequestContext().put(BindingProvider.USERNAME_PROPERTY, username);
+            bp.getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, password);
+        }
     }
 
     @Override
     public URL getBaseURL() {
-        return delegate.getBaseURL();
+        lock.tryLock();
+        try {
+            return delegate.getBaseURL();
+        } catch (WebServiceException ex) {
+            throw unwrap(ex);
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
@@ -69,6 +85,8 @@ public class RepositoryClient implements Repository {
                 }
             }
             return Collections.unmodifiableList(result);
+        } catch (WebServiceException ex) {
+            throw unwrap(ex);
         } finally {
             lock.unlock();
         }
@@ -80,6 +98,8 @@ public class RepositoryClient implements Repository {
         try {
             String result = delegate.getLatestAvailable(prefix);
             return result != null ? PatchId.fromString(result) : null;
+        } catch (WebServiceException ex) {
+            throw unwrap(ex);
         } finally {
             lock.unlock();
         }
@@ -91,6 +111,8 @@ public class RepositoryClient implements Repository {
         try {
             PatchAdapter result = delegate.getPatch(patchId.toString());
             return result != null ? result.toPatch() : null;
+        } catch (WebServiceException ex) {
+            throw unwrap(ex);
         } finally {
             lock.unlock();
         }
@@ -104,6 +126,8 @@ public class RepositoryClient implements Repository {
             DataHandler dataHandler = new DataHandler(new URLDataSource(fileUrl));
             PatchMetadata metadata = new PatchMetadataBuilder().patchId(patchId).build();
             return addArchive(metadata, dataHandler, false);
+        } catch (WebServiceException ex) {
+            throw unwrap(ex);
         } finally {
             lock.unlock();
         }
@@ -117,6 +141,8 @@ public class RepositoryClient implements Repository {
             DataHandler dataHandler = new DataHandler(new URLDataSource(fileUrl));
             PatchMetadata metadata = new PatchMetadataBuilder().patchId(patchId).build();
             return addArchive(metadata, dataHandler, force);
+        } catch (WebServiceException ex) {
+            throw unwrap(ex);
         } finally {
             lock.unlock();
         }
@@ -128,6 +154,8 @@ public class RepositoryClient implements Repository {
         try {
             String result = delegate.addArchive(PatchMetadataAdapter.fromPatchMetadata(metadata), dataHandler, force);
             return PatchId.fromString(result);
+        } catch (WebServiceException ex) {
+            throw unwrap(ex);
         } finally {
             lock.unlock();
         }
@@ -138,6 +166,8 @@ public class RepositoryClient implements Repository {
         lock.tryLock();
         try {
             return delegate.removeArchive(removeId.toString());
+        } catch (WebServiceException ex) {
+            throw unwrap(ex);
         } finally {
             lock.unlock();
         }
@@ -148,8 +178,15 @@ public class RepositoryClient implements Repository {
         lock.tryLock();
         try {
             return delegate.getSmartPatch(PatchAdapter.fromPatch(seedPatch), patchId.toString()).toSmartPatch();
+        } catch (WebServiceException ex) {
+            throw unwrap(ex);
         } finally {
             lock.unlock();
         }
+    }
+
+    private RuntimeException unwrap(WebServiceException ex) {
+        // [#118] RepositoryClient does not unwrap WebServiceException
+        return ex;
     }
 }

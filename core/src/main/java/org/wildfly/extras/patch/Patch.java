@@ -47,11 +47,6 @@ public final class Patch {
     private final Map<Path, Record> recordsMap = new LinkedHashMap<>();
     private int hashCache;
 
-    public static Patch create(PatchId patchId, Collection<Record> records) {
-        PatchMetadata metadata = new PatchMetadataBuilder().patchId(patchId).build();
-        return new Patch(metadata, records);
-    }
-
     public static Patch create(PatchMetadata metadata, Collection<Record> records) {
         return new Patch(metadata, records);
     }

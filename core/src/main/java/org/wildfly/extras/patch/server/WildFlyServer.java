@@ -224,7 +224,7 @@ public final class WildFlyServer implements Server {
             managedPaths.updatePaths(homePath, smartPatch, Action.DEL);
             MetadataParser.writeManagedPaths(getWorkspace(), managedPaths);
 
-            Patch infoset;
+            Patch result;
 
             // Update server side metadata
             if (!smartPatch.isUninstall()) {
@@ -239,17 +239,17 @@ public final class WildFlyServer implements Server {
                     }
                 }
 
-                Set<Record> inforecs = new HashSet<>();
+                Set<Record> records = new HashSet<>();
                 for (Record rec : serverRecords.values()) {
-                    inforecs.add(Record.create(rec.getPath(), rec.getChecksum()));
+                    records.add(Record.create(rec.getPath(), rec.getChecksum()));
                 }
-                infoset = Patch.create(patchId, inforecs);
-                MetadataParser.writePatch(getWorkspace(), infoset);
+                result = Patch.create(smartPatch.getMetadata(), records);
+                MetadataParser.writePatch(getWorkspace(), result);
             }
 
             // Remove metadata on uninstall
             else {
-                infoset = Patch.create(patchId, smartPatch.getRecords());
+                result = Patch.create(smartPatch.getMetadata(), smartPatch.getRecords());
                 File packageDir = MetadataParser.getMetadataDirectory(getWorkspace(), patchId).getParentFile();
                 IOUtils.rmdirs(packageDir.toPath());
             }
@@ -297,7 +297,7 @@ public final class WildFlyServer implements Server {
                 }
             }
 
-            return infoset;
+            return result;
         } finally {
             lock.unlock();
         }

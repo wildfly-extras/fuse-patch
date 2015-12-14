@@ -20,20 +20,20 @@
 package org.wildfly.extras.patch.repository;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchMetadata;
 import org.wildfly.extras.patch.PatchMetadataBuilder;
-import org.wildfly.extras.patch.PatchId;
 
 public class PatchMetadataAdapter {
 
-    private String identity;
+    private String patchId;
+    private String[] roles;
     private String[] dependencySpecs;
-    private String[] commandArray;
+    private String[] commands;
     
     public static PatchMetadataAdapter fromPatchMetadata(PatchMetadata metadata) {
     	
@@ -41,42 +41,54 @@ public class PatchMetadataAdapter {
     		return null;
     	
     	PatchMetadataAdapter result = new PatchMetadataAdapter();
-    	result.identity = metadata.getPatchId().toString();
-    	List<PatchId> dependencies = new ArrayList<>(metadata.getDependencies());
-    	result.dependencySpecs = new String[dependencies.size()];
-    	for (int i = 0; i < dependencies.size(); i++) {
-    		result.dependencySpecs[i] = dependencies.get(i).toString();
-    	}
-    	List<String> commands = metadata.getPostCommands();
-    	result.commandArray = new String[commands.size()];
-    	commands.toArray(result.commandArray);
+    	result.patchId = metadata.getPatchId().toString();
+        
+        List<String> roles = new ArrayList<>(metadata.getRoles());
+        result.roles = new String[roles.size()];
+        for (int i = 0; i < roles.size(); i++) {
+            result.roles[i] = roles.get(i);
+        }
+        
+        List<PatchId> dependencies = new ArrayList<>(metadata.getDependencies());
+        result.dependencySpecs = new String[dependencies.size()];
+        for (int i = 0; i < dependencies.size(); i++) {
+            result.dependencySpecs[i] = dependencies.get(i).toString();
+        }
+    	
+    	List<String> cmdlist = metadata.getPostCommands();
+    	result.commands = new String[cmdlist.size()];
+    	cmdlist.toArray(result.commands);
     	return result;
     }
     
     public PatchMetadata toPatchMetadata() {
-    	PatchId patchId = PatchId.fromString(identity);
+    	PatchId pid = PatchId.fromString(patchId);
     	Set<PatchId> dependencies = new HashSet<>();
     	if (dependencySpecs != null) {
         	for (String spec : dependencySpecs) {
         		dependencies.add(PatchId.fromString(spec));
         	}
     	}
-    	List<String> commands = new ArrayList<>();
-    	if (commandArray != null) {
-    		commands = Arrays.asList(commandArray);
-    	}
-    	return new PatchMetadataBuilder().patchId(patchId).dependencies(dependencies).postCommands(commands).build();
+    	return new PatchMetadataBuilder().patchId(pid).roles(roles).dependencies(dependencies).postCommands(commands).build();
     }
     
-    public String getIdentity() {
-		return identity;
+    public String getPatchId() {
+		return patchId;
 	}
 
-	public void setIdentity(String identity) {
-		this.identity = identity;
+	public void setPatchId(String identity) {
+		this.patchId = identity;
 	}
 
-	public String[] getDependencies() {
+	public String[] getRoles() {
+        return roles;
+    }
+
+    public void setRoles(String[] roles) {
+        this.roles = roles;
+    }
+
+    public String[] getDependencies() {
 		return dependencySpecs;
 	}
 
@@ -85,10 +97,10 @@ public class PatchMetadataAdapter {
 	}
 
 	public String[] getCommands() {
-		return commandArray;
+		return commands;
 	}
 
 	public void setCommands(String[] commands) {
-		this.commandArray = commands;
+		this.commands = commands;
 	}
 }

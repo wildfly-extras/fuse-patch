@@ -1,3 +1,4 @@
 <jboss-web>
     <context-root>fuse-patch-jaxws</context-root>
+    <security-domain>fuse-patch-policy</security-domain>
 </jboss-web>

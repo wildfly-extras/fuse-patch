@@ -50,7 +50,7 @@ public class PostCommandsTest {
     public static void setUp() throws Exception {
         IOUtils.rmdirs(serverPath);
         serverPath.toFile().mkdirs();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < repoPaths.length; i++) {
             repoPaths[i] = Paths.get("target/repos/PostCommandsTest/repo" + (i + 1));
             IOUtils.rmdirs(repoPaths[i]);
             repoPaths[i].toFile().mkdirs();
@@ -98,9 +98,9 @@ public class PostCommandsTest {
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[1]).build();
         Repository repo = patchTool.getRepository();
         
-        Patch patchSet = repo.getPatch(PatchId.fromString("foo-1.0.0"));
-        Assert.assertEquals(1, patchSet.getMetadata().getPostCommands().size());
-        Assert.assertEquals("echo hello world", patchSet.getMetadata().getPostCommands().get(0));
+        Patch patch = repo.getPatch(PatchId.fromString("foo-1.0.0"));
+        Assert.assertEquals(1, patch.getMetadata().getPostCommands().size());
+        Assert.assertEquals("echo hello world", patch.getMetadata().getPostCommands().get(0));
     }
 
     @Test
@@ -114,8 +114,8 @@ public class PostCommandsTest {
         PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[1]).build();
         Repository repo = patchTool.getRepository();
         
-        Patch patchSet = repo.getPatch(PatchId.fromString("foo-1.0.0"));
-        Assert.assertEquals(1, patchSet.getMetadata().getPostCommands().size());
-        Assert.assertEquals("echo hello world", patchSet.getMetadata().getPostCommands().get(0));
+        Patch patch = repo.getPatch(PatchId.fromString("foo-1.0.0"));
+        Assert.assertEquals(1, patch.getMetadata().getPostCommands().size());
+        Assert.assertEquals("echo hello world", patch.getMetadata().getPostCommands().get(0));
     }
 }

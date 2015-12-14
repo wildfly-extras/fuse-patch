@@ -47,32 +47,32 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
  */
 public final class SmartPatch implements Closeable {
 
-    private final Patch patchSet;
+    private final Patch patch;
     private final DataHandler dataHandler;
     private final Map<Path, Record> delMap = new HashMap<>();
     private final Map<Path, Record> updMap = new HashMap<>();
     private final Map<Path, Record> addMap = new HashMap<>();
     
-    public static SmartPatch forInstall(Patch patchSet, DataHandler dataHandler) {
+    public static SmartPatch forInstall(Patch patch, DataHandler dataHandler) {
         IllegalArgumentAssertion.assertNotNull(dataHandler, "dataHandler");
-        return new SmartPatch(patchSet, dataHandler);
+        return new SmartPatch(patch, dataHandler);
     }
     
-    public static SmartPatch forUninstall(Patch patchSet) {
-        IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
-        PatchId patchId = patchSet.getPatchId();
+    public static SmartPatch forUninstall(Patch patch) {
+        IllegalArgumentAssertion.assertNotNull(patch, "patch");
+        PatchId patchId = patch.getPatchId();
         List<Record> records = new ArrayList<>();
-        for (Record rec : patchSet.getRecords()) {
+        for (Record rec : patch.getRecords()) {
             records.add(Record.create(patchId, Action.DEL, rec.getPath(), rec.getChecksum()));
         }
-        return new SmartPatch(Patch.create(patchSet.getMetadata(), records), null);
+        return new SmartPatch(Patch.create(patch.getMetadata(), records), null);
     }
     
-    private SmartPatch(Patch patchSet, DataHandler dataHandler) {
-        IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
-        this.patchSet = patchSet;
+    private SmartPatch(Patch patch, DataHandler dataHandler) {
+        IllegalArgumentAssertion.assertNotNull(patch, "patch");
+        this.patch = patch;
         this.dataHandler = dataHandler;
-        for (Record rec : patchSet.getRecords()) {
+        for (Record rec : patch.getRecords()) {
             Record.Action action = rec.getAction();
             switch (rec.getAction()) {
                 case ADD:
@@ -91,11 +91,11 @@ public final class SmartPatch implements Closeable {
     }
 
     public PatchId getPatchId() {
-        return patchSet.getPatchId();
+        return patch.getPatchId();
     }
 
-    public Patch getPatchSet() {
-        return patchSet;
+    public Patch getPatch() {
+        return patch;
     }
 
     public DataHandler getDataHandler() {
@@ -107,11 +107,11 @@ public final class SmartPatch implements Closeable {
     }
     
     public List<Record> getRecords() {
-        return patchSet.getRecords();
+        return patch.getRecords();
     }
     
     public PatchMetadata getMetadata() {
-        return patchSet.getMetadata();
+        return patch.getMetadata();
     }
     
     public Set<Record> getRemoveSet() {
@@ -148,6 +148,6 @@ public final class SmartPatch implements Closeable {
 
     @Override
     public String toString() {
-        return "SmartPatch[id=" + patchSet.getPatchId() + ",add=" + addMap.size() + ",upd=" + updMap.size() + ",del=" + delMap.size() + "]";
+        return "SmartPatch[id=" + patch.getPatchId() + ",add=" + addMap.size() + ",upd=" + updMap.size() + ",del=" + delMap.size() + "]";
     }
 }

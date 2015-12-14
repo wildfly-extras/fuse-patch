@@ -1,0 +1,318 @@
+<wsdl:definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="http://jaxws.patch.extras.wildfly.org/"
+    xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:ns1="http://schemas.xmlsoap.org/soap/http"
+    name="RepositoryEndpointService" targetNamespace="http://jaxws.patch.extras.wildfly.org/">
+    <wsdl:types>
+        <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            xmlns:tns="http://jaxws.patch.extras.wildfly.org/"
+            attributeFormDefault="unqualified" elementFormDefault="unqualified"
+            targetNamespace="http://jaxws.patch.extras.wildfly.org/">
+            <xs:element name="addArchive" type="tns:addArchive" />
+            <xs:element name="addArchiveResponse" type="tns:addArchiveResponse" />
+            <xs:element name="getBaseURL" type="tns:getBaseURL" />
+            <xs:element name="getBaseURLResponse" type="tns:getBaseURLResponse" />
+            <xs:element name="getLatestAvailable" type="tns:getLatestAvailable" />
+            <xs:element name="getLatestAvailableResponse"
+                type="tns:getLatestAvailableResponse" />
+            <xs:element name="getPatch" type="tns:getPatch" />
+            <xs:element name="getPatchResponse" type="tns:getPatchResponse" />
+            <xs:element name="getSmartPatch" type="tns:getSmartPatch" />
+            <xs:element name="getSmartPatchResponse" type="tns:getSmartPatchResponse" />
+            <xs:element name="queryAvailable" type="tns:queryAvailable" />
+            <xs:element name="queryAvailableResponse" type="tns:queryAvailableResponse" />
+            <xs:element name="removeArchive" type="tns:removeArchive" />
+            <xs:element name="removeArchiveResponse" type="tns:removeArchiveResponse" />
+            <xs:complexType name="addArchive">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="arg0"
+                        type="tns:patchMetadataAdapter" />
+                    <xs:element minOccurs="0" name="arg1"
+                        type="xs:base64Binary" />
+                    <xs:element name="arg2" type="xs:boolean" />
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="patchMetadataAdapter">
+                <xs:sequence>
+                    <xs:element maxOccurs="unbounded"
+                        minOccurs="0" name="commands" nillable="true"
+                        type="xs:string" />
+                    <xs:element maxOccurs="unbounded"
+                        minOccurs="0" name="dependencies" nillable="true"
+                        type="xs:string" />
+                    <xs:element minOccurs="0" name="identity"
+                        type="xs:string" />
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="addArchiveResponse">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="return"
+                        type="xs:string" />
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="getPatch">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="arg0"
+                        type="xs:string" />
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="getPatchResponse">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="return"
+                        type="tns:patchAdapter" />
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="patchAdapter">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="metadata"
+                        type="tns:patchMetadataAdapter" />
+                    <xs:element maxOccurs="unbounded"
+                        minOccurs="0" name="records" nillable="true"
+                        type="xs:string" />
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="getLatestAvailable">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="arg0"
+                        type="xs:string" />
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="getLatestAvailableResponse">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="return"
+                        type="xs:string" />
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="getSmartPatch">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="arg0"
+                        type="tns:patchAdapter" />
+                    <xs:element minOccurs="0" name="arg1"
+                        type="xs:string" />
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="getSmartPatchResponse">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="return"
+                        type="tns:smartPatchAdapter" />
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="smartPatchAdapter">
+                <xs:sequence>
+                    <xs:element maxOccurs="unbounded"
+                        minOccurs="0" name="addRecs" nillable="true"
+                        type="xs:string" />
+                    <xs:element minOccurs="0" name="dataHandler"
+                        type="xs:base64Binary" />
+                    <xs:element minOccurs="0" name="patchSet"
+                        type="tns:patchAdapter" />
+                    <xs:element maxOccurs="unbounded"
+                        minOccurs="0" name="removeRecs" nillable="true"
+                        type="xs:string" />
+                    <xs:element maxOccurs="unbounded"
+                        minOccurs="0" name="replaceRecs" nillable="true"
+                        type="xs:string" />
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="removeArchive">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="arg0"
+                        type="xs:string" />
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="removeArchiveResponse">
+                <xs:sequence>
+                    <xs:element name="return" type="xs:boolean" />
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="getBaseURL">
+                <xs:sequence />
+            </xs:complexType>
+            <xs:complexType name="getBaseURLResponse">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="return"
+                        type="xs:anyURI" />
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="queryAvailable">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="arg0"
+                        type="xs:string" />
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="queryAvailableResponse">
+                <xs:sequence>
+                    <xs:element maxOccurs="unbounded"
+                        minOccurs="0" name="return" type="xs:string" />
+                </xs:sequence>
+            </xs:complexType>
+            <xs:element name="IOException" type="tns:IOException" />
+            <xs:complexType name="IOException">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="message"
+                        type="xs:string" />
+                </xs:sequence>
+            </xs:complexType>
+        </xs:schema>
+    </wsdl:types>
+    <wsdl:message name="getSmartPatch">
+        <wsdl:part element="tns:getSmartPatch" name="parameters"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="removeArchive">
+        <wsdl:part element="tns:removeArchive" name="parameters"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="getBaseURL">
+        <wsdl:part element="tns:getBaseURL" name="parameters"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="queryAvailable">
+        <wsdl:part element="tns:queryAvailable" name="parameters"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="getBaseURLResponse">
+        <wsdl:part element="tns:getBaseURLResponse" name="parameters"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="getPatchResponse">
+        <wsdl:part element="tns:getPatchResponse" name="parameters"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="removeArchiveResponse">
+        <wsdl:part element="tns:removeArchiveResponse" name="parameters"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="addArchive">
+        <wsdl:part element="tns:addArchive" name="parameters"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="addArchiveResponse">
+        <wsdl:part element="tns:addArchiveResponse" name="parameters"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="getPatch">
+        <wsdl:part element="tns:getPatch" name="parameters"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="queryAvailableResponse">
+        <wsdl:part element="tns:queryAvailableResponse" name="parameters"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="getLatestAvailable">
+        <wsdl:part element="tns:getLatestAvailable" name="parameters"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="getLatestAvailableResponse">
+        <wsdl:part element="tns:getLatestAvailableResponse"
+            name="parameters"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="getSmartPatchResponse">
+        <wsdl:part element="tns:getSmartPatchResponse" name="parameters"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="IOException">
+        <wsdl:part element="tns:IOException" name="IOException"></wsdl:part>
+    </wsdl:message>
+    <wsdl:portType name="RepositoryService">
+        <wsdl:operation name="addArchive">
+            <wsdl:input message="tns:addArchive" name="addArchive"></wsdl:input>
+            <wsdl:output message="tns:addArchiveResponse"
+                name="addArchiveResponse"></wsdl:output>
+            <wsdl:fault message="tns:IOException" name="IOException"></wsdl:fault>
+        </wsdl:operation>
+        <wsdl:operation name="getPatch">
+            <wsdl:input message="tns:getPatch" name="getPatch"></wsdl:input>
+            <wsdl:output message="tns:getPatchResponse"
+                name="getPatchResponse"></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getLatestAvailable">
+            <wsdl:input message="tns:getLatestAvailable"
+                name="getLatestAvailable"></wsdl:input>
+            <wsdl:output message="tns:getLatestAvailableResponse"
+                name="getLatestAvailableResponse"></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getSmartPatch">
+            <wsdl:input message="tns:getSmartPatch" name="getSmartPatch"></wsdl:input>
+            <wsdl:output message="tns:getSmartPatchResponse"
+                name="getSmartPatchResponse"></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="removeArchive">
+            <wsdl:input message="tns:removeArchive" name="removeArchive"></wsdl:input>
+            <wsdl:output message="tns:removeArchiveResponse"
+                name="removeArchiveResponse"></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getBaseURL">
+            <wsdl:input message="tns:getBaseURL" name="getBaseURL"></wsdl:input>
+            <wsdl:output message="tns:getBaseURLResponse"
+                name="getBaseURLResponse"></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="queryAvailable">
+            <wsdl:input message="tns:queryAvailable" name="queryAvailable"></wsdl:input>
+            <wsdl:output message="tns:queryAvailableResponse"
+                name="queryAvailableResponse"></wsdl:output>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="RepositoryEndpointServiceSoapBinding"
+        type="tns:RepositoryService">
+        <soap:binding style="document"
+            transport="http://schemas.xmlsoap.org/soap/http" />
+        <wsdl:operation name="addArchive">
+            <soap:operation soapAction="" style="document" />
+            <wsdl:input name="addArchive">
+                <soap:body use="literal" />
+            </wsdl:input>
+            <wsdl:output name="addArchiveResponse">
+                <soap:body use="literal" />
+            </wsdl:output>
+            <wsdl:fault name="IOException">
+                <soap:fault name="IOException" use="literal" />
+            </wsdl:fault>
+        </wsdl:operation>
+        <wsdl:operation name="getPatch">
+            <soap:operation soapAction="" style="document" />
+            <wsdl:input name="getPatch">
+                <soap:body use="literal" />
+            </wsdl:input>
+            <wsdl:output name="getPatchResponse">
+                <soap:body use="literal" />
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getLatestAvailable">
+            <soap:operation soapAction="" style="document" />
+            <wsdl:input name="getLatestAvailable">
+                <soap:body use="literal" />
+            </wsdl:input>
+            <wsdl:output name="getLatestAvailableResponse">
+                <soap:body use="literal" />
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getSmartPatch">
+            <soap:operation soapAction="" style="document" />
+            <wsdl:input name="getSmartPatch">
+                <soap:body use="literal" />
+            </wsdl:input>
+            <wsdl:output name="getSmartPatchResponse">
+                <soap:body use="literal" />
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="removeArchive">
+            <soap:operation soapAction="" style="document" />
+            <wsdl:input name="removeArchive">
+                <soap:body use="literal" />
+            </wsdl:input>
+            <wsdl:output name="removeArchiveResponse">
+                <soap:body use="literal" />
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getBaseURL">
+            <soap:operation soapAction="" style="document" />
+            <wsdl:input name="getBaseURL">
+                <soap:body use="literal" />
+            </wsdl:input>
+            <wsdl:output name="getBaseURLResponse">
+                <soap:body use="literal" />
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="queryAvailable">
+            <soap:operation soapAction="" style="document" />
+            <wsdl:input name="queryAvailable">
+                <soap:body use="literal" />
+            </wsdl:input>
+            <wsdl:output name="queryAvailableResponse">
+                <soap:body use="literal" />
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="RepositoryEndpointService">
+        <wsdl:port binding="tns:RepositoryEndpointServiceSoapBinding" name="RepositoryEndpointPort">
+            <!-- soap:address location="http://localhost:8080/fuse-patch-jaxws/RepositoryEndpoint" / -->
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

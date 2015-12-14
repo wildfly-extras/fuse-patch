@@ -38,6 +38,9 @@ import org.wildfly.extras.patch.PatchId;
  *   <package>
  *       <patchId>foo-1.0.0.SP1</patchId>
  *       <oneoffId>foo-1.0.0</oneoffId>
+ *       <roles>
+ *           <role>foo</role>
+ *       </roles>
  *       <dependencies>
  *           <patchId>aaa-0.0.0</patchId>
  *       </dependencies>
@@ -52,6 +55,7 @@ public final class PatchMetadataModel {
 
     private String patchId;
     private String oneoffId;
+    private Roles roles;
     private Dependencies dependencies;
     private Commands postCommands;
 
@@ -59,6 +63,7 @@ public final class PatchMetadataModel {
         PatchMetadataModel model = new PatchMetadataModel();
         model.patchId = metadata.getPatchId().toString();
         model.oneoffId = metadata.getOneoffId() != null ? metadata.getOneoffId().toString() : null;
+        model.roles = new Roles(metadata.getRoles());
         model.dependencies = new Dependencies(metadata.getDependencies());
         model.postCommands = new Commands(metadata.getPostCommands());
         return model;
@@ -66,6 +71,9 @@ public final class PatchMetadataModel {
     
     public PatchMetadata toPatchMetadata() {
         PatchMetadataBuilder builder = new PatchMetadataBuilder().patchId(PatchId.fromString(patchId));
+        if (roles != null) {
+            builder.roles(roles.getRoles());
+        }
         if (oneoffId != null) {
             builder.oneoffId(PatchId.fromString(oneoffId));
         }
@@ -116,6 +124,28 @@ public final class PatchMetadataModel {
         this.postCommands = postCommands;
     }
 
+    @XmlType
+    public static class Roles {
+        
+        private Set<String> roles;
+
+        public Roles() {
+        }
+
+        public Roles(Set<String> roles) {
+            this.roles = new LinkedHashSet<>(roles);
+        }
+
+        public Set<String> getRoles() {
+            return roles;
+        }
+
+        @XmlElement(name = "role")
+        public void setRoles(Set<String> roles) {
+            this.roles = roles;
+        }
+    }
+    
     @XmlType
     public static class Dependencies {
         

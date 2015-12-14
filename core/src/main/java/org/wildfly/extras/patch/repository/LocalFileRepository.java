@@ -298,16 +298,16 @@ public final class LocalFileRepository implements Repository {
             }
 
             // Build the patch set
-            Patch patchSet;
+            Patch patch;
             try {
                 try (ZipInputStream zipInput = new ZipInputStream(new FileInputStream(targetFile))) {
                     Patch sourceSet = MetadataParser.buildPatchFromZip(patchId, Record.Action.INFO, zipInput);
-                    patchSet = Patch.create(metadata, sourceSet.getRecords());
+                    patch = Patch.create(metadata, sourceSet.getRecords());
                 }
                 
                 // Assert no duplicate paths
                 Set<PatchId> duplicates = new HashSet<>();
-                for (Record rec : patchSet.getRecords()) {
+                for (Record rec : patch.getRecords()) {
                     Record otherRec = combinedPathsMap.get(rec.getPath());
                     if (otherRec != null) {
                         PatchId otherId = otherRec.getPatchId();
@@ -332,7 +332,7 @@ public final class LocalFileRepository implements Repository {
             }
 
             // Write repository metadata
-            MetadataParser.writePatch(rootPath, patchSet);
+            MetadataParser.writePatch(rootPath, patch);
 
             String message = "Added " + patchId;
             if (oneoffId != null) {

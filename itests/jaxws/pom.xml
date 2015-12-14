@@ -90,10 +90,32 @@
                         <goals>
                             <goal>build</goal>
                         </goals>
-                        <phase>process-sources</phase>
+                        <phase>process-test-sources</phase>
                         <configuration>
                             <config-file>src/test/resources/server-provisioning.xml</config-file>
                             <server-name>wildfly-${version.wildfly}</server-name>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-server-config</id>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <phase>process-test-sources</phase>
+                        <configuration>
+                            <outputDirectory>${jboss.home}/standalone/configuration</outputDirectory>
+                            <overwrite>true</overwrite>
+                            <resources>
+                                <resource>
+                                    <directory>src/test/resources/configuration</directory>
+                                </resource>
+                            </resources>
                         </configuration>
                     </execution>
                 </executions>
@@ -110,6 +132,7 @@
                         <phase>process-test-resources</phase>
                         <configuration>
                             <jbossHome>${jboss.home}</jbossHome>
+                            <serverConfig>standalone-extra.xml</serverConfig>
                             <javaOpts>
                                 <option>-Dfusepatch.repository=file://${jboss.home}/fusepatch/repository</option>
                                 <option>-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=n</option>

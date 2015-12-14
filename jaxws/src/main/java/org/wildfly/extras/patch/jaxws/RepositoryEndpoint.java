@@ -31,11 +31,13 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.jws.WebService;
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.xml.ws.WebServiceContext;
 import javax.xml.ws.handler.MessageContext;
 
 import org.wildfly.extras.patch.Patch;
 import org.wildfly.extras.patch.PatchId;
+import org.wildfly.extras.patch.PatchMetadata;
 import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.repository.LocalFileRepository;
@@ -130,6 +132,23 @@ public class RepositoryEndpoint implements RepositoryService {
         try {
             Patch seed = seedPatch != null ? seedPatch.toPatch() : null;
             PatchId pid = patchId != null ? PatchId.fromString(patchId) : null;
+            
+            // Derive the target patch id from the seed patch id
+            if (pid == null) {
+                IllegalArgumentAssertion.assertNotNull(seedPatch, "seedPatch");
+                PatchMetadata metadata = seedPatch.getMetadata().toPatchMetadata();
+                pid = delegate.getLatestAvailable(metadata.getPatchId().getName());
+            }
+            
+            // Assert user has required roles
+            PatchMetadata metadata = delegate.getPatch(pid).getMetadata();
+            HttpServletRequest servletRequest = (HttpServletRequest) context.getMessageContext().get(MessageContext.SERVLET_REQUEST);
+            for (String role : metadata.getRoles()) {
+                if (!servletRequest.isUserInRole(role)) {
+                    throw new SecurityException("User does not have required role: " + role);
+                }
+            }
+            
             SmartPatch smartPatch = delegate.getSmartPatch(seed, pid);
             return SmartPatchAdapter.fromSmartPatch(smartPatch);
         } finally {

@@ -40,7 +40,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -77,7 +76,8 @@ public final class MetadataParser {
             }
             entry = zipInput.getNextEntry();
         }
-        return Patch.create(patchId, records);
+        PatchMetadataBuilder mdbuilder = new PatchMetadataBuilder().patchId(patchId);
+        return Patch.create(mdbuilder.build(), records);
     }
 
     public static Patch readPatch(Path rootPath, PatchId patchId) throws IOException {
@@ -156,8 +156,8 @@ public final class MetadataParser {
             PatchId patchId = smartPatch.getPatchId();
             List<String> postCommands = smartPatch.getMetadata().getPostCommands();
             PatchMetadata metadata = new PatchMetadataBuilder().patchId(patchId).postCommands(postCommands).build();
-            Patch patchSet = Patch.create(metadata, smartPatch.getRecords());
-            writePatch(patchSet, fos, false);
+            Patch patch = Patch.create(metadata, smartPatch.getRecords());
+            writePatch(patch, fos, false);
         }
     }
 
@@ -177,13 +177,13 @@ public final class MetadataParser {
         return Collections.unmodifiableList(lines);
     }
 
-    public static void writePatch(Path rootPath, Patch patchSet) throws IOException {
+    public static void writePatch(Path rootPath, Patch patch) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
-        IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
-        File metadataFile = getMetadataFile(rootPath, patchSet.getPatchId());
+        IllegalArgumentAssertion.assertNotNull(patch, "patch");
+        File metadataFile = getMetadataFile(rootPath, patch.getPatchId());
         metadataFile.getParentFile().mkdirs();
         try (FileOutputStream fos = new FileOutputStream(metadataFile)) {
-            writePatch(patchSet, fos, true);
+            writePatch(patch, fos, true);
         }
     }
 
@@ -223,32 +223,37 @@ public final class MetadataParser {
         }
     }
 
-    private static void writePatch(Patch patchSet, OutputStream outstream, boolean addHeader) throws IOException {
-        IllegalArgumentAssertion.assertNotNull(patchSet, "patchSet");
+    private static void writePatch(Patch patch, OutputStream outstream, boolean addHeader) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(patch, "patch");
         IllegalArgumentAssertion.assertNotNull(outstream, "outstream");
         try (PrintStream pw = new PrintStream(outstream)) {
 
             if (addHeader) {
                 pw.println(VERSION_PREFIX + " " + PatchTool.VERSION);
-                pw.println(PATCHID_PREFIX + " " + patchSet.getPatchId());
+                pw.println(PATCHID_PREFIX + " " + patch.getPatchId());
             }
 
-            Set<PatchId> deps = patchSet.getMetadata().getDependencies();
-            if (!deps.isEmpty()) {
-                pw.println();
-                pw.println("[properties]");
-                String spec = deps.toString();
+            pw.println();
+            pw.println("[properties]");
+            PatchMetadata metadata = patch.getMetadata();
+            if (!metadata.getRoles().isEmpty()) {
+                String spec = metadata.getRoles().toString();
+                spec = spec.substring(1, spec.length() - 1);
+                pw.println("Roles: " + spec);
+            }
+            if (!metadata.getDependencies().isEmpty()) {
+                String spec = metadata.getDependencies().toString();
                 spec = spec.substring(1, spec.length() - 1);
                 pw.println("Dependencies: " + spec);
             }
 
             pw.println();
             pw.println("[content]");
-            for (Record rec : patchSet.getRecords()) {
+            for (Record rec : patch.getRecords()) {
                 pw.println(rec.toString());
             }
 
-            List<String> commands = patchSet.getMetadata().getPostCommands();
+            List<String> commands = metadata.getPostCommands();
             if (!commands.isEmpty()) {
                 pw.println();
                 pw.println("[post-install-commands]");
@@ -263,16 +268,16 @@ public final class MetadataParser {
         IllegalArgumentAssertion.assertNotNull(metadataFile, "metadataFile");
         IllegalArgumentAssertion.assertTrue(metadataFile.isFile(), "Cannot find metadata file: " + metadataFile);
 
+        PatchMetadataBuilder mdbuilder = new PatchMetadataBuilder();
         Set<Record> records = new HashSet<>();
-        List<String> commands = new ArrayList<>();
-        Set<PatchId> dependencies = new LinkedHashSet<>();
 
         try (BufferedReader br = new BufferedReader(new FileReader(metadataFile))) {
             String line = br.readLine().trim();
             IllegalStateAssertion.assertTrue(line.startsWith(VERSION_PREFIX), "Cannot obtain version info");
             line = br.readLine().trim();
             IllegalStateAssertion.assertTrue(line.startsWith(PATCHID_PREFIX), "Cannot obtain patch id");
-            PatchId patchId = PatchId.fromString(line.substring(PATCHID_PREFIX.length()).trim());
+            mdbuilder.patchId(PatchId.fromString(line.substring(PATCHID_PREFIX.length()).trim()));
+            
             String mode = null;
             while (line != null) {
                 line = line.trim();
@@ -290,10 +295,14 @@ public final class MetadataParser {
                     IllegalStateAssertion.assertEquals(2, toks.length, "Illegal property spec: " + line);
                     String name = toks[0].trim();
                     String value = toks[1].trim();
-                    if ("Dependencies".equals(name)) {
-                        IllegalStateAssertion.assertTrue(dependencies.isEmpty(), "Dependencies already defined" + line);
+                    if ("Roles".equals(name)) {
                         for (String tok : value.split(",")) {
-                            dependencies.add(PatchId.fromString(tok.trim()));
+                            mdbuilder.roles(tok.trim());
+                        }
+                    }
+                    if ("Dependencies".equals(name)) {
+                        for (String tok : value.split(",")) {
+                            mdbuilder.dependencies(PatchId.fromString(tok.trim()));
                         }
                     }
                 }
@@ -301,12 +310,11 @@ public final class MetadataParser {
                     records.add(Record.fromString(line));
                 }
                 if ("[post-install-commands]".equals(mode)) {
-                    commands.add(line);
+                    mdbuilder.postCommands(line);
                 }
                 line = br.readLine();
             }
-            PatchMetadata metadata = new PatchMetadataBuilder().patchId(patchId).dependencies(dependencies).postCommands(commands).build();
-            return Patch.create(metadata, records);
+            return Patch.create(mdbuilder.build(), records);
         }
     }
 }

@@ -24,8 +24,6 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.concurrent.locks.ReentrantLock;
 
-import javax.xml.namespace.QName;
-
 import org.wildfly.extras.patch.Patch;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
@@ -46,15 +44,17 @@ public final class DefaultPatchTool extends PatchTool {
     
     private final Path serverPath;
     private final URL repoUrl;
-    private final QName serviceName;
+    private final String username;
+    private final String password;
 
     private Server server;
     private Repository repository;
     
-	public DefaultPatchTool(Path serverPath, QName serviceName, URL repoUrl) {
+	public DefaultPatchTool(Path serverPath, URL repoUrl, String username, String password) {
 	    this.serverPath = serverPath;
 	    this.repoUrl = repoUrl;
-        this.serviceName = serviceName;
+        this.username = username;
+        this.password = password;
     }
 
     @Override
@@ -75,8 +75,9 @@ public final class DefaultPatchTool extends PatchTool {
         lock.tryLock();
         try {
             if (repository == null) {
-                if (serviceName != null) {
-                    repository = new RepositoryClient(lock, serviceName, repoUrl);
+                String protocol = repoUrl.getProtocol();
+                if (protocol.startsWith("http")) {
+                    repository = new RepositoryClient(lock, repoUrl, username, password);
                 } else {
                     repository = new LocalFileRepository(lock, repoUrl);
                 }

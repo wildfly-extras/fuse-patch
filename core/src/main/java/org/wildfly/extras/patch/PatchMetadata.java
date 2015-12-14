@@ -34,27 +34,34 @@ public final class PatchMetadata {
 
     private final PatchId patchId;
     private final PatchId oneoffId;
+    private final Set<String> roles = new LinkedHashSet<>();
     private final Set<PatchId> dependencies = new LinkedHashSet<>();
     private final List<String> commands = new ArrayList<>();
     private final String stringCache;
     
-    PatchMetadata(PatchId patchId, PatchId oneoffId, Set<PatchId> dependencies, List<String> commands) {
+    PatchMetadata(PatchId patchId, Set<String> roles, PatchId oneoffId, Set<PatchId> dependencies, List<String> commands) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         this.patchId = patchId;
         this.oneoffId = oneoffId;
+        if (roles != null) {
+            this.roles.addAll(roles);
+        }
         if (dependencies != null) {
             this.dependencies.addAll(dependencies);
         }
         if (commands != null) {
             this.commands.addAll(commands);
         }
-        this.stringCache = "[" + patchId + ",oneoff=" + oneoffId + ",deps=" + dependencies + ",cmds=" + commands + "]"; 
+        this.stringCache = "[" + patchId + ",roles=" + roles + ",oneoff=" + oneoffId + ",deps=" + dependencies + ",cmds=" + commands + "]"; 
     }
 
     public PatchId getPatchId() {
         return patchId;
     }
 
+    public Set<String> getRoles() {
+        return Collections.unmodifiableSet(roles);
+    }
 
     public PatchId getOneoffId() {
         return oneoffId;

@@ -47,11 +47,11 @@ import org.wildfly.extras.patch.utils.IOUtils;
 
 public class SimpleRepositoryTest {
 
-    final static Path[] repoPaths = new Path[5];
+    final static Path[] repoPaths = new Path[6];
 
     @BeforeClass
     public static void setUp() throws Exception {
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < repoPaths.length; i++) {
             repoPaths[i] = Paths.get("target/repos/SimpleRepositoryTest/repo" + (i + 1));
             IOUtils.rmdirs(repoPaths[i]);
             repoPaths[i].toFile().mkdirs();
@@ -68,24 +68,24 @@ public class SimpleRepositoryTest {
 
         // Add archive foo-1.0.0
         PatchId patchId = repo.addArchive(Archives.getZipUrlFoo100());
-        Patch patchSet = repo.getPatch(patchId);
-        Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patchSet.getPatchId());
-        Assert.assertEquals(4, patchSet.getRecords().size());
+        Patch patch = repo.getPatch(patchId);
+        Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patch.getPatchId());
+        Assert.assertEquals(4, patch.getRecords().size());
 
         // Add archive foo-1.1.0
         patchId = PatchId.fromString("foo-1.1.0");
         PatchMetadata metadata = new PatchMetadataBuilder().patchId(patchId).postCommands("bin/fusepatch.sh --query-server").build();
         DataHandler dataHandler = new DataHandler(new URLDataSource(Archives.getZipUrlFoo110()));
         patchId = repo.addArchive(metadata, dataHandler, false);
-        patchSet = repo.getPatch(patchId);
-        Assert.assertEquals(PatchId.fromString("foo-1.1.0"), patchSet.getPatchId());
-        Assert.assertEquals(3, patchSet.getRecords().size());
-        Assert.assertEquals(1, patchSet.getMetadata().getPostCommands().size());
-        Assert.assertEquals("bin/fusepatch.sh --query-server", patchSet.getMetadata().getPostCommands().get(0));
+        patch = repo.getPatch(patchId);
+        Assert.assertEquals(PatchId.fromString("foo-1.1.0"), patch.getPatchId());
+        Assert.assertEquals(3, patch.getRecords().size());
+        Assert.assertEquals(1, patch.getMetadata().getPostCommands().size());
+        Assert.assertEquals("bin/fusepatch.sh --query-server", patch.getMetadata().getPostCommands().get(0));
 
         // Add archive foo-1.1.0 again
         patchId = repo.addArchive(Archives.getZipUrlFoo110());
-        Assert.assertEquals(PatchId.fromString("foo-1.1.0"), patchSet.getPatchId());
+        Assert.assertEquals(PatchId.fromString("foo-1.1.0"), patch.getPatchId());
 
         // Query available
         List<PatchId> patches = repo.queryAvailable(null);
@@ -142,9 +142,9 @@ public class SimpleRepositoryTest {
         Files.copy(zipPathA, targetFile.toPath());
 
         PatchId patchId = repo.addArchive(targetFile.toURI().toURL());
-        Patch patchSet = repo.getPatch(patchId);
-        Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patchSet.getPatchId());
-        Assert.assertEquals(4, patchSet.getRecords().size());
+        Patch patch = repo.getPatch(patchId);
+        Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patch.getPatchId());
+        Assert.assertEquals(4, patch.getRecords().size());
 
         // Verify that the file got removed
         Assert.assertFalse("File got removed", targetFile.exists());
@@ -213,5 +213,20 @@ public class SimpleRepositoryTest {
         Patch smartSet = Patch.smartDelta(pack100, pack100sp1);
         Assert.assertEquals(1, smartSet.getRecords().size());
         Archives.assertActionPathEquals("UPD config/propsA.properties", smartSet.getRecords().get(0));
+    }
+
+    @Test
+    public void testArchiveWithRoles() throws Exception {
+
+        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[5]).build();
+        Repository repo = patchTool.getRepository();
+
+        URL url100 = Archives.getZipUrlFoo100();
+        PatchId pid100 = PatchId.fromURL(url100);
+        PatchMetadata md100 = new PatchMetadataBuilder().patchId(pid100).roles("FooRole").build();
+        DataHandler data100 = new DataHandler(new URLDataSource(url100));
+
+        Assert.assertEquals(pid100, repo.addArchive(md100, data100, false));
+        Assert.assertEquals(md100, repo.getPatch(pid100).getMetadata());
     }
 }

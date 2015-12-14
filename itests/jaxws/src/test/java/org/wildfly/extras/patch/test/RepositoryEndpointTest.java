@@ -48,13 +48,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.extras.patch.Patch;
+import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchMetadata;
 import org.wildfly.extras.patch.PatchMetadataBuilder;
-import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.Repository;
-import org.wildfly.extras.patch.repository.RepositoryService;
 import org.wildfly.extras.patch.test.subA.ClassA;
 import org.wildfly.extras.patch.utils.IOUtils;
 
@@ -82,8 +81,10 @@ public class RepositoryEndpointTest {
     public void testRepository() throws Exception {
 
     	// Configure JAX-WS Client
-        URL wsdlUrl = new URL("http://localhost:8080/fuse-patch-jaxws/RepositoryEndpoint?wsdl");
-        PatchTool patchTool = new PatchToolBuilder().jaxwsRepository(RepositoryService.SERVICE_QNAME, wsdlUrl).build();
+        String username = "user1";
+        String password = "ca9f7f650a6c1a1250859648d9bf5ca7";
+        URL endpointUrl = new URL("http://localhost:8080/fuse-patch-jaxws/RepositoryEndpoint");
+        PatchTool patchTool = new PatchToolBuilder().jaxwsRepository(endpointUrl, username, password).build();
         Repository repository = patchTool.getRepository();
         
         // Test repository base URL
@@ -110,40 +111,69 @@ public class RepositoryEndpointTest {
         
         // Add foo-1.0.0
         URL fileUrl = getArchiveURL("foo-1.0.0");
-        PatchId pid100 = repository.addArchive(fileUrl);
-        Patch pack100 = repository.getPatch(pid100);
-        Assert.assertEquals(pid100, pack100.getPatchId());
-        Assert.assertEquals(4, pack100.getRecords().size());
-        Assert.assertEquals(0, pack100.getMetadata().getPostCommands().size());
+        PatchId pidFoo100 = repository.addArchive(fileUrl);
+        Patch packFoo100 = repository.getPatch(pidFoo100);
+        Assert.assertEquals(pidFoo100, packFoo100.getPatchId());
+        Assert.assertEquals(4, packFoo100.getRecords().size());
+        Assert.assertEquals(0, packFoo100.getMetadata().getPostCommands().size());
         
         // Remove foo-1.0.0
-        Assert.assertTrue(repository.removeArchive(pid100));
+        Assert.assertTrue(repository.removeArchive(pidFoo100));
         Assert.assertNull(repository.getLatestAvailable("foo"));
         
         // Add foo-1.0.0
         fileUrl = getArchiveURL("foo-1.0.0");
-        pid100 = repository.addArchive(fileUrl);
-        pack100 = repository.getPatch(pid100);
-        Assert.assertEquals(pid100, pack100.getPatchId());
-        Assert.assertEquals(4, pack100.getRecords().size());
-        Assert.assertEquals(0, pack100.getMetadata().getPostCommands().size());
+        PatchMetadata mdFoo100 = new PatchMetadataBuilder().patchId(pidFoo100).roles("FooRole").build();
+        DataHandler dataFoo100 = new DataHandler(new URLDataSource(fileUrl));
+        Assert.assertEquals(pidFoo100, repository.addArchive(mdFoo100, dataFoo100, false));
+        packFoo100 = repository.getPatch(pidFoo100);
+        Assert.assertEquals(pidFoo100, packFoo100.getPatchId());
+        Assert.assertEquals(4, packFoo100.getRecords().size());
+        Assert.assertEquals(1, packFoo100.getMetadata().getRoles().size());
+        Assert.assertEquals(0, packFoo100.getMetadata().getPostCommands().size());
         
         // Add foo-1.1.0
         fileUrl = getArchiveURL("foo-1.1.0");
-        PatchId pid110 = PatchId.fromURL(fileUrl);
-        PatchMetadata md110 = new PatchMetadataBuilder().patchId(pid110).postCommands("echo hell world").build();
-        DataHandler data110 = new DataHandler(new URLDataSource(fileUrl));
-        repository.addArchive(md110, data110, false);
-        Patch pack110 = repository.getPatch(pid110);
-        Assert.assertEquals(pid110, pack110.getPatchId());
-        Assert.assertEquals(3, pack110.getRecords().size());
-        Assert.assertEquals(1, pack110.getMetadata().getPostCommands().size());
+        PatchId pidFoo110 = PatchId.fromURL(fileUrl);
+        PatchMetadata mdFoo110 = new PatchMetadataBuilder().patchId(pidFoo110).roles("FooRole").postCommands("echo hello world").build();
+        DataHandler dataFoo110 = new DataHandler(new URLDataSource(fileUrl));
+        Assert.assertEquals(pidFoo110, repository.addArchive(mdFoo110, dataFoo110, false));
+        Patch packFoo110 = repository.getPatch(pidFoo110);
+        Assert.assertEquals(pidFoo110, packFoo110.getPatchId());
+        Assert.assertEquals(3, packFoo110.getRecords().size());
+        Assert.assertEquals(1, packFoo110.getMetadata().getRoles().size());
+        Assert.assertEquals(1, packFoo110.getMetadata().getPostCommands().size());
         
         // Install foo-1.0.0
-        pack100 = patchTool.install(pid100, false);
-        Assert.assertEquals(pid100, pack100.getPatchId());
-        Assert.assertEquals(4, pack100.getRecords().size());
-        Assert.assertEquals(0, pack100.getMetadata().getPostCommands().size());
+        packFoo100 = patchTool.install(pidFoo100, false);
+        Assert.assertEquals(pidFoo100, packFoo100.getPatchId());
+        Assert.assertEquals(4, packFoo100.getRecords().size());
+        Assert.assertEquals(0, packFoo100.getMetadata().getPostCommands().size());
+        
+        // Update foo
+        packFoo110 = patchTool.update("foo", false);
+        Assert.assertEquals(pidFoo110, packFoo110.getPatchId());
+        Assert.assertEquals(3, packFoo110.getRecords().size());
+        Assert.assertEquals(1, packFoo110.getMetadata().getPostCommands().size());
+        
+        // Add bar-1.0.0
+        fileUrl = getArchiveURL("bar-1.0.0");
+        PatchId pidBar100 = PatchId.fromURL(fileUrl);
+        PatchMetadata mdBar100 = new PatchMetadataBuilder().patchId(pidBar100).roles("BarRole").build();
+        DataHandler dataBar100 = new DataHandler(new URLDataSource(fileUrl));
+        Assert.assertEquals(pidBar100, repository.addArchive(mdBar100, dataBar100, false));
+        Patch packBar100 = repository.getPatch(pidBar100);
+        Assert.assertEquals(pidBar100, packBar100.getPatchId());
+        Assert.assertEquals(2, packBar100.getRecords().size());
+        Assert.assertEquals(1, packBar100.getMetadata().getRoles().size());
+        
+        // Install bar-1.0.0
+        try {
+            patchTool.install(pidBar100, false);
+            Assert.fail("RuntimeException expected");
+        } catch (RuntimeException rte) {
+            Assert.assertTrue(rte.getMessage().contains("User does not have required role: BarRole"));
+        }
     }
 
     private URL getArchiveURL(String name) throws IOException {
@@ -193,6 +223,22 @@ public class RepositoryEndpointTest {
         GenericArchive archive = ShrinkWrap.create(GenericArchive.class);
         archive.add(new ArchiveAsset(jar, ZipExporter.class), "lib/" + jar.getName());
         archive.add(new FileAsset(new File("src/test/resources/archives/propsA2.properties")), "config/propsA.properties");
+        archive.add(new FileAsset(new File("src/test/resources/archives/propsB.properties")), "config/propsB.properties");
+        return archive;
+    }
+
+    /**
+     * bar-1.0.0.zip
+     * 
+     * config/propsB.properties
+     * lib/bar-1.0.0.jar
+     */
+    @Deployment(name = "bar-1.0.0", managed = false, testable = false)
+    public static GenericArchive bar100() throws IOException {
+        JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "bar-1.0.0.jar");
+        jar.addClasses(ClassA.class);
+        GenericArchive archive = ShrinkWrap.create(GenericArchive.class);
+        archive.add(new ArchiveAsset(jar, ZipExporter.class), "lib/" + jar.getName());
         archive.add(new FileAsset(new File("src/test/resources/archives/propsB.properties")), "config/propsB.properties");
         return archive;
     }
