@@ -378,7 +378,7 @@ public final class LocalFileRepository implements Repository {
             Patch targetSet = getPatch(patchId);
             PatchAssertion.assertNotNull(targetSet, "Repository does not contain package: " + patchId);
             Patch smartSet = Patch.smartDelta(seedPatch, targetSet);
-            DataSource dataSource = getSmartDataSource(smartSet, patchId);
+            CloseableDataSource dataSource = getSmartDataSource(smartSet, patchId);
             DataHandler dataHandler = new DataHandler(dataSource);
             return SmartPatch.forInstall(smartSet, dataHandler);
         } catch (IOException ex) {
@@ -388,12 +388,13 @@ public final class LocalFileRepository implements Repository {
         }
     }
 
-    private DataSource getSmartDataSource(Patch smartSet, PatchId patchId) throws IOException {
+    private CloseableDataSource getSmartDataSource(Patch smartSet, PatchId patchId) throws IOException {
         
-        Path sourcePath = getPatchPath(patchId);
-        Path workspace = sourcePath.getParent().resolve("workspace");
-        Path targetPath = workspace.resolve("last-smart-request.zip");
+        final Path sourcePath = getPatchPath(patchId);
+        final Path workspace = sourcePath.getParent().resolve("workspace");
         workspace.toFile().mkdirs();
+        
+        final Path targetPath = Files.createTempFile(workspace, "smart-content", ".zip");
         
         // Create a temporary zip file that only contains ADD && UPD records
         try (ZipInputStream zin = new ZipInputStream(new FileInputStream(sourcePath.toFile()))) {
@@ -415,7 +416,13 @@ public final class LocalFileRepository implements Repository {
             }
         }
         
-        return new FileDataSource(targetPath.toFile());
+        DataSource datasource = new FileDataSource(targetPath.toFile());
+        return new CloseableDataSource(datasource) {
+            @Override
+            public void close() throws IOException {
+                targetPath.toFile().delete();
+            }
+        };
     }
 
     private Path getPatchPath(PatchId patchId) {

@@ -120,8 +120,9 @@ public final class DefaultPatchTool extends PatchTool {
             PatchAssertion.assertNotNull(installed, "Patch not installed: " + patchId);
             PatchId latestId = getServer().getPatch(patchId.getName()).getPatchId();
             PatchAssertion.assertEquals(patchId, latestId, "Active package is " + latestId + ", cannot uninstall: " + patchId);
-            SmartPatch smartPatch = SmartPatch.forUninstall(installed);
-            return getServer().applySmartPatch(smartPatch, false);
+            try (SmartPatch smartPatch = SmartPatch.forUninstall(installed)) {
+                return getServer().applySmartPatch(smartPatch, false);
+            }
         } finally {
             lock.unlock();
         }
@@ -139,8 +140,9 @@ public final class DefaultPatchTool extends PatchTool {
         }
 
         Patch seedPatch = serverId != null ? getServer().getPatch(serverId) : null;
-        SmartPatch smartPatch = getRepository().getSmartPatch(seedPatch, patchId);
-        return getServer().applySmartPatch(smartPatch, force);
+        try (SmartPatch smartPatch = getRepository().getSmartPatch(seedPatch, patchId)) {
+            return getServer().applySmartPatch(smartPatch, force);
+        }
     }
 
     @Override

@@ -19,6 +19,8 @@
  */
 package org.wildfly.extras.patch;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.activation.DataHandler;
+import javax.activation.DataSource;
 
 import org.wildfly.extras.patch.Record.Action;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
@@ -42,7 +45,7 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
  * @author thomas.diesler@jboss.com
  * @since 10-Jun-2015
  */
-public final class SmartPatch {
+public final class SmartPatch implements Closeable {
 
     private final Patch patchSet;
     private final DataHandler dataHandler;
@@ -133,6 +136,14 @@ public final class SmartPatch {
 
     public boolean isAddPath(Path path) {
         return addMap.containsKey(path);
+    }
+
+    @Override
+    public void close() throws IOException {
+        DataSource dataSource = dataHandler != null ? dataHandler.getDataSource() : null;
+        if (dataSource instanceof Closeable) {
+            ((Closeable) dataSource).close();
+        }
     }
 
     @Override
