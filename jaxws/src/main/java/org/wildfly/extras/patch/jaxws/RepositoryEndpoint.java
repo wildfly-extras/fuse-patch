@@ -33,6 +33,7 @@ import javax.jws.WebService;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.ws.WebServiceContext;
+import javax.xml.ws.WebServiceException;
 import javax.xml.ws.handler.MessageContext;
 
 import org.wildfly.extras.patch.Patch;
@@ -145,7 +146,7 @@ public class RepositoryEndpoint implements RepositoryService {
             HttpServletRequest servletRequest = (HttpServletRequest) context.getMessageContext().get(MessageContext.SERVLET_REQUEST);
             for (String role : metadata.getRoles()) {
                 if (!servletRequest.isUserInRole(role)) {
-                    throw new SecurityException("User does not have required role: " + role);
+                    throw new WebServiceException(new SecurityException("User does not have required role: " + role));
                 }
             }
             

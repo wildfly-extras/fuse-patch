@@ -170,9 +170,9 @@ public class RepositoryEndpointTest {
         // Install bar-1.0.0
         try {
             patchTool.install(pidBar100, false);
-            Assert.fail("RuntimeException expected");
-        } catch (RuntimeException rte) {
-            Assert.assertTrue(rte.getMessage().contains("User does not have required role: BarRole"));
+            Assert.fail("SecurityException expected");
+        } catch (SecurityException ex) {
+            Assert.assertTrue(ex.getMessage().contains("User does not have required role: BarRole"));
         }
     }
 

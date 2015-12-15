@@ -186,7 +186,13 @@ public class RepositoryClient implements Repository {
     }
 
     private RuntimeException unwrap(WebServiceException ex) {
-        // [#118] RepositoryClient does not unwrap WebServiceException
-        return ex;
+        RuntimeException result = ex;
+        String message = ex.getMessage();
+        String prefix = SecurityException.class.getName() + ": ";
+        if (message.startsWith(prefix)) {
+            message = message.substring(prefix.length());
+            result = new SecurityException (message);
+        }
+        return result;
     }
 }

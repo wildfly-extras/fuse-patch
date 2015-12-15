@@ -19,10 +19,12 @@
  */
 package org.wildfly.extras.patch.repository;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -441,5 +443,31 @@ public final class LocalFileRepository implements Repository {
     @Override
     public String toString() {
         return "DefaultRepository[rootPath=" + rootPath + "]";
+    }
+
+    static abstract class CloseableDataSource implements DataSource, Closeable {
+
+        private final DataSource delegate;
+        
+        CloseableDataSource(DataSource delegate) {
+            IllegalArgumentAssertion.assertNotNull(delegate, "delegate");
+            this.delegate = delegate;
+        }
+        
+        public String getContentType() {
+            return delegate.getContentType();
+        }
+
+        public InputStream getInputStream() throws IOException {
+            return delegate.getInputStream();
+        }
+
+        public String getName() {
+            return delegate.getName();
+        }
+
+        public OutputStream getOutputStream() throws IOException {
+            return delegate.getOutputStream();
+        }
     }
 }

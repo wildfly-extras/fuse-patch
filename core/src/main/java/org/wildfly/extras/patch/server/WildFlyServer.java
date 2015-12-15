@@ -20,6 +20,7 @@
 package org.wildfly.extras.patch.server;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -172,6 +173,25 @@ public final class WildFlyServer implements Server {
                 }
             }
 
+            // Write log message
+            String message;
+            if (serverId == null) {
+                message = "Install " + patchId;
+            } else {
+                if (serverId.compareTo(patchId) < 0) {
+                    message = "Upgrade from " + serverId + " to " + patchId;
+                } else if (serverId.compareTo(patchId) == 0) {
+                    if (smartPatch.isUninstall()) {
+                        message = "Uninstall " + patchId;
+                    } else {
+                        message = "Reinstall " + patchId;
+                    }
+                } else {
+                    message = "Downgrade from " + serverId + " to " + patchId;
+                }
+            }
+            LOG.info(message);
+            
             // Remove all records in the remove set
             for (Record rec : smartPatch.getRemoveSet()) {
                 Path path = homePath.resolve(rec.getPath());
@@ -254,27 +274,8 @@ public final class WildFlyServer implements Server {
                 IOUtils.rmdirs(packageDir.toPath());
             }
 
-            // Write audit log
-            String message;
-            if (serverId == null) {
-                message = "Installed " + patchId;
-            } else {
-                if (serverId.compareTo(patchId) < 0) {
-                    message = "Upgraded from " + serverId + " to " + patchId;
-                } else if (serverId.compareTo(patchId) == 0) {
-                    if (smartPatch.isUninstall()) {
-                        message = "Uninstalled " + patchId;
-                    } else {
-                        message = "Reinstalled " + patchId;
-                    }
-                } else {
-                    message = "Downgraded from " + serverId + " to " + patchId;
-                }
-            }
+            // Write Audit log
             MetadataParser.writeAuditLog(getWorkspace(), message, smartPatch);
-
-            // Write the log message
-            LOG.info(message);
 
             // Run post install commands
             if (!smartPatch.isUninstall()) {
@@ -318,93 +319,104 @@ public final class WildFlyServer implements Server {
     }
 
     private void updateServerFiles(SmartPatch smartPatch, ManagedPaths managedPaths) throws IOException {
-
-        // Verify that the zip contains all expected add/replace paths
-        Set<Path> addupdPaths = new HashSet<>();
-        for (Record rec : smartPatch.getAddSet()) {
-            addupdPaths.add(rec.getPath());
-        }
-        for (Record rec : smartPatch.getReplaceSet()) {
-            addupdPaths.add(rec.getPath());
-        }
-        if (!smartPatch.isUninstall()) {
-            try (ZipInputStream zip = getZipInputStream(smartPatch)) {
-                ZipEntry entry = zip.getNextEntry();
-                while (entry != null) {
-                    if (!entry.isDirectory()) {
-                        Path path = Paths.get(entry.getName());
-                        addupdPaths.remove(path);
+        
+        File tmpFile = Files.createTempFile(getWorkspace(), "smartpatch", ".zip").toFile();
+        
+        try {
+            
+            // Verify that the zip contains all expected add/replace paths
+            Set<Path> addupdPaths = new HashSet<>();
+            for (Record rec : smartPatch.getAddSet()) {
+                addupdPaths.add(rec.getPath());
+            }
+            for (Record rec : smartPatch.getReplaceSet()) {
+                addupdPaths.add(rec.getPath());
+            }
+            if (!smartPatch.isUninstall()) {
+                try (FileOutputStream output = new FileOutputStream(tmpFile)) {
+                    InputStream input = smartPatch.getDataHandler().getInputStream();
+                    IOUtils.copy(input, output);
+                }
+                try (ZipInputStream zip = new ZipInputStream(new FileInputStream(tmpFile))) {
+                    ZipEntry entry = zip.getNextEntry();
+                    while (entry != null) {
+                        if (!entry.isDirectory()) {
+                            Path path = Paths.get(entry.getName());
+                            addupdPaths.remove(path);
+                        }
+                        entry = zip.getNextEntry();
                     }
-                    entry = zip.getNextEntry();
                 }
             }
-        }
-        IllegalStateAssertion.assertTrue(addupdPaths.isEmpty(), "Patch file does not contain expected paths: " + addupdPaths);
+            IllegalStateAssertion.assertTrue(addupdPaths.isEmpty(), "Patch file does not contain expected paths: " + addupdPaths);
 
-        // Remove all files in the remove set
-        for (Record rec : smartPatch.getRemoveSet()) {
-            Path path = rec.getPath();
-            removeServerFile(managedPaths, path);
-        }
+            // Remove all files in the remove set
+            for (Record rec : smartPatch.getRemoveSet()) {
+                Path path = rec.getPath();
+                removeServerFile(managedPaths, path);
+            }
 
-        // Handle replace and add sets
-        if (!smartPatch.isUninstall()) {
-            try (ZipInputStream zip = getZipInputStream(smartPatch)) {
-                byte[] buffer = new byte[1024];
-                ZipEntry entry = zip.getNextEntry();
-                while (entry != null) {
-                    if (!entry.isDirectory()) {
-                        Path path = Paths.get(entry.getName());
-                        if (smartPatch.isReplacePath(path) || smartPatch.isAddPath(path)) {
-                            File file = homePath.resolve(path).toFile();
-                            file.getParentFile().mkdirs();
-                            try (FileOutputStream fos = new FileOutputStream(file)) {
-                                int read = zip.read(buffer);
-                                while (read > 0) {
-                                    fos.write(buffer, 0, read);
-                                    read = zip.read(buffer);
+            // Handle replace and add sets
+            if (!smartPatch.isUninstall()) {
+                try (ZipInputStream zip = new ZipInputStream(new FileInputStream(tmpFile))) {
+                    byte[] buffer = new byte[1024];
+                    ZipEntry entry = zip.getNextEntry();
+                    while (entry != null) {
+                        if (!entry.isDirectory()) {
+                            Path path = Paths.get(entry.getName());
+                            if (smartPatch.isReplacePath(path) || smartPatch.isAddPath(path)) {
+                                File file = homePath.resolve(path).toFile();
+                                file.getParentFile().mkdirs();
+                                try (FileOutputStream fos = new FileOutputStream(file)) {
+                                    int read = zip.read(buffer);
+                                    while (read > 0) {
+                                        fos.write(buffer, 0, read);
+                                        read = zip.read(buffer);
+                                    }
+                                }
+                                if (file.getName().endsWith(".sh") || file.getName().endsWith(".bat")) {
+                                    file.setExecutable(true);
                                 }
                             }
-                            if (file.getName().endsWith(".sh") || file.getName().endsWith(".bat")) {
-                                file.setExecutable(true);
-                            }
                         }
+                        entry = zip.getNextEntry();
                     }
-                    entry = zip.getNextEntry();
                 }
             }
-        }
 
-        // Ensure Fuse layer exists
-        Path modulesPath = homePath.resolve("modules");
-        if (modulesPath.toFile().isDirectory()) {
-            Properties props = new Properties();
-            Path layersPath = modulesPath.resolve("layers.conf");
-            if (layersPath.toFile().isFile()) {
-                try (FileReader fr = new FileReader(layersPath.toFile())) {
-                    props.load(fr);
+            // Ensure Fuse layer exists
+            Path modulesPath = homePath.resolve("modules");
+            if (modulesPath.toFile().isDirectory()) {
+                Properties props = new Properties();
+                Path layersPath = modulesPath.resolve("layers.conf");
+                if (layersPath.toFile().isFile()) {
+                    try (FileReader fr = new FileReader(layersPath.toFile())) {
+                        props.load(fr);
+                    }
+                }
+                List<String> layers = new ArrayList<>();
+                String value = props.getProperty("layers");
+                if (value != null) {
+                    for (String layer : value.split(",")) {
+                        layers.add(layer.trim());
+                    }
+                }
+                if (!layers.contains(MODULE_LAYER)) {
+                    layers.add(0, MODULE_LAYER);
+                    value = "";
+                    for (String layer : layers) {
+                        value += "," + layer;
+                    }
+                    value = value.substring(1);
+                    props.setProperty("layers", value);
+                    LOG.warn("Layers config does not contain '" + MODULE_LAYER + "', writing: {}", value);
+                    try (FileWriter fw = new FileWriter(layersPath.toFile())) {
+                        props.store(fw, "Fixed by fusepatch");
+                    }
                 }
             }
-            List<String> layers = new ArrayList<>();
-            String value = props.getProperty("layers");
-            if (value != null) {
-                for (String layer : value.split(",")) {
-                    layers.add(layer.trim());
-                }
-            }
-            if (!layers.contains(MODULE_LAYER)) {
-                layers.add(0, MODULE_LAYER);
-                value = "";
-                for (String layer : layers) {
-                    value += "," + layer;
-                }
-                value = value.substring(1);
-                props.setProperty("layers", value);
-                LOG.warn("Layers config does not contain '" + MODULE_LAYER + "', writing: {}", value);
-                try (FileWriter fw = new FileWriter(layersPath.toFile())) {
-                    props.store(fw, "Fixed by fusepatch");
-                }
-            }
+        } finally {
+            tmpFile.delete();
         }
     }
 
@@ -426,12 +438,10 @@ public final class WildFlyServer implements Server {
         }
     }
 
-    private ZipInputStream getZipInputStream(SmartPatch smartPatch) throws IOException {
-        return new ZipInputStream(smartPatch.getDataHandler().getDataSource().getInputStream());
-    }
-
     private Path getWorkspace() {
-        return homePath.resolve(Paths.get("fusepatch", "workspace"));
+        Path path = homePath.resolve(Paths.get("fusepatch", "workspace"));
+        path.toFile().mkdirs();
+        return path;
     }
 
     static Path getConfiguredHomePath() {
