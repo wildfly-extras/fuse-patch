@@ -62,18 +62,6 @@ public class RepositoryClient implements Repository {
     }
 
     @Override
-    public URL getBaseURL() {
-        lock.tryLock();
-        try {
-            return delegate.getBaseURL();
-        } catch (WebServiceException ex) {
-            throw unwrap(ex);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    @Override
     public List<PatchId> queryAvailable(String prefix) {
         lock.tryLock();
         try {

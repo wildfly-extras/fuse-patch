@@ -39,6 +39,8 @@ import javax.xml.ws.handler.MessageContext;
 import org.wildfly.extras.patch.Patch;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchMetadata;
+import org.wildfly.extras.patch.PatchTool;
+import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.repository.LocalFileRepository;
@@ -54,17 +56,14 @@ public class RepositoryEndpoint implements RepositoryService {
 	@Resource
 	private WebServiceContext context;
 	
-    private ReentrantLock lock = new ReentrantLock();
+    private final ReentrantLock lock = new ReentrantLock();
+    
 	private Repository delegate;
 	
     @PostConstruct
     public void postConstruct() {
-    	delegate = new LocalFileRepository(lock, getRepositoryURL());
-    }
-
-    @Override
-    public URL getBaseURL() {
-    	return delegate.getBaseURL();
+        PatchTool patchTool = new PatchToolBuilder().customLock(lock).repositoryURL(getRepositoryURL()).build();
+        delegate = patchTool.getRepository();
     }
 
 	@Override

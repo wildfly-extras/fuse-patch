@@ -45,19 +45,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wildfly.extras.patch.ManagedPath;
 import org.wildfly.extras.patch.ManagedPaths;
-import org.wildfly.extras.patch.MetadataParser;
 import org.wildfly.extras.patch.Patch;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Record;
 import org.wildfly.extras.patch.Record.Action;
 import org.wildfly.extras.patch.Server;
 import org.wildfly.extras.patch.SmartPatch;
+import org.wildfly.extras.patch.internal.MetadataParser;
 import org.wildfly.extras.patch.utils.IOUtils;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 import org.wildfly.extras.patch.utils.PatchAssertion;
 
-public final class WildFlyServer implements Server {
+public final class WildFlyServer extends AbstractServer {
 
     private static final Logger LOG = LoggerFactory.getLogger(WildFlyServer.class);
 
@@ -68,14 +68,30 @@ public final class WildFlyServer implements Server {
 
     public WildFlyServer(Lock lock, Path homePath) {
         IllegalArgumentAssertion.assertNotNull(lock, "lock");
-        this.lock = lock;
-        
         if (homePath == null) {
-            homePath = getConfiguredHomePath();
+            homePath = getDefaultServerPath();
         }
         IllegalStateAssertion.assertNotNull(homePath, "Cannot obtain JBOSS_HOME");
         IllegalStateAssertion.assertTrue(homePath.toFile().isDirectory(), "Directory JBOSS_HOME does not exist: " + homePath);
         this.homePath = homePath.toAbsolutePath();
+        this.lock = lock;
+    }
+
+    public static Path getDefaultServerPath() {
+        String jbossHome = System.getProperty("jboss.home");
+        if (jbossHome == null) {
+            jbossHome = System.getProperty("jboss.home.dir");
+        }
+        if (jbossHome == null) {
+            jbossHome = System.getenv("JBOSS_HOME");
+        }
+        if (jbossHome == null) {
+            Path currpath = Paths.get(".");
+            if (currpath.resolve("jboss-modules.jar").toFile().exists()) {
+                jbossHome = currpath.toAbsolutePath().toString();
+            }
+        }
+        return jbossHome != null ? Paths.get(jbossHome) : null;
     }
 
     @Override
@@ -97,7 +113,7 @@ public final class WildFlyServer implements Server {
     public List<ManagedPath> queryManagedPaths(String pattern) {
         lock.tryLock();
         try {
-            return MetadataParser.queryManagedPaths(getWorkspace(), pattern);
+            return queryManagedPaths(getWorkspace(), pattern);
         } finally {
             lock.unlock();
         }
@@ -119,7 +135,7 @@ public final class WildFlyServer implements Server {
     public List<String> getAuditLog() {
         lock.tryLock();
         try {
-            return MetadataParser.readAuditLog(getWorkspace());
+            return readAuditLog(getWorkspace());
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         } finally {
@@ -234,7 +250,7 @@ public final class WildFlyServer implements Server {
             }
 
             // Update managed paths
-            ManagedPaths managedPaths = MetadataParser.readManagedPaths(getWorkspace());
+            ManagedPaths managedPaths = readManagedPaths(getWorkspace());
             managedPaths.updatePaths(homePath, smartPatch, Action.ADD, Action.UPD);
             
             // Update server files
@@ -242,7 +258,7 @@ public final class WildFlyServer implements Server {
             
             // Write managed paths
             managedPaths.updatePaths(homePath, smartPatch, Action.DEL);
-            MetadataParser.writeManagedPaths(getWorkspace(), managedPaths);
+            writeManagedPaths(getWorkspace(), managedPaths);
 
             Patch result;
 
@@ -275,7 +291,7 @@ public final class WildFlyServer implements Server {
             }
 
             // Write Audit log
-            MetadataParser.writeAuditLog(getWorkspace(), message, smartPatch);
+            writeAuditLog(getWorkspace(), message, smartPatch);
 
             // Run post install commands
             if (!smartPatch.isUninstall()) {
@@ -442,23 +458,6 @@ public final class WildFlyServer implements Server {
         Path path = homePath.resolve(Paths.get("fusepatch", "workspace"));
         path.toFile().mkdirs();
         return path;
-    }
-
-    static Path getConfiguredHomePath() {
-        String jbossHome = System.getProperty("jboss.home");
-        if (jbossHome == null) {
-            jbossHome = System.getProperty("jboss.home.dir");
-        }
-        if (jbossHome == null) {
-            jbossHome = System.getenv("JBOSS_HOME");
-        }
-        if (jbossHome == null) {
-            Path currpath = Paths.get(".");
-            if (currpath.resolve("jboss-modules.jar").toFile().exists()) {
-                jbossHome = currpath.toAbsolutePath().toString();
-            }
-        }
-        return jbossHome != null ? Paths.get(jbossHome) : null;
     }
 
     @Override

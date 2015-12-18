@@ -85,7 +85,7 @@ public class Main {
 	private static void run(CmdLineParser cmdParser, Options options) throws IOException, JAXBException {
 		
         URL repoUrl = options.repositoryUrl != null ? options.repositoryUrl : LocalFileRepository.getDefaultRepositoryURL();
-        PatchToolBuilder builder = new PatchToolBuilder().localRepository(repoUrl);
+        PatchToolBuilder builder = new PatchToolBuilder().repositoryURL(repoUrl);
         
 	    boolean opfound = false;
 	    

@@ -42,7 +42,7 @@ public final class ManagedPaths {
 
     private final Map<Path, ManagedPath> managedPaths = new HashMap<>();
 
-    ManagedPaths(List<ManagedPath> managedPaths) {
+    public ManagedPaths(List<ManagedPath> managedPaths) {
         IllegalArgumentAssertion.assertNotNull(managedPaths, "managedPaths");
         for (ManagedPath mpath : managedPaths) {
             this.managedPaths.put(mpath.getPath(), mpath);

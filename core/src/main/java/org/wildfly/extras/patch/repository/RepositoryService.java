@@ -20,7 +20,6 @@
 package org.wildfly.extras.patch.repository;
 
 import java.io.IOException;
-import java.net.URL;
 
 import javax.activation.DataHandler;
 import javax.jws.WebMethod;
@@ -34,12 +33,6 @@ public interface RepositoryService {
 
     String TARGET_NAMESPACE = "http://jaxws.patch.extras.wildfly.org/";
     QName SERVICE_QNAME = new QName(TARGET_NAMESPACE, "RepositoryEndpointService");
-
-    /**
-     * Get the repository base URL
-     */
-    @WebMethod
-    URL getBaseURL();
 
     /**
      * Get the list of available patches

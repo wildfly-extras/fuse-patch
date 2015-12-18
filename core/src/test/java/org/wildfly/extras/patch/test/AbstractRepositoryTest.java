@@ -21,9 +21,7 @@ package org.wildfly.extras.patch.test;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
-import java.io.File;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,37 +31,27 @@ import javax.activation.DataHandler;
 import javax.activation.URLDataSource;
 
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.extras.patch.Patch;
-import org.wildfly.extras.patch.PatchMetadata;
-import org.wildfly.extras.patch.PatchMetadataBuilder;
 import org.wildfly.extras.patch.PatchException;
 import org.wildfly.extras.patch.PatchId;
+import org.wildfly.extras.patch.PatchMetadata;
+import org.wildfly.extras.patch.PatchMetadataBuilder;
 import org.wildfly.extras.patch.PatchTool;
-import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.Repository;
-import org.wildfly.extras.patch.utils.IOUtils;
 
-public class SimpleRepositoryTest {
+public abstract class AbstractRepositoryTest {
 
-    final static Path[] repoPaths = new Path[6];
+    static URL[] repoURL = new URL[5];;
 
-    @BeforeClass
-    public static void setUp() throws Exception {
-        for (int i = 0; i < repoPaths.length; i++) {
-            repoPaths[i] = Paths.get("target/repos/SimpleRepositoryTest/repo" + (i + 1));
-            IOUtils.rmdirs(repoPaths[i]);
-            repoPaths[i].toFile().mkdirs();
-        }
-    }
-
+    abstract PatchTool getPatchTool(URL repoURL);
+    
+    abstract boolean isRemoveSupported();
+    
     @Test
     public void testSimpleAccess() throws Exception {
 
-        URL url = new URL("file:./" + repoPaths[0].toString());
-
-        PatchTool patchTool = new PatchToolBuilder().localRepository(url).build();
+        PatchTool patchTool = getPatchTool(repoURL[0]);
         Repository repo = patchTool.getRepository();
 
         // Add archive foo-1.0.0
@@ -96,64 +84,31 @@ public class SimpleRepositoryTest {
         Assert.assertEquals(PatchId.fromString("foo-1.1.0"), repo.getLatestAvailable("foo"));
         Assert.assertNull(repo.getLatestAvailable("bar"));
 
-        // Cannot remove non-existing archive
-        try {
-            repo.removeArchive(PatchId.fromString("xxx-1.0.0"));
-            Assert.fail("PatchException expected");
-        } catch (PatchException ex) {
-            String message = ex.getMessage();
-            Assert.assertTrue(message, message.contains("not exist: xxx-1.0.0"));
+        if (isRemoveSupported()) {
+            
+            // Cannot remove non-existing archive
+            try {
+                repo.removeArchive(PatchId.fromString("xxx-1.0.0"));
+                Assert.fail("PatchException expected");
+            } catch (PatchException ex) {
+                String message = ex.getMessage();
+                Assert.assertTrue(message, message.contains("not exist: xxx-1.0.0"));
+            }
+
+            // Remove archive
+            Assert.assertTrue(repo.removeArchive(PatchId.fromString("foo-1.1.0")));
+            patches = repo.queryAvailable(null);
+            Assert.assertEquals("Patch available", 1, patches.size());
+
+            Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patches.get(0));
+            Assert.assertEquals(PatchId.fromString("foo-1.0.0"), repo.getLatestAvailable("foo"));
         }
-
-        // Remove archive
-        Assert.assertTrue(repo.removeArchive(PatchId.fromString("foo-1.1.0")));
-        patches = repo.queryAvailable(null);
-        Assert.assertEquals("Patch available", 1, patches.size());
-
-        Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patches.get(0));
-        Assert.assertEquals(PatchId.fromString("foo-1.0.0"), repo.getLatestAvailable("foo"));
-    }
-
-    @Test
-    public void testRepoUrlWithSpaces() throws Exception {
-
-        Path path = Paths.get("target/repos/SimpleRepositoryTest", "repo && path");
-        IOUtils.rmdirs(path);
-        path.toFile().mkdirs();
-
-        URL url = new URL("file:./target/repos/SimpleRepositoryTest/" + URLEncoder.encode("repo && path", "UTF-8"));
-        PatchTool patchTool = new PatchToolBuilder().localRepository(url).build();
-        Repository repo = patchTool.getRepository();
-
-        // Add archive foo-1.0.0
-        PatchId patchId = repo.addArchive(Archives.getZipUrlFoo100());
-        Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patchId);
-    }
-
-    @Test
-    public void testFileMove() throws Exception {
-
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[1]).build();
-        Repository repo = patchTool.getRepository();
-
-        // copy a file to the root of the repository
-        Path zipPathA = Paths.get(Archives.getZipUrlFoo100().toURI());
-        File targetFile = repoPaths[1].resolve(zipPathA.getFileName()).toFile();
-        Files.copy(zipPathA, targetFile.toPath());
-
-        PatchId patchId = repo.addArchive(targetFile.toURI().toURL());
-        Patch patch = repo.getPatch(patchId);
-        Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patch.getPatchId());
-        Assert.assertEquals(4, patch.getRecords().size());
-
-        // Verify that the file got removed
-        Assert.assertFalse("File got removed", targetFile.exists());
     }
 
     @Test
     public void testOverlappingPaths() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[2]).build();
+        PatchTool patchTool = getPatchTool(repoURL[1]);
         Repository repo = patchTool.getRepository();
 
         repo.addArchive(Archives.getZipUrlFoo100());
@@ -177,7 +132,7 @@ public class SimpleRepositoryTest {
     @Test
     public void testEqualOverlappingPaths() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[3]).build();
+        PatchTool patchTool = getPatchTool(repoURL[2]);
         Repository repo = patchTool.getRepository();
 
         Assert.assertEquals(PatchId.fromString("foo-1.1.0"), repo.addArchive(Archives.getZipUrlFoo110()));
@@ -187,7 +142,7 @@ public class SimpleRepositoryTest {
     @Test
     public void testAddOneOff() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[4]).build();
+        PatchTool patchTool = getPatchTool(repoURL[3]);
         Repository repo = patchTool.getRepository();
 
         URL url100sp1 = Archives.getZipUrlFoo100SP1();
@@ -218,7 +173,7 @@ public class SimpleRepositoryTest {
     @Test
     public void testArchiveWithRoles() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[5]).build();
+        PatchTool patchTool = getPatchTool(repoURL[4]);
         Repository repo = patchTool.getRepository();
 
         URL url100 = Archives.getZipUrlFoo100();

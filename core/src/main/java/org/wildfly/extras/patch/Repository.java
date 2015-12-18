@@ -37,11 +37,6 @@ public interface Repository {
 	String ENV_PROPERTY_REPOSITORY_URL = "FUSEPATCH_REPOSITORY";
 	
     /**
-     * Get the repository base URL
-     */
-    URL getBaseURL();
-
-    /**
      * Get the list of available patches
      * @param prefix The patch name prefix - null for all patches
      */

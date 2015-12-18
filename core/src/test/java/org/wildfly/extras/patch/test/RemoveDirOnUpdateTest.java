@@ -63,7 +63,8 @@ public class RemoveDirOnUpdateTest {
             IOUtils.rmdirs(serverPaths[i]);
             serverPaths[i].toFile().mkdirs();
         }
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).build();
+        URL repoURL = repoPath.toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).build();
         patchTool.getRepository().addArchive(getZipUrlRdou100());
         patchTool.getRepository().addArchive(getZipUrlRdou110());
     }
@@ -71,7 +72,8 @@ public class RemoveDirOnUpdateTest {
     @Test
     public void testRemoveDirOnUpdate() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).serverPath(serverPaths[0]).build();
+        URL repoURL = repoPath.toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[0]).build();
         Server server = patchTool.getServer();
         
         Path configPath = serverPaths[0].resolve("config");
@@ -110,7 +112,8 @@ public class RemoveDirOnUpdateTest {
     @Test
     public void testKeepDirOnUpdate() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).serverPath(serverPaths[1]).build();
+        URL repoURL = repoPath.toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[1]).build();
         Server server = patchTool.getServer();
         
         Path configPath = serverPaths[1].resolve("config");

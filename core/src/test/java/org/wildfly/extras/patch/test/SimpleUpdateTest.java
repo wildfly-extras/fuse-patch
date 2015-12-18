@@ -25,6 +25,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -61,7 +62,8 @@ public class SimpleUpdateTest {
             IOUtils.rmdirs(serverPaths[i]);
             serverPaths[i].toFile().mkdirs();
         }
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).build();
+        URL repoURL = repoPath.toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).build();
         patchTool.getRepository().addArchive(Archives.getZipUrlFoo100());
         patchTool.getRepository().addArchive(Archives.getZipUrlFoo110());
     }
@@ -69,7 +71,8 @@ public class SimpleUpdateTest {
     @Test
     public void testInstallUpdateUninstall() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).serverPath(serverPaths[0]).build();
+        URL repoURL = repoPath.toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[0]).build();
         Server server = patchTool.getServer();
         
         List<PatchId> patches = server.queryAppliedPatches();
@@ -221,7 +224,8 @@ public class SimpleUpdateTest {
     @Test
     public void testAddingFileThatExists() throws Exception {
         
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).serverPath(serverPaths[1]).build();
+        URL repoURL = repoPath.toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[1]).build();
         Server server = patchTool.getServer();
         
         Path targetPath = serverPaths[1].resolve("config/propsA.properties");
@@ -256,7 +260,8 @@ public class SimpleUpdateTest {
     @Test
     public void testOverrideModifiedFile() throws Exception {
         
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).serverPath(serverPaths[2]).build();
+        URL repoURL = repoPath.toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[2]).build();
         
         Path targetPath = serverPaths[2].resolve("config/propsA.properties");
         
@@ -284,7 +289,8 @@ public class SimpleUpdateTest {
     @Test
     public void testRemoveNonExistingFile() throws Exception {
         
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).serverPath(serverPaths[3]).build();
+        URL repoURL = repoPath.toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[3]).build();
         
         Path targetPath = serverPaths[3].resolve("config/remove-me.properties");
         

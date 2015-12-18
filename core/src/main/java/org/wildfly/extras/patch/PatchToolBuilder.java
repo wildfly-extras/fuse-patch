@@ -19,13 +19,22 @@
  */
 package org.wildfly.extras.patch;
 
-import java.net.MalformedURLException;
+import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.nio.file.Path;
+import java.util.concurrent.locks.ReentrantLock;
 
+import org.wildfly.extras.patch.aether.AetherFactory;
 import org.wildfly.extras.patch.internal.DefaultPatchTool;
+import org.wildfly.extras.patch.repository.AetherRepository;
+import org.wildfly.extras.patch.repository.LocalFileRepository;
+import org.wildfly.extras.patch.repository.RepositoryClient;
+import org.wildfly.extras.patch.server.ServerFactory;
+import org.wildfly.extras.patch.server.WildFlyServer;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
-
+import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 
 /**
  * The default {@link PatchTool} builder.
@@ -35,41 +44,97 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
  */
 public final class PatchToolBuilder {
 
-    private Path serverPath;
+    private ReentrantLock lock = new ReentrantLock();
     private URL repoUrl;
+    private Path serverPath;
+    private ServerFactory serverFactory;
+    private AetherFactory aetherFactory;
     private String username;
     private String password;
+
+    public PatchToolBuilder customLock(ReentrantLock lock) {
+        this.lock = lock;
+        return this;
+    }
 
     public PatchToolBuilder serverPath(Path serverPath) {
         this.serverPath = serverPath;
         return this;
     }
 
-    public PatchToolBuilder repositoryPath(Path repoPath) {
-        IllegalArgumentAssertion.assertNotNull(repoPath, "repoPath");
-        try {
-            this.repoUrl = repoPath.toFile().toURI().toURL();
-        } catch (MalformedURLException ex) {
-            throw new IllegalArgumentException(ex);
-        }
-        return this;
-    }
-
-    public PatchToolBuilder localRepository(URL repoUrl) {
+    public PatchToolBuilder repositoryURL(URL repoUrl) {
         IllegalArgumentAssertion.assertNotNull(repoUrl, "repoUrl");
         this.repoUrl = repoUrl;
         return this;
     }
 
-    public PatchToolBuilder jaxwsRepository(URL endpointUrl, String username, String password) {
-        IllegalArgumentAssertion.assertNotNull(endpointUrl, "endpointUrl");
-        this.repoUrl = endpointUrl;
+    public PatchToolBuilder aetherFactory(AetherFactory aetherFactory) {
+        IllegalArgumentAssertion.assertNotNull(aetherFactory, "aetherFactory");
+        this.aetherFactory = aetherFactory;
+        return this;
+    }
+
+    public PatchToolBuilder targetServer(ServerFactory serverFactory) {
+        IllegalArgumentAssertion.assertNotNull(serverFactory, "serverFactory");
+        this.serverFactory = serverFactory;
+        return this;
+    }
+
+    /**
+     * Optional repository credentials
+     */
+    public PatchToolBuilder credentials(String username, String password) {
         this.username = username;
         this.password = password;
         return this;
     }
 
     public PatchTool build() {
-        return new DefaultPatchTool(serverPath, repoUrl, username, password);
+        return new DefaultPatchTool(lock, buildServer(), buildRepository());
+    }
+
+    private Server buildServer() {
+        Server server = null;
+        if (serverFactory != null) {
+            server = serverFactory.getServer();
+        } else if (serverPath != null) {
+            server = new WildFlyServer(lock, serverPath);
+        }
+        return server;
+    }
+
+    private Repository buildRepository() {
+        Repository repository = null;
+
+        // Aether repository
+        if (aetherFactory != null) {
+            repository = new AetherRepository(lock, aetherFactory);
+
+        } else if (repoUrl != null) {
+            
+            // Remote jaxws repository
+            String protocol = repoUrl.getProtocol();
+            if (protocol.startsWith("http")) {
+                repository = new RepositoryClient(lock, repoUrl, username, password);
+            }
+            
+            // Local file repository
+            if (protocol.equals("file")) {
+                Path rootPath = getAbsolutePath(repoUrl);
+                repository = new LocalFileRepository(lock, rootPath);
+            }
+            
+            IllegalStateAssertion.assertNotNull(repository, "Unsupported protocol: " + protocol);
+        }
+        
+        return repository;
+    }
+
+    private Path getAbsolutePath(URL url) {
+        try {
+            return new File(URLDecoder.decode(url.getPath(), "UTF-8")).getAbsoluteFile().toPath();
+        } catch (UnsupportedEncodingException ex) {
+            throw new IllegalArgumentException(ex);
+        }
     }
 }

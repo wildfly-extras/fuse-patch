@@ -19,6 +19,7 @@
  */
 package org.wildfly.extras.patch.test;
 
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -60,7 +61,8 @@ public class PostCommandsTest {
     @Test
     public void testPostCommands() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[0]).serverPath(serverPath).build();
+        URL repoURL = repoPaths[0].toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPath).build();
         Server server = patchTool.getServer();
         Repository repo = patchTool.getRepository();
         
@@ -95,7 +97,8 @@ public class PostCommandsTest {
         String repoUrl = repoPaths[1].toUri().toURL().toString();
         Main.mainInternal(new String[] {"--repository", repoUrl, "--add", fileUrl, "--add-cmd", "echo hello world"});
         
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[1]).build();
+        URL repoURL = repoPaths[1].toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).build();
         Repository repo = patchTool.getRepository();
         
         Patch patch = repo.getPatch(PatchId.fromString("foo-1.0.0"));
@@ -107,11 +110,12 @@ public class PostCommandsTest {
     public void testAddThroughMainWithMetadata() throws Exception {
 
         String fileUrl = Archives.getZipUrlFoo100().toString();
-        String repoUrl = repoPaths[1].toUri().toURL().toString();
+        String repoUrl = repoPaths[2].toUri().toURL().toString();
         String metadataUrl = Paths.get("src/test/resources/simple-metadata.xml").toUri().toString();
         Main.mainInternal(new String[] {"--repository", repoUrl, "--add", fileUrl, "--metadata", metadataUrl});
         
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPaths[1]).build();
+        URL repoURL = repoPaths[2].toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).build();
         Repository repo = patchTool.getRepository();
         
         Patch patch = repo.getPatch(PatchId.fromString("foo-1.0.0"));

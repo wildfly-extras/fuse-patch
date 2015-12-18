@@ -17,27 +17,23 @@
  * limitations under the License.
  * #L%
  */
-package org.wildfly.extras.patch;
+package org.wildfly.extras.patch.internal;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -47,16 +43,21 @@ import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.wildfly.extras.patch.Patch;
+import org.wildfly.extras.patch.PatchId;
+import org.wildfly.extras.patch.PatchMetadata;
+import org.wildfly.extras.patch.PatchMetadataBuilder;
+import org.wildfly.extras.patch.PatchTool;
+import org.wildfly.extras.patch.Record;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 
 public final class MetadataParser {
 
-    private static final String AUDIT_LOG = "audit.log";
-    private static final String MANAGED_PATHS = "managed-paths.metadata";
-
+    public static final String MANAGED_PATHS = "managed-paths.metadata";
+    
     static final String VERSION_PREFIX = "# fusepatch:";
-    static final String PATCHID_PREFIX = "# patch id:";
+    static final String PATCHID_PREFIX = "# patchId:";
 
     public static Patch buildPatchFromZip(PatchId patchId, Record.Action action, ZipInputStream zipInput) throws IOException {
         IllegalArgumentAssertion.assertNotNull(zipInput, "zipInput");
@@ -127,56 +128,6 @@ public final class MetadataParser {
         return Collections.unmodifiableList(result);
     }
 
-    public static List<ManagedPath> queryManagedPaths(Path rootPath, String pattern) {
-        try {
-            List<ManagedPath> result = new ArrayList<>();
-            ManagedPaths mpaths = readManagedPaths(rootPath);
-            for (ManagedPath aux : mpaths.getManagedPaths()) {
-                String path = aux.getPath().toString();
-                if (pattern == null || path.startsWith(pattern)) {
-                    result.add(aux);
-                }
-            }
-            return Collections.unmodifiableList(result);
-        } catch (IOException ex) {
-            throw new IllegalStateException(ex);
-        }
-    }
-
-    public static void writeAuditLog(Path rootPath, String message, SmartPatch smartPatch) throws IOException {
-        IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
-        IllegalArgumentAssertion.assertNotNull(message, "message");
-        IllegalArgumentAssertion.assertNotNull(smartPatch, "smartPatch");
-        try (FileOutputStream fos = new FileOutputStream(rootPath.resolve(AUDIT_LOG).toFile(), true)) {
-            PrintStream pw = new PrintStream(fos);
-            pw.println();
-            String date = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss").format(new Date());
-            pw.println("# " + date);
-            pw.println("# " + message);
-            PatchId patchId = smartPatch.getPatchId();
-            List<String> postCommands = smartPatch.getMetadata().getPostCommands();
-            PatchMetadata metadata = new PatchMetadataBuilder().patchId(patchId).postCommands(postCommands).build();
-            Patch patch = Patch.create(metadata, smartPatch.getRecords());
-            writePatch(patch, fos, false);
-        }
-    }
-
-    public static List<String> readAuditLog(Path rootPath) throws IOException {
-        IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
-        List<String> lines = new ArrayList<>();
-        File auditFile = rootPath.resolve(AUDIT_LOG).toFile();
-        if (auditFile.exists()) {
-            try (BufferedReader br = new BufferedReader(new FileReader(auditFile))) {
-                String line = br.readLine();
-                while (line != null) {
-                    lines.add(line);
-                    line = br.readLine();
-                }
-            }
-        }
-        return Collections.unmodifiableList(lines);
-    }
-
     public static void writePatch(Path rootPath, Patch patch) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
         IllegalArgumentAssertion.assertNotNull(patch, "patch");
@@ -195,35 +146,7 @@ public final class MetadataParser {
         return getMetadataDirectory(rootPath, patchId).toPath().resolve(patchId + ".metadata").toFile();
     }
 
-    public static ManagedPaths readManagedPaths(Path rootPath) throws IOException {
-        IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
-        List<ManagedPath> managedPaths = new ArrayList<>();
-        File metadataFile = rootPath.resolve(MANAGED_PATHS).toFile();
-        if (metadataFile.exists()) {
-            try (BufferedReader br = new BufferedReader(new FileReader(metadataFile))) {
-                String line = br.readLine();
-                while (line != null) {
-                    managedPaths.add(ManagedPath.fromString(line));
-                    line = br.readLine();
-                }
-            }
-        }
-        return new ManagedPaths(managedPaths);
-    }
-
-    public static void writeManagedPaths(Path rootPath, ManagedPaths managedPaths) throws IOException {
-        IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
-        IllegalArgumentAssertion.assertNotNull(managedPaths, "managedPaths");
-        File metadataFile = rootPath.resolve(MANAGED_PATHS).toFile();
-        metadataFile.getParentFile().mkdirs();
-        try (PrintWriter pw = new PrintWriter(new FileWriter(metadataFile))) {
-            for (ManagedPath path : managedPaths.getManagedPaths()) {
-                pw.println(path.toString());
-            }
-        }
-    }
-
-    private static void writePatch(Patch patch, OutputStream outstream, boolean addHeader) throws IOException {
+    public static void writePatch(Patch patch, OutputStream outstream, boolean addHeader) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patch, "patch");
         IllegalArgumentAssertion.assertNotNull(outstream, "outstream");
         try (PrintStream pw = new PrintStream(outstream)) {
@@ -264,7 +187,7 @@ public final class MetadataParser {
         }
     }
 
-    private static Patch readPatch(File metadataFile) throws IOException {
+    public static Patch readPatch(File metadataFile) throws IOException {
         IllegalArgumentAssertion.assertNotNull(metadataFile, "metadataFile");
         IllegalArgumentAssertion.assertTrue(metadataFile.isFile(), "Cannot find metadata file: " + metadataFile);
 

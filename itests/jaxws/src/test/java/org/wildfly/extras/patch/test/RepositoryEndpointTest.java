@@ -84,20 +84,15 @@ public class RepositoryEndpointTest {
         String username = "user1";
         String password = "ca9f7f650a6c1a1250859648d9bf5ca7";
         URL endpointUrl = new URL("http://localhost:8080/fuse-patch-jaxws/RepositoryEndpoint");
-        PatchTool patchTool = new PatchToolBuilder().jaxwsRepository(endpointUrl, username, password).build();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(endpointUrl).credentials(username, password).build();
         Repository repository = patchTool.getRepository();
         
-        // Test repository base URL
-        URL baseURL = repository.getBaseURL();
-        Assert.assertEquals("file", baseURL.getProtocol());
-        Assert.assertTrue("Unexpected path: " + baseURL, baseURL.getPath().endsWith("fusepatch/repository"));
-
         PatchId pid = PatchId.fromString("fuse-patch-distro-wildfly-" + PatchTool.VERSION);
         List<PatchId> pids = repository.queryAvailable(null);
         
         // With the feature pack runtime we need to install the fuse-patch package
         if (pids.size() == 0) {
-            URL fileUrl = new URL(repository.getBaseURL() + "/" + pid + ".zip");
+            URL fileUrl = new URL(System.getProperty(Repository.SYSTEM_PROPERTY_REPOSITORY_URL) + "/" + pid + ".zip");
             Assert.assertEquals(pid, repository.addArchive(fileUrl));
         }
         

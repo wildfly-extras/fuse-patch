@@ -20,8 +20,6 @@
 package org.wildfly.extras.patch.internal;
 
 import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Path;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.wildfly.extras.patch.Patch;
@@ -30,31 +28,21 @@ import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.Server;
 import org.wildfly.extras.patch.SmartPatch;
-import org.wildfly.extras.patch.repository.LocalFileRepository;
-import org.wildfly.extras.patch.repository.RepositoryClient;
 import org.wildfly.extras.patch.server.WildFlyServer;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.PatchAssertion;
 
-
 public final class DefaultPatchTool extends PatchTool {
 
-    // All default patch tool instances share this lock
-    private static ReentrantLock lock = new ReentrantLock();
-    
-    private final Path serverPath;
-    private final URL repoUrl;
-    private final String username;
-    private final String password;
-
+    private final ReentrantLock lock;
+    private final Repository repository;
     private Server server;
-    private Repository repository;
-    
-	public DefaultPatchTool(Path serverPath, URL repoUrl, String username, String password) {
-	    this.serverPath = serverPath;
-	    this.repoUrl = repoUrl;
-        this.username = username;
-        this.password = password;
+
+    public DefaultPatchTool(ReentrantLock lock, Server server, Repository repository) {
+        IllegalArgumentAssertion.assertNotNull(lock, "lock");
+        this.lock = lock;
+        this.server = server;
+        this.repository = repository;
     }
 
     @Override
@@ -62,7 +50,7 @@ public final class DefaultPatchTool extends PatchTool {
         lock.tryLock();
         try {
             if (server == null) {
-                server = new WildFlyServer(lock, serverPath);
+                server = new WildFlyServer(lock, null);
             }
             return server;
         } finally {
@@ -72,20 +60,7 @@ public final class DefaultPatchTool extends PatchTool {
 
     @Override
     public Repository getRepository() {
-        lock.tryLock();
-        try {
-            if (repository == null) {
-                String protocol = repoUrl.getProtocol();
-                if (protocol.startsWith("http")) {
-                    repository = new RepositoryClient(lock, repoUrl, username, password);
-                } else {
-                    repository = new LocalFileRepository(lock, repoUrl);
-                }
-            }
-            return repository;
-        } finally {
-            lock.unlock();
-        }
+        return repository;
     }
 
     @Override
@@ -148,6 +123,6 @@ public final class DefaultPatchTool extends PatchTool {
 
     @Override
     public String toString() {
-        return "DefaultPatchTool[server=" + serverPath + ",repo=" + repoUrl + "]";
+        return "DefaultPatchTool[server=" + server + ",repo=" + repository + "]";
     }
 }

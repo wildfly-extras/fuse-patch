@@ -55,7 +55,8 @@ public class OneOffPatchTest {
             IOUtils.rmdirs(serverPaths[i]);
             serverPaths[i].toFile().mkdirs();
         }
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).build();
+        URL repoURL = repoPath.toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).build();
         PatchId oneoffId = patchTool.getRepository().addArchive(Archives.getZipUrlFoo100());
         URL url100sp1 = Archives.getZipUrlFoo100SP1();
         PatchId pid100sp1 = PatchId.fromURL(url100sp1);
@@ -67,7 +68,8 @@ public class OneOffPatchTest {
     @Test
     public void testSimpleOneOff() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).serverPath(serverPaths[0]).build();
+        URL repoURL = repoPath.toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[0]).build();
         
         PatchId pid100 = PatchId.fromURL(Archives.getZipUrlFoo100());
         PatchId pid100sp1 = PatchId.fromURL(Archives.getZipUrlFoo100SP1());
@@ -84,7 +86,8 @@ public class OneOffPatchTest {
     @Test
     public void testOneOffWithoutPriorBase() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).serverPath(serverPaths[1]).build();
+        URL repoURL = repoPath.toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[1]).build();
         
         PatchId pid100sp1 = PatchId.fromURL(Archives.getZipUrlFoo100SP1());
         Path filePath = serverPaths[1].resolve("config/propsA.properties");

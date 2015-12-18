@@ -9,8 +9,6 @@
             targetNamespace="http://jaxws.patch.extras.wildfly.org/">
             <xs:element name="addArchive" type="tns:addArchive" />
             <xs:element name="addArchiveResponse" type="tns:addArchiveResponse" />
-            <xs:element name="getBaseURL" type="tns:getBaseURL" />
-            <xs:element name="getBaseURLResponse" type="tns:getBaseURLResponse" />
             <xs:element name="getLatestAvailable" type="tns:getLatestAvailable" />
             <xs:element name="getLatestAvailableResponse"
                 type="tns:getLatestAvailableResponse" />
@@ -124,15 +122,6 @@
                     <xs:element name="return" type="xs:boolean" />
                 </xs:sequence>
             </xs:complexType>
-            <xs:complexType name="getBaseURL">
-                <xs:sequence />
-            </xs:complexType>
-            <xs:complexType name="getBaseURLResponse">
-                <xs:sequence>
-                    <xs:element minOccurs="0" name="return"
-                        type="xs:anyURI" />
-                </xs:sequence>
-            </xs:complexType>
             <xs:complexType name="queryAvailable">
                 <xs:sequence>
                     <xs:element minOccurs="0" name="arg0"
@@ -160,14 +149,8 @@
     <wsdl:message name="removeArchive">
         <wsdl:part element="tns:removeArchive" name="parameters"></wsdl:part>
     </wsdl:message>
-    <wsdl:message name="getBaseURL">
-        <wsdl:part element="tns:getBaseURL" name="parameters"></wsdl:part>
-    </wsdl:message>
     <wsdl:message name="queryAvailable">
         <wsdl:part element="tns:queryAvailable" name="parameters"></wsdl:part>
-    </wsdl:message>
-    <wsdl:message name="getBaseURLResponse">
-        <wsdl:part element="tns:getBaseURLResponse" name="parameters"></wsdl:part>
     </wsdl:message>
     <wsdl:message name="getPatchResponse">
         <wsdl:part element="tns:getPatchResponse" name="parameters"></wsdl:part>
@@ -228,11 +211,6 @@
             <wsdl:output message="tns:removeArchiveResponse"
                 name="removeArchiveResponse"></wsdl:output>
         </wsdl:operation>
-        <wsdl:operation name="getBaseURL">
-            <wsdl:input message="tns:getBaseURL" name="getBaseURL"></wsdl:input>
-            <wsdl:output message="tns:getBaseURLResponse"
-                name="getBaseURLResponse"></wsdl:output>
-        </wsdl:operation>
         <wsdl:operation name="queryAvailable">
             <wsdl:input message="tns:queryAvailable" name="queryAvailable"></wsdl:input>
             <wsdl:output message="tns:queryAvailableResponse"
@@ -288,15 +266,6 @@
                 <soap:body use="literal" />
             </wsdl:input>
             <wsdl:output name="removeArchiveResponse">
-                <soap:body use="literal" />
-            </wsdl:output>
-        </wsdl:operation>
-        <wsdl:operation name="getBaseURL">
-            <soap:operation soapAction="" style="document" />
-            <wsdl:input name="getBaseURL">
-                <soap:body use="literal" />
-            </wsdl:input>
-            <wsdl:output name="getBaseURLResponse">
                 <soap:body use="literal" />
             </wsdl:output>
         </wsdl:operation>

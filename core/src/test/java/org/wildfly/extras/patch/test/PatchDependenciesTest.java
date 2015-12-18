@@ -50,7 +50,8 @@ public class PatchDependenciesTest {
         repoPath.toFile().mkdirs();
         IOUtils.rmdirs(serverPath);
         serverPath.toFile().mkdirs();
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).build();
+        URL repoURL = repoPath.toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).build();
         PatchId pid100 = patchTool.getRepository().addArchive(Archives.getZipUrlFoo100());
         URL url110 = Archives.getZipUrlFoo110();
         PatchId pid110 = PatchId.fromURL(url110);
@@ -62,7 +63,8 @@ public class PatchDependenciesTest {
     @Test
     public void testSimpleDependency() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).serverPath(serverPath).build();
+        URL repoURL = repoPath.toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPath).build();
         
         PatchId idA = PatchId.fromURL(Archives.getZipUrlFoo100());
         PatchId idB = PatchId.fromURL(Archives.getZipUrlFoo110());

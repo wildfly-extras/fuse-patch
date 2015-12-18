@@ -64,7 +64,8 @@ public class OverrideExistingPathTest {
             IOUtils.rmdirs(serverPaths[i]);
             serverPaths[i].toFile().mkdirs();
         }
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).build();
+        URL repoURL = repoPath.toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).build();
         patchTool.getRepository().addArchive(getZipUrlFoo100());
         patchTool.getRepository().addArchive(getZipUrlBar100(), true);
         patchTool.getRepository().addArchive(getZipUrlBar110(), true);
@@ -73,7 +74,8 @@ public class OverrideExistingPathTest {
     @Test
     public void testPathExistsInServer() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).serverPath(serverPaths[0]).build();
+        URL repoURL = repoPath.toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[0]).build();
         Server server = patchTool.getServer();
         
         // Add a file to the server upfront
@@ -130,7 +132,8 @@ public class OverrideExistingPathTest {
     @Test
     public void testPathExistsInFoo() throws Exception {
 
-        PatchTool patchTool = new PatchToolBuilder().repositoryPath(repoPath).serverPath(serverPaths[1]).build();
+        URL repoURL = repoPath.toFile().toURI().toURL();
+        PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[1]).build();
         Server server = patchTool.getServer();
         
         // Install oepfoo-1.0.0

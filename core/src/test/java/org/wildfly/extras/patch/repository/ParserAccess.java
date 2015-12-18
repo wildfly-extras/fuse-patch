@@ -23,10 +23,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.zip.ZipInputStream;
 
-import org.wildfly.extras.patch.MetadataParser;
 import org.wildfly.extras.patch.Patch;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Record;
+import org.wildfly.extras.patch.internal.MetadataParser;
 
 public final class ParserAccess {
 
