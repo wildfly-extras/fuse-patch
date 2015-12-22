@@ -30,6 +30,9 @@ final class Options {
 	@Option(name = "--help", help = true)
 	boolean help;
 
+    @Option(name = "--config", usage = "URL to the patch tool configuration")
+    URL configUrl;
+    
 	@Option(name = "--server", usage = "Path to the target server")
 	Path serverHome;
 
@@ -51,18 +54,6 @@ final class Options {
     @Option(name = "--add", forbids = { "--remove" },  usage = "Add the given archive to the repository")
     URL addUrl;
     
-    @Option(name = "--metadata", depends = { "--add" }, usage = "A subcommand for --add that points to a metadata descriptor")
-    URL metadataUrl;
-    
-    @Option(name = "--add-cmd", depends = { "--add" }, usage = "A subcommand for --add that adds a post-install command")
-    String addCmd;
-    
-    @Option(name = "--one-off", depends = { "--add" }, usage = "A subcommand for --add that names the target id for a one-off patch")
-    String oneoffId;
-    
-    @Option(name = "--dependencies", handler = StringArrayOptionHandler.class, depends = { "--add" }, usage = "A subcommand for --add that defines an array of dependencies")
-    String[]  dependencies;
-    
     @Option(name = "--remove", forbids = { "--add" },  usage = "Remove the given patch id from the repository")
     String removeId;
     
@@ -74,6 +65,21 @@ final class Options {
 
     @Option(name = "--uninstall", forbids = { "--install", "--update" },  usage = "Uninstall the given patch id from the server")
     String uninstallId;
+    
+    @Option(name = "--metadata", depends = { "--add" }, usage = "A subcommand for --add that points to a metadata descriptor")
+    URL metadataUrl;
+    
+    @Option(name = "--add-cmd", depends = { "--add" }, usage = "A subcommand for --add that adds a post-install command")
+    String addCmd;
+    
+    @Option(name = "--one-off", depends = { "--add" }, usage = "A subcommand for --add that names the target id for a one-off patch")
+    String oneoffId;
+    
+    @Option(name = "--dependencies", depends = { "--add" }, handler = StringArrayOptionHandler.class, usage = "A subcommand for --add that defines patch dependencies")
+    String[]  dependencies;
+    
+    @Option(name = "--roles", depends = { "--add" }, handler = StringArrayOptionHandler.class, usage = "A subcommand for --add that defines required roles")
+    String[]  roles;
     
     @Option(name = "--force", usage = "Force an --add, --install or --update operation")
     boolean force;

@@ -24,26 +24,14 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
-import org.eclipse.aether.DefaultRepositorySystemSession;
-import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.RepositorySystemSession;
-import org.eclipse.aether.repository.LocalRepository;
-import org.eclipse.aether.repository.RemoteRepository;
 import org.junit.BeforeClass;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
+import org.wildfly.extras.patch.aether.DefaultAetherFactory;
 import org.wildfly.extras.patch.aether.AetherFactory;
-import org.wildfly.extras.patch.aether.ConsoleRepositoryListener;
-import org.wildfly.extras.patch.aether.ConsoleTransferListener;
-import org.wildfly.extras.patch.aether.ManualRepositorySystemFactory;
 import org.wildfly.extras.patch.utils.IOUtils;
 
 public class AetherRepositoryTest extends AbstractRepositoryTest {
-
-    static {
-        repoURL = new URL[5];
-    }
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -61,8 +49,8 @@ public class AetherRepositoryTest extends AbstractRepositoryTest {
     }
 
     PatchTool getPatchTool(final URL repoURL) {
-        AetherFactory factory = new AetherFactory() {
-
+        AetherFactory factory = new DefaultAetherFactory() {
+            
             Path rootPath = Paths.get(repoURL.getPath());
             {
                 try {
@@ -71,29 +59,15 @@ public class AetherRepositoryTest extends AbstractRepositoryTest {
                     
                 }
             }
-            RepositorySystem system = ManualRepositorySystemFactory.newRepositorySystem();
-            RemoteRepository repository = new RemoteRepository.Builder("fusepatch.repository", "default", repoURL.toString()).build();
             
             @Override
-            public RepositorySystem getRepositorySystem() {
-                return system;
+            public URL getRepositoryURL() {
+                return repoURL;
             }
-
+            
             @Override
-            public RepositorySystemSession newRepositorySystemSession(RepositorySystem system) {
-                DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
-
-                LocalRepository localRepo = new LocalRepository(rootPath.resolve("local-repo").toFile());
-                session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
-
-                session.setTransferListener(new ConsoleTransferListener());
-                session.setRepositoryListener(new ConsoleRepositoryListener());
-                return session;
-            }
-
-            @Override
-            public RemoteRepository getRemoteRepository() {
-                return repository;
+            public Path getLocalRepositoryPath() {
+                return rootPath.resolve("local-repo");
             }
         };
         return new PatchToolBuilder().repositoryURL(repoURL).aetherFactory(factory).build();

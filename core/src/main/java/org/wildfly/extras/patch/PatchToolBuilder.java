@@ -20,6 +20,7 @@
 package org.wildfly.extras.patch;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -52,6 +53,13 @@ public final class PatchToolBuilder {
     private String username;
     private String password;
 
+    public PatchToolBuilder loadConfiguration(URL configUrl) throws IOException {
+        IllegalArgumentAssertion.assertNotNull(configUrl, "configUrl");
+        Configuration config = Configuration.load(configUrl);
+        config.loadPatchToolBuilder(this);
+        return this;
+    }
+    
     public PatchToolBuilder customLock(ReentrantLock lock) {
         this.lock = lock;
         return this;

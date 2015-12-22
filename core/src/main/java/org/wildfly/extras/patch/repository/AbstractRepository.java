@@ -70,10 +70,19 @@ public abstract class AbstractRepository implements Repository {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractRepository.class);
     
     protected final Lock lock;
+    
+    private final URL repositoryURL;
 
-    public AbstractRepository(Lock lock) {
+    public AbstractRepository(Lock lock, URL repoURL) {
         IllegalArgumentAssertion.assertNotNull(lock, "lock");
+        IllegalArgumentAssertion.assertNotNull(repoURL, "repoURL");
+        this.repositoryURL = repoURL;
         this.lock = lock;
+    }
+
+    @Override
+    public URL getRepositoryURL() {
+        return repositoryURL;
     }
 
     @Override
