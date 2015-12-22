@@ -22,6 +22,8 @@ package org.wildfly.extras.patch.jaxws;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
@@ -39,15 +41,17 @@ import javax.xml.ws.handler.MessageContext;
 import org.wildfly.extras.patch.Patch;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchMetadata;
-import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.SmartPatch;
+import org.wildfly.extras.patch.aether.AetherFactory;
+import org.wildfly.extras.patch.aether.DefaultAetherFactory;
 import org.wildfly.extras.patch.repository.LocalFileRepository;
 import org.wildfly.extras.patch.repository.PatchAdapter;
 import org.wildfly.extras.patch.repository.PatchMetadataAdapter;
 import org.wildfly.extras.patch.repository.RepositoryService;
 import org.wildfly.extras.patch.repository.SmartPatchAdapter;
+import org.wildfly.extras.patch.utils.IOUtils;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 
 @WebService(targetNamespace = RepositoryService.TARGET_NAMESPACE, endpointInterface = "org.wildfly.extras.patch.repository.RepositoryService")
@@ -62,8 +66,22 @@ public class RepositoryEndpoint implements RepositoryService {
 	
     @PostConstruct
     public void postConstruct() {
-        PatchTool patchTool = new PatchToolBuilder().customLock(lock).repositoryURL(getRepositoryURL()).build();
-        delegate = patchTool.getRepository();
+        final URL repoURL = getRepositoryURL();
+        AetherFactory factory = new DefaultAetherFactory() {
+            
+            @Override
+            public URL getRepositoryURL() {
+                return repoURL;
+            }
+            
+            @Override
+            public Path getLocalRepositoryPath() {
+                Path rootPath = Paths.get(repoURL.getPath());
+                return rootPath.resolve("local-repo");
+            }
+        };
+        PatchToolBuilder builder = new PatchToolBuilder().customLock(lock).repositoryURL(repoURL);
+        delegate = builder.build().getRepository();
     }
 
 	@Override

@@ -37,10 +37,10 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wildfly.extras.patch.ManagedPath;
-import org.wildfly.extras.patch.PatchMetadata;
-import org.wildfly.extras.patch.PatchMetadataBuilder;
 import org.wildfly.extras.patch.PatchException;
 import org.wildfly.extras.patch.PatchId;
+import org.wildfly.extras.patch.PatchMetadata;
+import org.wildfly.extras.patch.PatchMetadataBuilder;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.repository.LocalFileRepository;
@@ -84,8 +84,22 @@ public class Main {
 
 	private static void run(CmdLineParser cmdParser, Options options) throws IOException, JAXBException {
 		
-        URL repoUrl = options.repositoryUrl != null ? options.repositoryUrl : LocalFileRepository.getDefaultRepositoryURL();
-        PatchToolBuilder builder = new PatchToolBuilder().repositoryURL(repoUrl);
+        // Configure the patch tool builder
+        PatchToolBuilder builder = new PatchToolBuilder();
+        URL defaultRepoURL = LocalFileRepository.getDefaultRepositoryURL();
+        if (defaultRepoURL != null) {
+            builder.repositoryURL(defaultRepoURL);
+        }
+        
+        if (options.configUrl != null) {
+            builder.loadConfiguration(options.configUrl);
+        }
+        if (options.repositoryUrl != null) {
+            builder.repositoryURL(options.repositoryUrl);
+        }
+        if (options.serverHome != null) {
+            builder.serverPath(options.serverHome);
+        }
         
 	    boolean opfound = false;
 	    

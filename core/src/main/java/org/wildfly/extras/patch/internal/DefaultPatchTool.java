@@ -40,6 +40,7 @@ public final class DefaultPatchTool extends PatchTool {
 
     public DefaultPatchTool(ReentrantLock lock, Server server, Repository repository) {
         IllegalArgumentAssertion.assertNotNull(lock, "lock");
+        IllegalArgumentAssertion.assertNotNull(repository, "repository");
         this.lock = lock;
         this.server = server;
         this.repository = repository;

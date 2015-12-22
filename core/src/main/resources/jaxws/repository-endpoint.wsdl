@@ -9,6 +9,8 @@
             targetNamespace="http://jaxws.patch.extras.wildfly.org/">
             <xs:element name="addArchive" type="tns:addArchive" />
             <xs:element name="addArchiveResponse" type="tns:addArchiveResponse" />
+            <xs:element name="getRepositoryURL" type="tns:getRepositoryURL" />
+            <xs:element name="getRepositoryURLResponse" type="tns:getRepositoryURLResponse" />
             <xs:element name="getLatestAvailable" type="tns:getLatestAvailable" />
             <xs:element name="getLatestAvailableResponse"
                 type="tns:getLatestAvailableResponse" />
@@ -122,6 +124,15 @@
                     <xs:element name="return" type="xs:boolean" />
                 </xs:sequence>
             </xs:complexType>
+            <xs:complexType name="getRepositoryURL">
+                <xs:sequence />
+            </xs:complexType>
+            <xs:complexType name="getRepositoryURLResponse">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="return"
+                        type="xs:anyURI" />
+                </xs:sequence>
+            </xs:complexType>
             <xs:complexType name="queryAvailable">
                 <xs:sequence>
                     <xs:element minOccurs="0" name="arg0"
@@ -149,8 +160,14 @@
     <wsdl:message name="removeArchive">
         <wsdl:part element="tns:removeArchive" name="parameters"></wsdl:part>
     </wsdl:message>
+    <wsdl:message name="getRepositoryURL">
+        <wsdl:part element="tns:getRepositoryURL" name="parameters"></wsdl:part>
+    </wsdl:message>
     <wsdl:message name="queryAvailable">
         <wsdl:part element="tns:queryAvailable" name="parameters"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="getRepositoryURLResponse">
+        <wsdl:part element="tns:getRepositoryURLResponse" name="parameters"></wsdl:part>
     </wsdl:message>
     <wsdl:message name="getPatchResponse">
         <wsdl:part element="tns:getPatchResponse" name="parameters"></wsdl:part>
@@ -211,6 +228,11 @@
             <wsdl:output message="tns:removeArchiveResponse"
                 name="removeArchiveResponse"></wsdl:output>
         </wsdl:operation>
+        <wsdl:operation name="getRepositoryURL">
+            <wsdl:input message="tns:getRepositoryURL" name="getRepositoryURL"></wsdl:input>
+            <wsdl:output message="tns:getRepositoryURLResponse"
+                name="getRepositoryURLResponse"></wsdl:output>
+        </wsdl:operation>
         <wsdl:operation name="queryAvailable">
             <wsdl:input message="tns:queryAvailable" name="queryAvailable"></wsdl:input>
             <wsdl:output message="tns:queryAvailableResponse"
@@ -266,6 +288,15 @@
                 <soap:body use="literal" />
             </wsdl:input>
             <wsdl:output name="removeArchiveResponse">
+                <soap:body use="literal" />
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getRepositoryURL">
+            <soap:operation soapAction="" style="document" />
+            <wsdl:input name="getRepositoryURL">
+                <soap:body use="literal" />
+            </wsdl:input>
+            <wsdl:output name="getRepositoryURLResponse">
                 <soap:body use="literal" />
             </wsdl:output>
         </wsdl:operation>

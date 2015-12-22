@@ -1,13 +1,3 @@
-/*******************************************************************************
- * Copyright (c) 2010, 2013 Sonatype, Inc.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- *
- * Contributors:
- *    Sonatype, Inc. - initial API and implementation
- *******************************************************************************/
 package org.wildfly.extras.patch.aether;
 
 import java.io.PrintStream;
@@ -21,6 +11,7 @@ import org.eclipse.aether.transfer.AbstractTransferListener;
 import org.eclipse.aether.transfer.MetadataNotFoundException;
 import org.eclipse.aether.transfer.TransferEvent;
 import org.eclipse.aether.transfer.TransferResource;
+import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 
 /**
  * A simplistic transfer listener that logs uploads/downloads to the console.
@@ -33,12 +24,9 @@ public class ConsoleTransferListener extends AbstractTransferListener {
 
     private int lastLength;
 
-    public ConsoleTransferListener() {
-        this(null);
-    }
-
     public ConsoleTransferListener(PrintStream out) {
-        this.out = (out != null) ? out : System.out;
+        IllegalArgumentAssertion.assertNotNull(out, "out");
+        this.out = out;
     }
 
     @Override

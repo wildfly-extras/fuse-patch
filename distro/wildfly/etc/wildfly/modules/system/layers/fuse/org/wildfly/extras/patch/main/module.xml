@@ -37,6 +37,7 @@
         <module name="javax.servlet.api"/>
         <module name="javax.xml.ws.api"/>
         <module name="org.apache.cxf"/>
+        <module name="org.eclipse.aether"/>
         <module name="org.jboss.logmanager" services="import"/>
         <module name="org.slf4j"/>
     </dependencies>

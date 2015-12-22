@@ -39,6 +39,20 @@
             <scope>provided</scope>
             <unpack>false</unpack>
         </dependencySet>
+        <dependencySet>
+            <outputDirectory>/modules/system/layers/fuse/org/eclipse/aether/main</outputDirectory>
+            <includes>
+                <include>org.apache.maven:maven-aether-provider:jar</include>
+                <include>org.eclipse.aether:aether-api:jar</include>
+                <include>org.eclipse.aether:aether-impl:jar</include>
+                <include>org.eclipse.aether:aether-connector-basic:jar</include>
+                <include>org.eclipse.aether:aether-transport-file:jar</include>
+                <include>org.eclipse.aether:aether-transport-http:jar</include>
+            </includes>
+            <useStrictFiltering>true</useStrictFiltering>
+            <scope>provided</scope>
+            <unpack>false</unpack>
+        </dependencySet>
 		<dependencySet>
 			<outputDirectory>/modules/system/layers/fuse/org/wildfly/extras/config/main</outputDirectory>
             <includes>

@@ -56,7 +56,7 @@ public final class LocalFileRepository extends AbstractRepository {
     private final Path rootPath;
 
     public LocalFileRepository(Lock lock, Path rootPath) {
-        super(lock);
+        super(lock, toRepositoryUrl(rootPath));
         this.rootPath = rootPath;
 
         PatchAssertion.assertTrue(rootPath.toFile().isDirectory(), "Repository root does not exist: " + rootPath);
@@ -172,6 +172,14 @@ public final class LocalFileRepository extends AbstractRepository {
     }
 
 
+    private static URL toRepositoryUrl(Path rootPath) {
+        try {
+            return rootPath.toUri().toURL();
+        } catch (MalformedURLException ex) {
+            throw new IllegalArgumentException(ex);
+        }
+    }
+    
     private Path getPatchPath(PatchId patchId) {
         return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString(), patchId + ".zip"));
     }

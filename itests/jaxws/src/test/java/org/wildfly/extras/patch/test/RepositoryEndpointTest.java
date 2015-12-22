@@ -66,6 +66,7 @@ public class RepositoryEndpointTest {
     @Deployment
     public static JavaArchive deployment() {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, "repository-endpoint-test.jar");
+        archive.addAsResource("fusepatch.configuration");
         archive.setManifest(new Asset() {
             @Override
             public InputStream openStream() {
@@ -81,12 +82,16 @@ public class RepositoryEndpointTest {
     public void testRepository() throws Exception {
 
     	// Configure JAX-WS Client
-        String username = "user1";
-        String password = "ca9f7f650a6c1a1250859648d9bf5ca7";
-        URL endpointUrl = new URL("http://localhost:8080/fuse-patch-jaxws/RepositoryEndpoint");
-        PatchTool patchTool = new PatchToolBuilder().repositoryURL(endpointUrl).credentials(username, password).build();
+        ClassLoader classLoader = getClass().getClassLoader();
+        URL configUrl = classLoader.getResource("/fusepatch.configuration");
+        PatchTool patchTool = new PatchToolBuilder().loadConfiguration(configUrl).build();
+        
         Repository repository = patchTool.getRepository();
         
+        // Test repository base URL
+        URL baseURL = repository.getRepositoryURL();
+        Assert.assertEquals(new URL("http://localhost:8080/fuse-patch-jaxws/RepositoryEndpoint"), baseURL);
+
         PatchId pid = PatchId.fromString("fuse-patch-distro-wildfly-" + PatchTool.VERSION);
         List<PatchId> pids = repository.queryAvailable(null);
         

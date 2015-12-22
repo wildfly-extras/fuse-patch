@@ -70,7 +70,7 @@ public class AetherRepository extends AbstractRepository {
     private final AetherFactory factory;
 
     public AetherRepository(Lock lock, AetherFactory factory) {
-        super(lock);
+        super(lock, factory.getRepositoryURL());
         IllegalArgumentAssertion.assertNotNull(factory, "factory");
         this.factory = factory;
     }
@@ -80,7 +80,7 @@ public class AetherRepository extends AbstractRepository {
         lock.tryLock();
         try {
             RepositorySystem system = factory.getRepositorySystem();
-            RepositorySystemSession session = factory.newRepositorySystemSession(system);
+            RepositorySystemSession session = factory.newRepositorySystemSession();
             RemoteRepository target = factory.getRemoteRepository();
             
             Set<String> names = new HashSet<>();
@@ -128,7 +128,7 @@ public class AetherRepository extends AbstractRepository {
         lock.tryLock();
         try {
             RepositorySystem system = factory.getRepositorySystem();
-            RepositorySystemSession session = factory.newRepositorySystemSession(system);
+            RepositorySystemSession session = factory.newRepositorySystemSession();
             RemoteRepository target = factory.getRemoteRepository();
             
             Artifact artifact = new DefaultArtifact(GROUP_ID, patchId.getName(), "", "metadata", patchId.getVersion().toString());
@@ -167,7 +167,7 @@ public class AetherRepository extends AbstractRepository {
         File tmpFile = Files.createTempFile("fptmp", ".metadata").toFile();
         try {
             RepositorySystem system = factory.getRepositorySystem();
-            RepositorySystemSession session = factory.newRepositorySystemSession(system);
+            RepositorySystemSession session = factory.newRepositorySystemSession();
             RemoteRepository target = factory.getRemoteRepository();
             
             Artifact zipArtifact = new DefaultArtifact(GROUP_ID, patchId.getName(), "", "zip", patchId.getVersion().toString());
@@ -208,7 +208,7 @@ public class AetherRepository extends AbstractRepository {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         
         RepositorySystem system = factory.getRepositorySystem();
-        RepositorySystemSession session = factory.newRepositorySystemSession(system);
+        RepositorySystemSession session = factory.newRepositorySystemSession();
         RemoteRepository target = factory.getRemoteRepository();
         
         Artifact artifact = new DefaultArtifact(GROUP_ID, patchId.getName(), "", "zip", patchId.getVersion().toString());

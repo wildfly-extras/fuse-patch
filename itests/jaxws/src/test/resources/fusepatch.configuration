@@ -1,0 +1,3 @@
+repository.url = http://localhost:8080/fuse-patch-jaxws/RepositoryEndpoint
+repository.username = user1
+repository.password = ca9f7f650a6c1a1250859648d9bf5ca7

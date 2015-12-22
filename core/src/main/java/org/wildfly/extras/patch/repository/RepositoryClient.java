@@ -43,11 +43,13 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 public class RepositoryClient implements Repository {
 
     private final Lock lock;
+    private final URL endpointUrl;
     private final RepositoryService delegate;
 
     public RepositoryClient(Lock lock, URL endpointUrl, String username, String password) {
         IllegalArgumentAssertion.assertNotNull(endpointUrl, "endpointUrl");
         IllegalArgumentAssertion.assertNotNull(lock, "lock");
+        this.endpointUrl = endpointUrl;
         this.lock = lock;
 
         URL wsdlUrl = getClass().getClassLoader().getResource("/jaxws/repository-endpoint.wsdl");
@@ -59,6 +61,11 @@ public class RepositoryClient implements Repository {
             bp.getRequestContext().put(BindingProvider.USERNAME_PROPERTY, username);
             bp.getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, password);
         }
+    }
+
+    @Override
+    public URL getRepositoryURL() {
+        return endpointUrl;
     }
 
     @Override
