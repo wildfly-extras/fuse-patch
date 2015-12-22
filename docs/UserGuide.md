@@ -30,17 +30,20 @@ This is the standalone distribution, which comes with a local repository and is 
 $ bin/fusepatch.sh --help
 fusepatch [options...]
  --add URL                : Add the given archive to the repository
- --add-cmd STRING[]       : Add a post-install command for a given patch id
+ --add-cmd VAL            : A subcommand for --add that adds a post-install command
  --audit-log              : Print the audit log
- --dependencies VAL       : A subcommand for --add that defines an array of dependencies
+ --config URL             : URL to the patch tool configuration
+ --dependencies STRING[]  : A subcommand for --add that defines patch dependencies
  --force                  : Force an --add, --install or --update operation
  --install VAL            : Install the given patch id to the server
+ --metadata URL           : A subcommand for --add that points to a metadata descriptor
  --one-off VAL            : A subcommand for --add that names the target id for a one-off patch
  --query-repository       : Query the repository for available patches
  --query-server           : Query the server for installed patches
  --query-server-paths VAL : Query managed server paths
  --remove VAL             : Remove the given patch id from the repository
  --repository URL         : URL to the patch repository
+ --roles STRING[]         : A subcommand for --add that defines required roles
  --server PATH            : Path to the target server
  --uninstall VAL          : Uninstall the given patch id from the server
  --update VAL             : Update the server for the given patch name
@@ -50,8 +53,22 @@ The standalone distribution already contains the fuse-patch wildfly patch.
 
 ```
 $ bin/fusepatch.sh --query-repository
-fuse-patch-distro-wildfly-1.5.0
+fuse-patch-distro-wildfly-2.0.0
 ```
+
+### Client Configuration
+
+Conceptually Fuse-Patch consists of a thin client located alongside the server instance it operates on and a remote repository that the client connects to.
+How the client connects to the repository is determined by the repository URL.
+
+Currently Fuse-Patch supports three flavours of repository
+
+* Local file based repository
+* JAX-WS endpoint that implements the repository interface
+* Aether based repository that delegates to a Maven repository
+
+The repository client can be configured by a config URL that points to a [properties](https://github.com/wildfly-extras/fuse-patch/blob/master/core/src/main/java/org/wildfly/extras/patch/Configuration.java) file.
+The webservice enpoint is expected to be hosted on an application server, which provides a user/role mapping. Access to repository contend can such be secured by roles on an individual bassis.   
 
 ### Installing a Patch
 
@@ -59,7 +76,7 @@ Lets assume we work with WildFly and want to use fusepatch with WildFly.
 
 ```
 $ bin/fusepatch.sh --server ../wildfly-8.2.0.Final --update fuse-patch-distro-wildfly
-Installed fuse-patch-distro-wildfly-1.5.0
+Installed fuse-patch-distro-wildfly-2.0.0
 ```
 
 Note, that the above uses `--update` instead of `--install`, which installs the latest available patch for a given name.
@@ -69,7 +86,7 @@ Now we can switch to WildFly and query the server for installed patches
 ```
 $ cd ../wildfly-8.2.0.Final
 $ bin/fusepatch.sh --query-server
-fuse-patch-distro-wildfly-1.5.0
+fuse-patch-distro-wildfly-2.0.0
 ```
 
 or managed paths
@@ -77,17 +94,17 @@ or managed paths
 ```
 $ cd ../wildfly-8.2.0.Final
 $ bin/fusepatch.sh --query-server-paths modules
-modules/layers.conf [fuse-patch-distro-wildfly-1.5.0]
-modules/system/layers/fuse/org/wildfly/extras/patch/main/args4j-2.0.31.jar [fuse-patch-distro-wildfly-1.5.0]
-modules/system/layers/fuse/org/wildfly/extras/patch/main/fuse-patch-core-1.4.1-SNAPSHOT.jar [fuse-patch-distro-wildfly-1.5.0]
-modules/system/layers/fuse/org/wildfly/extras/patch/main/module.xml [fuse-patch-distro-wildfly-1.5.0]
+modules/layers.conf [fuse-patch-distro-wildfly-2.0.0]
+modules/system/layers/fuse/org/wildfly/extras/patch/main/args4j-2.0.31.jar [fuse-patch-distro-wildfly-2.0.0]
+modules/system/layers/fuse/org/wildfly/extras/patch/main/fuse-patch-core-1.4.1-SNAPSHOT.jar [fuse-patch-distro-wildfly-2.0.0]
+modules/system/layers/fuse/org/wildfly/extras/patch/main/module.xml [fuse-patch-distro-wildfly-2.0.0]
 ```
 
 ###  Loading the Repository
 
 The repository contains patches identified by symbolic-name and version. 
 
-Lets add two versions of a given patch to the repository.
+Lets add three versions of a given patch to the repository.
 
 ```
 $ bin/fusepatch.sh --add file:foo-1.0.0.zip 
@@ -96,9 +113,31 @@ Added foo-1.0.0
 $ bin/fusepatch.sh --add file:foo-1.1.0.zip 
 Added foo-1.1.0
 
+$ bin/fusepatch.sh --metadata file://.../foo-1.2.0-metadata.xml --add file:foo-1.2.0.zip 
+Added foo-1.2.0
+
 $ bin/fusepatch.sh --query-repository
+foo-1.2.0
 foo-1.1.0
 foo-1.0.0
+```
+
+Patches may have additional metadata associated with it.
+
+```xml
+    <package>
+        <patchId>foo-1.0.0.SP1</patchId>
+        <oneoffId>foo-1.0.0</oneoffId>
+        <roles>
+            <role>foo</role>
+        </roles>
+        <dependencies>
+            <patchId>aaa-0.0.0</patchId>
+        </dependencies>
+        <post-commands>
+            <command>echo done</command>
+        </post-commands>
+    </package>
 ```
 
 Unwanted patches can be removed from the repository.
