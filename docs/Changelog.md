@@ -1,5 +1,63 @@
 ### Changelog
 
+#### Fuse Patch 2.0.0
+
+**Features**
+
+* [#38][38] Provide remote accessible repository
+* [#105][105] Protect remote repository content with security roles
+* [#106][106] Provide maven repository as back store option
+* [#122][122] Configure patch tool client through config file
+
+For details see [2.0.0 features](https://github.com/wildfly-extras/fuse-patch/issues?q=milestone%3A"2.0.0"+label%3Afeature)
+
+**Tasks**
+
+* [#77][77] Add changelog and release notes
+* [#107][107] Migrate parameters to structured metadata 
+* [#110][110] Combine oneoff upload with base patch content
+* [#114][114] Consistently use Patch instead of Package in API
+* [#126][126] Document repository flavours, roles, client config 
+
+For details see [2.0.0 tasks](https://github.com/wildfly-extras/fuse-patch/issues?q=milestone%3A"2.0.0"+label%3Atask)
+
+**Bugs**
+
+* [#57][57] Already existing paths may incorrectly get removed on update
+* [#100][100] Directories not deleted during update
+* [#112][112] Repository always puts full patch content in smart patch
+* [#116][116] Temporary file for smart patch content not deleted
+* [#118][118] RepositoryClient does not unwrap WebServiceException
+* [#124][124] Command line roles are ignored
+
+For details see [2.0.0 bugs](https://github.com/wildfly-extras/fuse-patch/issues?q=milestone%3A"2.0.0"+label%3Abug)
+
+[38]: https://github.com/wildfly-extras/fuse-patch/issues/38
+[105]: https://github.com/wildfly-extras/fuse-patch/issues/105
+[106]: https://github.com/wildfly-extras/fuse-patch/issues/106
+[122]: https://github.com/wildfly-extras/fuse-patch/issues/122
+[77]: https://github.com/wildfly-extras/fuse-patch/issues/77
+[107]: https://github.com/wildfly-extras/fuse-patch/issues/107
+[110]: https://github.com/wildfly-extras/fuse-patch/issues/110
+[114]: https://github.com/wildfly-extras/fuse-patch/issues/114
+[126]: https://github.com/wildfly-extras/fuse-patch/issues/126
+[57]: https://github.com/wildfly-extras/fuse-patch/issues/57
+[100]: https://github.com/wildfly-extras/fuse-patch/issues/100
+[112]: https://github.com/wildfly-extras/fuse-patch/issues/112
+[116]: https://github.com/wildfly-extras/fuse-patch/issues/116
+[118]: https://github.com/wildfly-extras/fuse-patch/issues/118
+[124]: https://github.com/wildfly-extras/fuse-patch/issues/124
+
+#### Fuse Patch 1.6.2
+
+**Tasks**
+
+* [#97][97] Display warning when adding duplicate packages to repository
+
+For details see [1.6.2 tasks](https://github.com/wildfly-extras/fuse-patch/issues?q=milestone%3A"1.6.2"+label%3Atask)
+
+[97]: https://github.com/wildfly-extras/fuse-patch/issues/97
+
 #### Fuse Patch 1.6.1
 
 **Bugs**
