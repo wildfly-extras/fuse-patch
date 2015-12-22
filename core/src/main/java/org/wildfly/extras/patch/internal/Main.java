@@ -205,6 +205,11 @@ public class Main {
             mdbuilder.dependencies(dependencies);
         }
         
+        if (options.roles != null) {
+            IllegalStateAssertion.assertTrue(metadata.getRoles().isEmpty(), "Roles already defined: " + metadata);
+            mdbuilder.roles(options.roles);
+        }
+        
         if (options.addCmd != null) {
             IllegalStateAssertion.assertTrue(metadata.getPostCommands().isEmpty(), "Post commands already defined: " + metadata);
             mdbuilder.postCommands(options.addCmd);
