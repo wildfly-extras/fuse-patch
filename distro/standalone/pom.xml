@@ -28,7 +28,7 @@
 
     <name>Fuse Patch :: Distro :: Standalone</name>
 
-    <artifactId>fuse-patch-distro-standalone</artifactId>
+    <artifactId>fuse-patch-standalone</artifactId>
     <packaging>pom</packaging>
 
     <!-- Properties -->
@@ -47,7 +47,7 @@
         </dependency>
         <dependency>
             <groupId>org.wildfly.extras.patch</groupId>
-            <artifactId>fuse-patch-distro-wildfly</artifactId>
+            <artifactId>fuse-patch-wildfly</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
             <type>zip</type>
@@ -103,7 +103,7 @@
                         <configuration>
                             <executable>${fusepatch.home}/bin/fusepatch.${fusepatch.ext}</executable>
                             <arguments>
-                                <argument>--add=file:${fusepatch.home}/repository/fuse-patch-distro-wildfly-${project.version}.zip</argument>
+                                <argument>--add=file:${fusepatch.home}/repository/fuse-patch-wildfly-${project.version}.zip</argument>
                             </arguments>
                         </configuration>
                     </execution>

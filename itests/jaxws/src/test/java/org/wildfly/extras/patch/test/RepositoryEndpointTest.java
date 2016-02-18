@@ -62,7 +62,7 @@ public class RepositoryEndpointTest {
 
 	@ArquillianResource
 	private Deployer deployer;
-	
+
     @Deployment
     public static JavaArchive deployment() {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, "repository-endpoint-test.jar");
@@ -85,30 +85,30 @@ public class RepositoryEndpointTest {
         ClassLoader classLoader = getClass().getClassLoader();
         URL configUrl = classLoader.getResource("/fusepatch.configuration");
         PatchTool patchTool = new PatchToolBuilder().loadConfiguration(configUrl).build();
-        
+
         Repository repository = patchTool.getRepository();
-        
+
         // Test repository base URL
         URL baseURL = repository.getRepositoryURL();
         Assert.assertEquals(new URL("http://localhost:8080/fuse-patch-jaxws/RepositoryEndpoint"), baseURL);
 
-        PatchId pid = PatchId.fromString("fuse-patch-distro-wildfly-" + PatchTool.VERSION);
+        PatchId pid = PatchId.fromString("fuse-patch-wildfly-" + PatchTool.VERSION);
         List<PatchId> pids = repository.queryAvailable(null);
-        
+
         // With the feature pack runtime we need to install the fuse-patch package
         if (pids.size() == 0) {
             URL fileUrl = new URL(System.getProperty(Repository.SYSTEM_PROPERTY_REPOSITORY_URL) + "/" + pid + ".zip");
             Assert.assertEquals(pid, repository.addArchive(fileUrl));
         }
-        
+
         // Verify queryAvailable
         pids = repository.queryAvailable(null);
         Assert.assertEquals(1, pids.size());
         Assert.assertEquals(pid, pids.get(0));
 
         // Verify getLatestAvailable
-        Assert.assertEquals(pid, repository.getLatestAvailable("fuse-patch-distro-wildfly"));
-        
+        Assert.assertEquals(pid, repository.getLatestAvailable("fuse-patch-wildfly"));
+
         // Add foo-1.0.0
         URL fileUrl = getArchiveURL("foo-1.0.0");
         PatchId pidFoo100 = repository.addArchive(fileUrl);
@@ -116,11 +116,11 @@ public class RepositoryEndpointTest {
         Assert.assertEquals(pidFoo100, packFoo100.getPatchId());
         Assert.assertEquals(4, packFoo100.getRecords().size());
         Assert.assertEquals(0, packFoo100.getMetadata().getPostCommands().size());
-        
+
         // Remove foo-1.0.0
         Assert.assertTrue(repository.removeArchive(pidFoo100));
         Assert.assertNull(repository.getLatestAvailable("foo"));
-        
+
         // Add foo-1.0.0
         fileUrl = getArchiveURL("foo-1.0.0");
         PatchMetadata mdFoo100 = new PatchMetadataBuilder().patchId(pidFoo100).roles("FooRole").build();
@@ -131,7 +131,7 @@ public class RepositoryEndpointTest {
         Assert.assertEquals(4, packFoo100.getRecords().size());
         Assert.assertEquals(1, packFoo100.getMetadata().getRoles().size());
         Assert.assertEquals(0, packFoo100.getMetadata().getPostCommands().size());
-        
+
         // Add foo-1.1.0
         fileUrl = getArchiveURL("foo-1.1.0");
         PatchId pidFoo110 = PatchId.fromURL(fileUrl);
@@ -143,19 +143,19 @@ public class RepositoryEndpointTest {
         Assert.assertEquals(3, packFoo110.getRecords().size());
         Assert.assertEquals(1, packFoo110.getMetadata().getRoles().size());
         Assert.assertEquals(1, packFoo110.getMetadata().getPostCommands().size());
-        
+
         // Install foo-1.0.0
         packFoo100 = patchTool.install(pidFoo100, false);
         Assert.assertEquals(pidFoo100, packFoo100.getPatchId());
         Assert.assertEquals(4, packFoo100.getRecords().size());
         Assert.assertEquals(0, packFoo100.getMetadata().getPostCommands().size());
-        
+
         // Update foo
         packFoo110 = patchTool.update("foo", false);
         Assert.assertEquals(pidFoo110, packFoo110.getPatchId());
         Assert.assertEquals(3, packFoo110.getRecords().size());
         Assert.assertEquals(1, packFoo110.getMetadata().getPostCommands().size());
-        
+
         // Add bar-1.0.0
         fileUrl = getArchiveURL("bar-1.0.0");
         PatchId pidBar100 = PatchId.fromURL(fileUrl);
@@ -166,7 +166,7 @@ public class RepositoryEndpointTest {
         Assert.assertEquals(pidBar100, packBar100.getPatchId());
         Assert.assertEquals(2, packBar100.getRecords().size());
         Assert.assertEquals(1, packBar100.getMetadata().getRoles().size());
-        
+
         // Install bar-1.0.0
         try {
             patchTool.install(pidBar100, false);
@@ -191,7 +191,7 @@ public class RepositoryEndpointTest {
 
 	/**
      * foo-1.0.0.zip
-     * 
+     *
      * config/remove-me.properties
      * config/propsA.properties
      * config/propsB.properties
@@ -211,7 +211,7 @@ public class RepositoryEndpointTest {
 
     /**
      * foo-1.1.0.zip
-     * 
+     *
      * config/propsA.properties
      * config/propsB.properties
      * lib/foo-1.1.0.jar
@@ -229,7 +229,7 @@ public class RepositoryEndpointTest {
 
     /**
      * bar-1.0.0.zip
-     * 
+     *
      * config/propsB.properties
      * lib/bar-1.0.0.jar
      */

@@ -48,6 +48,7 @@
         <version.slf4j>1.6.6</version.slf4j>
         <version.wildfly>9.0.2.Final</version.wildfly>
         <version.wildfly.arquillian>1.0.0.CR1</version.wildfly.arquillian>
+        <version.wildfly.core>1.0.2.Final</version.wildfly.core>
         <version.wildfly.camel>3.0.0</version.wildfly.camel>
 
         <!-- Plugin versions -->
@@ -78,7 +79,7 @@
         <module>core</module>
         <module>distro</module>
         <module>docs</module>
-        <module>feature-pack</module>
+        <module>features</module>
         <module>installer</module>
         <module>jaxws</module>
         <module>itests</module>

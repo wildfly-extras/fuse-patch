@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -43,7 +43,7 @@ public abstract class AbstractInstaller {
     protected boolean verbose;
 
     abstract public String getJarName();
-    
+
     public void main(LinkedList<String> args) {
         while (!args.isEmpty()) {
             String arg = args.peekFirst();
@@ -122,22 +122,22 @@ public abstract class AbstractInstaller {
         if (eapHome == null) {
             eapHome = new File(".").toPath().toAbsolutePath();
         }
-        
+
         validateHomePath(eapHome);
-        
+
         ClassLoader classLoader = getClass().getClassLoader();
-        
+
         // Install Fuse Patch Tool
         Path fusepatchPath = eapHome.resolve(Paths.get("modules/system/layers/fuse/org/wildfly/extras/patch"));
         if (!fusepatchPath.toFile().exists()) {
-            
+
             String resname = "META-INF/fuse-patch.version";
             InputStream resource = classLoader.getResourceAsStream(resname);
             IllegalStateAssertion.assertNotNull(resource, "Cannot obtain resource: " + resname);
             BufferedReader br = new BufferedReader(new InputStreamReader(resource));
             String fusepatchVersion = br.readLine().trim();
-            
-            resname = "META-INF/repository/fuse-patch-distro-wildfly-" + fusepatchVersion + ".zip";
+
+            resname = "META-INF/repository/fuse-patch-wildfly-" + fusepatchVersion + ".zip";
             resource = classLoader.getResourceAsStream(resname);
             IllegalStateAssertion.assertNotNull(resource, "Cannot obtain resource: " + resname);
 
@@ -145,8 +145,8 @@ public abstract class AbstractInstaller {
             try (ZipInputStream distro = new ZipInputStream(resource)) {
                 unpack(resname, distro, installedFiles);
             }
-        } 
-        
+        }
+
         // Copy repository content
         Path jarPath = Paths.get(getClass().getProtectionDomain().getCodeSource().getLocation().toURI());
         try (ZipInputStream zipstream = new ZipInputStream(new FileInputStream(jarPath.toFile()))) {
@@ -166,8 +166,8 @@ public abstract class AbstractInstaller {
                 }
             }
         }
-        
-        // Run the install commands 
+
+        // Run the install commands
         String resname = "META-INF/fuse-install.commands";
         InputStream resource = classLoader.getResourceAsStream(resname);
         IllegalStateAssertion.assertNotNull(resource, "Cannot obtain resource: " + resname);

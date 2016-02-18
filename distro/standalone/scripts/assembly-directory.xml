@@ -32,7 +32,7 @@
             <outputDirectory>lib</outputDirectory>
             <useStrictFiltering>true</useStrictFiltering>
             <excludes>
-                <exclude>*:fuse-patch-distro-wildfly</exclude>
+                <exclude>*:fuse-patch-wildfly</exclude>
             </excludes>
             <scope>provided</scope>
             <unpack>false</unpack>
@@ -41,7 +41,7 @@
             <outputDirectory>repository</outputDirectory>
             <useStrictFiltering>true</useStrictFiltering>
             <includes>
-                <include>*:fuse-patch-distro-wildfly</include>
+                <include>*:fuse-patch-wildfly</include>
             </includes>
             <scope>provided</scope>
             <unpack>false</unpack>

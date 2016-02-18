@@ -53,7 +53,7 @@ The standalone distribution already contains the fuse-patch wildfly patch.
 
 ```
 $ bin/fusepatch.sh --query-repository
-fuse-patch-distro-wildfly-2.0.0
+fuse-patch-wildfly-2.0.0
 ```
 
 ### Client Configuration
@@ -75,8 +75,8 @@ The webservice enpoint is expected to be hosted on an application server, which 
 Lets assume we work with WildFly and want to use fusepatch with WildFly.
 
 ```
-$ bin/fusepatch.sh --server ../wildfly-8.2.0.Final --update fuse-patch-distro-wildfly
-Installed fuse-patch-distro-wildfly-2.0.0
+$ bin/fusepatch.sh --server ../wildfly-8.2.0.Final --update fuse-patch-wildfly
+Installed fuse-patch-wildfly-2.0.0
 ```
 
 Note, that the above uses `--update` instead of `--install`, which installs the latest available patch for a given name.
@@ -86,7 +86,7 @@ Now we can switch to WildFly and query the server for installed patches
 ```
 $ cd ../wildfly-8.2.0.Final
 $ bin/fusepatch.sh --query-server
-fuse-patch-distro-wildfly-2.0.0
+fuse-patch-wildfly-2.0.0
 ```
 
 or managed paths
@@ -94,10 +94,10 @@ or managed paths
 ```
 $ cd ../wildfly-8.2.0.Final
 $ bin/fusepatch.sh --query-server-paths modules
-modules/layers.conf [fuse-patch-distro-wildfly-2.0.0]
-modules/system/layers/fuse/org/wildfly/extras/patch/main/args4j-2.0.31.jar [fuse-patch-distro-wildfly-2.0.0]
-modules/system/layers/fuse/org/wildfly/extras/patch/main/fuse-patch-core-1.4.1-SNAPSHOT.jar [fuse-patch-distro-wildfly-2.0.0]
-modules/system/layers/fuse/org/wildfly/extras/patch/main/module.xml [fuse-patch-distro-wildfly-2.0.0]
+modules/layers.conf [fuse-patch-wildfly-2.0.0]
+modules/system/layers/fuse/org/wildfly/extras/patch/main/args4j-2.0.31.jar [fuse-patch-wildfly-2.0.0]
+modules/system/layers/fuse/org/wildfly/extras/patch/main/fuse-patch-core-1.4.1-SNAPSHOT.jar [fuse-patch-wildfly-2.0.0]
+modules/system/layers/fuse/org/wildfly/extras/patch/main/module.xml [fuse-patch-wildfly-2.0.0]
 ```
 
 ###  Loading the Repository
