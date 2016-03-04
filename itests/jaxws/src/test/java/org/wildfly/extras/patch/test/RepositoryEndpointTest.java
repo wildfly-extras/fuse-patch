@@ -92,7 +92,7 @@ public class RepositoryEndpointTest {
         URL baseURL = repository.getRepositoryURL();
         Assert.assertEquals(new URL("http://localhost:8080/fuse-patch-jaxws/RepositoryEndpoint"), baseURL);
 
-        PatchId pid = PatchId.fromString("fuse-patch-wildfly-" + PatchTool.VERSION);
+        PatchId pid = PatchId.fromString("fuse-patch-distro-wildfly-" + PatchTool.VERSION);
         List<PatchId> pids = repository.queryAvailable(null);
 
         // With the feature pack runtime we need to install the fuse-patch package
@@ -107,7 +107,7 @@ public class RepositoryEndpointTest {
         Assert.assertEquals(pid, pids.get(0));
 
         // Verify getLatestAvailable
-        Assert.assertEquals(pid, repository.getLatestAvailable("fuse-patch-wildfly"));
+        Assert.assertEquals(pid, repository.getLatestAvailable("fuse-patch-distro-wildfly"));
 
         // Add foo-1.0.0
         URL fileUrl = getArchiveURL("foo-1.0.0");

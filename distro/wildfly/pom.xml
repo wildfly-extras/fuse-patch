@@ -28,7 +28,7 @@
 
     <name>Fuse Patch :: Distro :: WildFly</name>
 
-    <artifactId>fuse-patch-wildfly</artifactId>
+    <artifactId>fuse-patch-distro-wildfly</artifactId>
     <packaging>pom</packaging>
 
     <dependencies>

@@ -26,12 +26,12 @@
     </properties>
 
     <resources>
-        <resource-root path="aether-api.jar"/>
-        <resource-root path="aether-impl.jar"/>
-        <resource-root path="aether-connector-basic.jar"/>
-        <resource-root path="aether-transport-file.jar"/>
-        <resource-root path="aether-transport-http.jar"/>
-        <resource-root path="maven-aether-provider.jar"/>
+        <resource-root path="aether-api-${version.eclipse.aether}.jar"/>
+        <resource-root path="aether-impl-${version.eclipse.aether}.jar"/>
+        <resource-root path="aether-connector-basic-${version.eclipse.aether}.jar"/>
+        <resource-root path="aether-transport-file-${version.eclipse.aether}.jar"/>
+        <resource-root path="aether-transport-http-${version.eclipse.aether}.jar"/>
+        <resource-root path="maven-aether-provider-${version.apache.maven}.jar"/>
     </resources>
 
     <dependencies>

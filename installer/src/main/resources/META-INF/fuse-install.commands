@@ -1,9 +1,9 @@
 #
-# bin/fusepatch.sh --add file:fusepatch/repository/fuse-patch-wildfly-${project.version}.zip
+# bin/fusepatch.sh --add file:fusepatch/repository/fuse-patch-distro-wildfly-${project.version}.zip
 #
-java -Djboss.home=. -Dlogging.configuration=file:bin/fusepatch-logging.properties -jar jboss-modules.jar -mp modules org.wildfly.extras.patch --add file:fusepatch/repository/fuse-patch-wildfly-${project.version}.zip
+java -Djboss.home=. -Dlogging.configuration=file:bin/fusepatch-logging.properties -jar jboss-modules.jar -mp modules org.wildfly.extras.patch --add file:fusepatch/repository/fuse-patch-distro-wildfly-${project.version}.zip
 
 #
-# bin/fusepatch.sh --update fuse-patch-wildfly
+# bin/fusepatch.sh --update fuse-patch-distro-wildfly
 #
-java -Djboss.home=. -Dlogging.configuration=file:bin/fusepatch-logging.properties -jar jboss-modules.jar -mp modules org.wildfly.extras.patch --update fuse-patch-wildfly
+java -Djboss.home=. -Dlogging.configuration=file:bin/fusepatch-logging.properties -jar jboss-modules.jar -mp modules org.wildfly.extras.patch --update fuse-patch-distro-wildfly

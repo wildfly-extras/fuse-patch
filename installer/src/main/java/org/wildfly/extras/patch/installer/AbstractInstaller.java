@@ -137,7 +137,7 @@ public abstract class AbstractInstaller {
             BufferedReader br = new BufferedReader(new InputStreamReader(resource));
             String fusepatchVersion = br.readLine().trim();
 
-            resname = "META-INF/repository/fuse-patch-wildfly-" + fusepatchVersion + ".zip";
+            resname = "META-INF/repository/fuse-patch-distro-wildfly-" + fusepatchVersion + ".zip";
             resource = classLoader.getResourceAsStream(resname);
             IllegalStateAssertion.assertNotNull(resource, "Cannot obtain resource: " + resname);
 

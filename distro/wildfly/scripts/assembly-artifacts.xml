@@ -81,7 +81,7 @@
 		</fileSet>
         <fileSet>
             <outputDirectory>/</outputDirectory>
-            <directory>../../feature-pack/src/main/resources/content</directory>
+            <directory>../../features/core/src/main/resources/content</directory>
             <excludes>
                 <exclude>bin/*.bat</exclude>
                 <exclude>bin/*.sh</exclude>
@@ -89,7 +89,7 @@
         </fileSet>
         <fileSet>
             <outputDirectory>/</outputDirectory>
-            <directory>../../feature-pack/src/main/resources/content</directory>
+            <directory>../../features/core/src/main/resources/content</directory>
             <includes>
                 <include>bin/*.bat</include>
                 <include>bin/*.sh</include>

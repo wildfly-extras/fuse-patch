@@ -40,7 +40,7 @@
         </dependency>
         <dependency>
             <groupId>org.wildfly.extras.patch</groupId>
-            <artifactId>fuse-patch-wildfly</artifactId>
+            <artifactId>fuse-patch-distro-wildfly</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
             <exclusions>
