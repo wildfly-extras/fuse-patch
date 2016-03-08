@@ -57,7 +57,7 @@ public final class MetadataParser {
     public static final String MANAGED_PATHS = "managed-paths.metadata";
     
     static final String VERSION_PREFIX = "# fusepatch:";
-    static final String PATCHID_PREFIX = "# patchId:";
+    static final String PATCHID_PREFIX = "# patch id:";
 
     public static Patch buildPatchFromZip(PatchId patchId, Record.Action action, ZipInputStream zipInput) throws IOException {
         IllegalArgumentAssertion.assertNotNull(zipInput, "zipInput");
