@@ -1,16 +1,16 @@
 Release Notes
 -------------
 
-Fuse-Patch 2.1.1
+Fuse Patch 2.2.0
 
-**Bugs**
+**Tasks**
 
-* [#134][134] Incompatible metadata change in version 2.0
-* [#136][136] Release prepare does not install artefacts in local repo
+* [#137][137] Consolidate core & full feature pack
+* [#138][138] Upgrade to wildfly-10.0.0
 
-For details see [2.1.1 bugs](https://github.com/wildfly-extras/fuse-patch/issues?q=milestone%3A"2.1.1"+label%3Abug)
+For details see [2.2.0 tasks](https://github.com/wildfly-extras/fuse-patch/issues?q=milestone%3A"2.2.0"+label%3Atask)
 
-[134]: https://github.com/wildfly-extras/fuse-patch/issues/134
-[136]: https://github.com/wildfly-extras/fuse-patch/issues/136
+[137]: https://github.com/wildfly-extras/fuse-patch/issues/137
+[138]: https://github.com/wildfly-extras/fuse-patch/issues/138
 
 Enjoy
