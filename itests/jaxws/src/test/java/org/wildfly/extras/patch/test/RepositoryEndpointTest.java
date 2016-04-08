@@ -54,6 +54,7 @@ import org.wildfly.extras.patch.PatchMetadataBuilder;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.Repository;
+import org.wildfly.extras.patch.repository.LocalFileRepository;
 import org.wildfly.extras.patch.test.subA.ClassA;
 import org.wildfly.extras.patch.utils.IOUtils;
 
@@ -135,7 +136,8 @@ public class RepositoryEndpointTest {
         // Add foo-1.1.0
         fileUrl = getArchiveURL("foo-1.1.0");
         PatchId pidFoo110 = PatchId.fromURL(fileUrl);
-        PatchMetadata mdFoo110 = new PatchMetadataBuilder().patchId(pidFoo110).roles("FooRole").postCommands("echo hello world").build();
+        String cmd = getPostCommand("echo hello world");
+        PatchMetadata mdFoo110 = new PatchMetadataBuilder().patchId(pidFoo110).roles("FooRole").postCommands(cmd).build();
         DataHandler dataFoo110 = new DataHandler(new URLDataSource(fileUrl));
         Assert.assertEquals(pidFoo110, repository.addArchive(mdFoo110, dataFoo110, false));
         Patch packFoo110 = repository.getPatch(pidFoo110);
@@ -176,7 +178,14 @@ public class RepositoryEndpointTest {
         }
     }
 
-    private URL getArchiveURL(String name) throws IOException {
+    private String getPostCommand(String cmd) {
+    	if (LocalFileRepository.isWindows()) {
+    		cmd = "cmd /c " + cmd;
+    	}
+		return cmd;
+	}
+
+	private URL getArchiveURL(String name) throws IOException {
     	Path dataDir = Paths.get(System.getProperty("jboss.server.data.dir"));
     	Path patchDir = dataDir.resolve("fusepatch");
     	patchDir.toFile().mkdirs();

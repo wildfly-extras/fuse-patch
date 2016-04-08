@@ -19,6 +19,7 @@
  */
 package org.wildfly.extras.patch.test;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -51,7 +52,7 @@ public class AetherRepositoryTest extends AbstractRepositoryTest {
     PatchTool getPatchTool(final URL repoURL) {
         AetherFactory factory = new DefaultAetherFactory() {
             
-            Path rootPath = Paths.get(repoURL.getPath());
+            Path rootPath = new File(repoURL.getPath()).toPath();
             {
                 try {
                     IOUtils.rmdirs(rootPath);

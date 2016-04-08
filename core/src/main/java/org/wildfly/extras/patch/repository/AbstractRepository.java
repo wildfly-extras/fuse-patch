@@ -171,8 +171,8 @@ public abstract class AbstractRepository implements Repository {
             
             // Copy regular patch content to a target file
             if (oneoffId == null) {
-                try (OutputStream output = new FileOutputStream(targetFile)) {
-                    IOUtils.copy(dataHandler.getInputStream(), output);
+                try (InputStream input = dataHandler.getInputStream(); OutputStream output = new FileOutputStream(targetFile)) {
+                    IOUtils.copy(input, output);
                 }
             }
             

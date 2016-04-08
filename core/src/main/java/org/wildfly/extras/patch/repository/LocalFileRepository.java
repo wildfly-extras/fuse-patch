@@ -62,6 +62,10 @@ public final class LocalFileRepository extends AbstractRepository {
         PatchAssertion.assertTrue(rootPath.toFile().isDirectory(), "Repository root does not exist: " + rootPath);
         LOG.debug("Repository location: {}", rootPath);
     }
+    
+    public static boolean isWindows () {
+    	return System.getProperty("os.name").toLowerCase().contains("win");
+    }
 
     public static URL getDefaultRepositoryURL() {
         String repoSpec = System.getProperty(Repository.SYSTEM_PROPERTY_REPOSITORY_URL);
@@ -121,9 +125,12 @@ public final class LocalFileRepository extends AbstractRepository {
         // Remove the source file when it was placed in the repository
         if (dataHandler.getDataSource() instanceof URLDataSource) {
             URL sourceURL = ((URLDataSource)dataHandler.getDataSource()).getURL();
-            Path sourcePath = Paths.get(sourceURL.getPath());
+            Path sourcePath = new File(sourceURL.getPath()).toPath();
             if (sourcePath.startsWith(rootPath)) {
-                sourcePath.toFile().delete();
+            	File sourceFile = sourcePath.toFile();
+            	File targetFile = new File (sourceFile.getPath().concat(".delete"));
+            	sourceFile.renameTo(targetFile);
+                targetFile.delete();
             }
         }
 

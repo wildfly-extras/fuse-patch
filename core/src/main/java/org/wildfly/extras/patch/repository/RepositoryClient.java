@@ -19,6 +19,7 @@
  */
 package org.wildfly.extras.patch.repository;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -27,7 +28,8 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 
 import javax.activation.DataHandler;
-import javax.activation.URLDataSource;
+import javax.activation.DataSource;
+import javax.activation.FileDataSource;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Service;
 import javax.xml.ws.WebServiceException;
@@ -40,7 +42,7 @@ import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 
-public class RepositoryClient implements Repository {
+public final class RepositoryClient implements Repository {
 
     private final Lock lock;
     private final URL endpointUrl;
@@ -115,32 +117,15 @@ public class RepositoryClient implements Repository {
 
     @Override
     public PatchId addArchive(URL fileUrl) throws IOException {
-        lock.tryLock();
-        try {
-            PatchId patchId = PatchId.fromURL(fileUrl);
-            DataHandler dataHandler = new DataHandler(new URLDataSource(fileUrl));
-            PatchMetadata metadata = new PatchMetadataBuilder().patchId(patchId).build();
-            return addArchive(metadata, dataHandler, false);
-        } catch (WebServiceException ex) {
-            throw unwrap(ex);
-        } finally {
-            lock.unlock();
-        }
+        return addArchive(fileUrl, false);
     }
 
     @Override
     public PatchId addArchive(URL fileUrl, boolean force) throws IOException {
-        lock.tryLock();
-        try {
-            PatchId patchId = PatchId.fromURL(fileUrl);
-            DataHandler dataHandler = new DataHandler(new URLDataSource(fileUrl));
-            PatchMetadata metadata = new PatchMetadataBuilder().patchId(patchId).build();
-            return addArchive(metadata, dataHandler, force);
-        } catch (WebServiceException ex) {
-            throw unwrap(ex);
-        } finally {
-            lock.unlock();
-        }
+        PatchId patchId = PatchId.fromURL(fileUrl);
+        DataSource dataSource = new FileDataSource(new File(fileUrl.getPath()));
+        PatchMetadata metadata = new PatchMetadataBuilder().patchId(patchId).build();
+        return addArchive(metadata, new DataHandler(dataSource), force);
     }
 
     @Override

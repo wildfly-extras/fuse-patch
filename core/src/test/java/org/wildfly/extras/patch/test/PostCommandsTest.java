@@ -40,6 +40,7 @@ import org.wildfly.extras.patch.Repository;
 import org.wildfly.extras.patch.Server;
 import org.wildfly.extras.patch.SmartPatch;
 import org.wildfly.extras.patch.internal.Main;
+import org.wildfly.extras.patch.repository.LocalFileRepository;
 import org.wildfly.extras.patch.utils.IOUtils;
 
 public class PostCommandsTest {
@@ -66,8 +67,14 @@ public class PostCommandsTest {
         Server server = patchTool.getServer();
         Repository repo = patchTool.getRepository();
         
+        String[] cmdarr = new String[] {"echo first", "echo after"};
+        if (LocalFileRepository.isWindows()) {
+        	cmdarr[0] = "cmd /c " + cmdarr[0];
+        	cmdarr[1] = "cmd /c " + cmdarr[1];
+        }
+        
         PatchId pid100 = PatchId.fromURL(Archives.getZipUrlFoo100());
-        PatchMetadata md100 = new PatchMetadataBuilder().patchId(pid100).postCommands("echo Do first", "echo Do after").build();
+        PatchMetadata md100 = new PatchMetadataBuilder().patchId(pid100).postCommands(cmdarr).build();
         DataHandler data100 = new DataHandler(new URLDataSource(Archives.getZipUrlFoo100()));
         repo.addArchive(md100, data100, false);
 
@@ -82,8 +89,8 @@ public class PostCommandsTest {
         // Verify post install commands
         List<String> cmds = smartPatch.getMetadata().getPostCommands();
         Assert.assertEquals(2, cmds.size());
-        Assert.assertEquals("echo Do first", cmds.get(0));
-        Assert.assertEquals("echo Do after", cmds.get(1));
+        Assert.assertEquals(cmdarr[0], cmds.get(0));
+        Assert.assertEquals(cmdarr[1], cmds.get(1));
         
         // Update the server with a known patch
         Patch patch = server.applySmartPatch(smartPatch, false);

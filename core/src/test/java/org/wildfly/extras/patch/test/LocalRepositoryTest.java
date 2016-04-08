@@ -81,8 +81,8 @@ public class LocalRepositoryTest extends AbstractRepositoryTest {
         Repository repo = patchTool.getRepository();
 
         // copy a file to the root of the repository
-        Path zipPathA = Paths.get(Archives.getZipUrlFoo100().toURI());
-        File targetFile = Paths.get(repoURL[5].toURI()).resolve(zipPathA.getFileName()).toFile();
+        Path zipPathA = new File(Archives.getZipUrlFoo100().toURI()).toPath();
+        File targetFile = new File(repoURL[5].toURI()).toPath().resolve(zipPathA.getFileName()).toFile();
         Files.copy(zipPathA, targetFile.toPath());
 
         PatchId patchId = repo.addArchive(targetFile.toURI().toURL());
