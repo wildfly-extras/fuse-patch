@@ -1,16 +1,14 @@
 Release Notes
 -------------
 
-Fuse Patch 2.2.0
+Fuse Patch 2.2.1
 
-**Tasks**
+**Bugs**
 
-* [#137][137] Consolidate core & full feature pack
-* [#138][138] Upgrade to wildfly-10.0.0
+* [#130][130] Cannot derive local repo URL on Windows
 
-For details see [2.2.0 tasks](https://github.com/wildfly-extras/fuse-patch/issues?q=milestone%3A"2.2.0"+label%3Atask)
+For details see [2.2.1 bugs](https://github.com/wildfly-extras/fuse-patch/issues?q=milestone%3A"2.2.1"+label%3Abug)
 
-[137]: https://github.com/wildfly-extras/fuse-patch/issues/137
-[138]: https://github.com/wildfly-extras/fuse-patch/issues/138
+[130]: https://github.com/wildfly-extras/fuse-patch/issues/130
 
 Enjoy
