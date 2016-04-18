@@ -152,6 +152,13 @@
                             <type>war</type>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>wildfly-shutdown</id>
+                        <goals>
+                            <goal>shutdown</goal>
+                        </goals>
+                        <phase>post-integration-test</phase>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
