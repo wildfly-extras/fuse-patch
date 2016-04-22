@@ -92,7 +92,6 @@ public class ConfigSupport {
                 ConfigLogger.info("Processing config for: " + plugin.getConfigName());
 
                 applyLayerChanges(jbossHome, plugin, enable);
-
                 applyConfigurationChanges(jbossHome, plugin, enable);
             }
         }
@@ -255,7 +254,6 @@ public class ConfigSupport {
         domainPaths.add(Paths.get("domain", "configuration", "domain.xml"));
 
         String message = (enable ? "\tEnable " : "\tDisable ") + plugin.getConfigName() + " configuration in: ";
-
         String lineSeparator = System.getProperty("line.separator");
 
         SAXBuilder jdom = new SAXBuilder();
@@ -374,16 +372,33 @@ public class ConfigSupport {
         return out.toByteArray();
     }
 
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static Element findElementWithAttributeValue(Element element, String name, Namespace ns, String attrName, String attrValue) {
-        if (element.getName().equals(name) && element.getNamespace().equals(ns)) {
-            Attribute attribute = element.getAttribute(attrName);
-            if (attribute != null && attrValue.equals(attribute.getValue())) {
-                return element;
+        return findElementWithAttributeValue(element, name, attrName, attrValue, ns);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Element findElementWithAttributeValue(Element element, String name, String attrName, String attrValue, Namespace... supportedNamespaces) {
+        for (Namespace ns : supportedNamespaces) {
+            if (element.getName().equals(name) && element.getNamespace().equals(ns)) {
+                Attribute attribute = element.getAttribute(attrName);
+                if (attribute != null && attrValue.equals(attribute.getValue())) {
+                    return element;
+                }
+            }
+            for (Element ch : (List<Element>) element.getChildren()) {
+                Element result = findElementWithAttributeValue(ch, name, attrName, attrValue, supportedNamespaces);
+                if (result != null) {
+                    return result;
+                }
             }
         }
-        for (Element ch : (List<Element>) element.getChildren()) {
-            Element result = findElementWithAttributeValue(ch, name, ns, attrName, attrValue);
+        return null;
+    }
+
+    public static Element findChildElement(Element parent, String name, Namespace... supportedNamespaces) {
+        for (Namespace ns : supportedNamespaces) {
+            Element result = parent.getChild(name, ns);
             if (result != null) {
                 return result;
             }
@@ -408,18 +423,24 @@ public class ConfigSupport {
         return rc;
     }
 
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static List<Element> findProfileElements(Document doc, Namespace ns) {
+        return findProfileElements(doc, new Namespace[] {ns});
+    }
+
+    @SuppressWarnings("unchecked")
+    public static List<Element> findProfileElements(Document doc, Namespace... supportedNamespaces) {
         List<Element> result = new ArrayList<>();
-        Element profile = doc.getRootElement().getChild("profile", ns);
-        if (profile != null) {
-            result.add(profile);
-        }
-        Element profiles = doc.getRootElement().getChild("profiles", ns);
-        if (profiles != null) {
-            result.addAll(profiles.getChildren("profile", ns));
+        for (Namespace ns : supportedNamespaces) {
+            Element profile = doc.getRootElement().getChild("profile", ns);
+            if (profile != null) {
+                result.add(profile);
+            }
+            Element profiles = doc.getRootElement().getChild("profiles", ns);
+            if (profiles != null) {
+                result.addAll(profiles.getChildren("profile", ns));
+            }
         }
         return result;
     }
-
 }

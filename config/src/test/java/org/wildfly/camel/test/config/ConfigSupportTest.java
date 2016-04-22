@@ -58,7 +58,7 @@ public class ConfigSupportTest {
             @Override
             public void applyStandaloneConfigChange(ConfigContext context, boolean enable) {
             }
-            
+
             @Override
             public void applyDomainConfigChange(ConfigContext context, boolean enable) {
             }
@@ -109,7 +109,7 @@ public class ConfigSupportTest {
             @Override
             public void applyStandaloneConfigChange(ConfigContext context, boolean enable) {
             }
-            
+
             @Override
             public void applyDomainConfigChange(ConfigContext context, boolean enable) {
             }
