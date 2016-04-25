@@ -1,14 +1,14 @@
 Release Notes
 -------------
 
-Fuse Patch 2.2.2
+Fuse Patch 2.3.0
 
-**Bugs**
+**Features**
 
-* [#142][142] Missing directories in WildFly distro
+* [#144][144] Add plugin support for multiple namespace versions
 
-For details see [2.2.2 bugs](https://github.com/wildfly-extras/fuse-patch/issues?q=milestone%3A"2.2.2"+label%3Abug)
+For details see [2.3.0 features](https://github.com/wildfly-extras/fuse-patch/issues?q=milestone%3A"2.3.0"+label%3Afeature)
 
-[142]: https://github.com/wildfly-extras/fuse-patch/issues/142
+[144]: https://github.com/wildfly-extras/fuse-patch/issues/144
 
 Enjoy
