@@ -22,6 +22,8 @@ package org.wildfly.extras.patch.server;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -69,6 +71,17 @@ public final class WildFlyServer extends AbstractServer {
             }
         }
         return jbossHome != null ? Paths.get(jbossHome) : null;
+    }
+
+    @Override
+    public URL getDefaultRepositoryURL() {
+        Path jbossHome = getServerHome().toFile().toPath();
+        Path repoPath = jbossHome.resolve("fusepatch").resolve("repository");
+        try {
+            return repoPath.toUri().toURL();
+        } catch (MalformedURLException ex) {
+            throw new IllegalStateException("Invalid repository path", ex);
+        }
     }
 
     @Override

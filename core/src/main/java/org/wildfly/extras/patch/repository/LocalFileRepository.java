@@ -27,7 +27,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.CodeSource;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 
@@ -42,9 +41,7 @@ import org.wildfly.extras.patch.Patch;
 import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchMetadata;
 import org.wildfly.extras.patch.Repository;
-import org.wildfly.extras.patch.internal.Main;
 import org.wildfly.extras.patch.internal.MetadataParser;
-import org.wildfly.extras.patch.server.WildFlyServer;
 import org.wildfly.extras.patch.utils.IOUtils;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.PatchAssertion;
@@ -71,18 +68,6 @@ public final class LocalFileRepository extends AbstractRepository {
         String repoSpec = System.getProperty(Repository.SYSTEM_PROPERTY_REPOSITORY_URL);
         if (repoSpec == null) {
             repoSpec = System.getenv(Repository.ENV_PROPERTY_REPOSITORY_URL);
-        }
-        if (repoSpec == null) {
-            CodeSource codeSource = Main.class.getProtectionDomain().getCodeSource();
-            URL codeLocation = codeSource != null ? codeSource.getLocation() : null;
-            if (codeLocation != null) {
-                String modulePath = "modules/system/layers/" + WildFlyServer.MODULE_LAYER + "/org/wildfly/extras/patch";
-                if (codeLocation.getPath().contains(modulePath)) {
-                    Path jbossHome = Paths.get(codeLocation.getPath().substring(0, codeLocation.getPath().indexOf(modulePath)));
-                    Path repositoryPath = jbossHome.resolve("fusepatch").resolve("repository");
-                    repoSpec = repositoryPath.toString();
-                }
-            }
         }
         URL repoUrl = null;
         if (repoSpec != null) {
