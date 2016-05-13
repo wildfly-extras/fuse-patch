@@ -20,6 +20,7 @@
 package org.wildfly.extras.patch;
 
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -38,6 +39,11 @@ public interface Server {
 	 */
 	Path getServerHome();
 	
+	/**
+	 * Get the default repository URL
+	 */
+    URL getDefaultRepositoryURL();
+    
     /**
      * Get the audit log
      */

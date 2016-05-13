@@ -53,13 +53,16 @@ public final class PatchToolBuilder {
     private String username;
     private String password;
 
+    private Server server;
+    private Repository repository;
+
     public PatchToolBuilder loadConfiguration(URL configUrl) throws IOException {
         IllegalArgumentAssertion.assertNotNull(configUrl, "configUrl");
         Configuration config = Configuration.load(configUrl);
         config.loadPatchToolBuilder(this);
         return this;
     }
-    
+
     public PatchToolBuilder customLock(ReentrantLock lock) {
         this.lock = lock;
         return this;
@@ -102,39 +105,50 @@ public final class PatchToolBuilder {
     }
 
     private Server buildServer() {
-        Server server = null;
-        if (serverFactory != null) {
-            server = serverFactory.getServer();
-        } else if (serverPath != null) {
-            server = new WildFlyServer(lock, serverPath);
+        if (server == null) {
+            if (serverFactory != null) {
+                server = serverFactory.getServer();
+            } else {
+                if (serverPath == null) {
+                    serverPath = WildFlyServer.getDefaultServerPath();
+                }
+                if (serverPath != null) {
+                    server = new WildFlyServer(lock, serverPath);
+                }
+            }
         }
         return server;
     }
 
     private Repository buildRepository() {
-        Repository repository = null;
+        if (repository == null) {
 
-        // Aether repository
-        if (aetherFactory != null) {
-            repository = new AetherRepository(lock, aetherFactory);
+            // Aether repository
+            if (aetherFactory != null) {
+                repository = new AetherRepository(lock, aetherFactory);
 
-        } else if (repoUrl != null) {
-            
-            // Remote jaxws repository
-            String protocol = repoUrl.getProtocol();
-            if (protocol.startsWith("http")) {
-                repository = new RepositoryClient(lock, repoUrl, username, password);
+            } else {
+
+                if (repoUrl == null) {
+                    repoUrl = buildServer().getDefaultRepositoryURL();
+                    IllegalStateAssertion.assertNotNull(repoUrl, "Cannot obtain repository URL");
+                }
+
+                // Remote jaxws repository
+                String protocol = repoUrl.getProtocol();
+                if (protocol.startsWith("http")) {
+                    repository = new RepositoryClient(lock, repoUrl, username, password);
+                }
+
+                // Local file repository
+                if (protocol.equals("file")) {
+                    Path rootPath = getAbsolutePath(repoUrl);
+                    repository = new LocalFileRepository(lock, rootPath);
+                }
+
+                IllegalStateAssertion.assertNotNull(repository, "Unsupported protocol: " + protocol);
             }
-            
-            // Local file repository
-            if (protocol.equals("file")) {
-                Path rootPath = getAbsolutePath(repoUrl);
-                repository = new LocalFileRepository(lock, rootPath);
-            }
-            
-            IllegalStateAssertion.assertNotNull(repository, "Unsupported protocol: " + protocol);
         }
-        
         return repository;
     }
 
