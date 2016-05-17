@@ -306,6 +306,9 @@ public abstract class AbstractServer implements Server {
         }
     }
 
+    @Override
+    public abstract void cleanUp();
+
     private Thread startStreaming(final InputStream input, final OutputStream output) {
         Thread thread = new Thread("io") {
             @Override
@@ -395,7 +398,15 @@ public abstract class AbstractServer implements Server {
         ManagedPath managedPath = managedPaths.getManagedPath(path);
         List<PatchId> owners = managedPath.getOwners();
         if (!owners.contains(Server.SERVER_ID)) {
-            Files.deleteIfExists(homePath.resolve(path));
+            Path pathToRemove = homePath.resolve(path);
+            try {
+                Files.deleteIfExists(pathToRemove);
+            } catch (Exception e) {
+                // Something prevented the file being deleted, so try again on VM exit
+                File file = pathToRemove.toFile();
+                file.deleteOnExit();
+                LOG.warn("Deleting {} on exit due to: {}", file.getAbsoluteFile(), e.getMessage());
+            }
         }
 
         // Recursively remove managed dirs that are empty 

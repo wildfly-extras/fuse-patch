@@ -74,4 +74,9 @@ public interface Server {
 	 * Apply a smart patch and return the result
 	 */
 	Patch applySmartPatch(SmartPatch smartPatch, boolean force) throws IOException;
+
+	/**
+	 * Apply cleanup tasks to a server
+	 */
+	void cleanUp();
 }

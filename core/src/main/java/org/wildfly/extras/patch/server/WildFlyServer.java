@@ -19,17 +19,23 @@
  */
 package org.wildfly.extras.patch.server;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.locks.Lock;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,6 +124,49 @@ public final class WildFlyServer extends AbstractServer {
                 LOG.warn("Layers config does not contain '" + MODULE_LAYER + "', writing: {}", value);
                 try (FileWriter fw = new FileWriter(layersPath.toFile())) {
                     props.store(fw, "Fixed by fusepatch");
+                }
+            }
+        }
+    }
+
+    @Override
+    public void cleanUp() {
+        final List<String> currentFiles = new ArrayList<>();
+        Path patchModuleBase = getServerHome().resolve("modules/system/layers/fuse/org/wildfly/extras/");
+        if (patchModuleBase.toFile().exists()) {
+            String[] patchModuleNames = {"config", "patch"};
+            for (String moduleName : patchModuleNames) {
+                Path modulePath = Paths.get(patchModuleBase.toString(), moduleName, "main");
+                File moduleXML = modulePath.resolve("module.xml").toFile();
+                if (moduleXML.exists()) {
+                    try (BufferedReader br = new BufferedReader(new FileReader(moduleXML))) {
+                        String line;
+                        while((line = br.readLine()) != null) {
+                            Pattern compile = Pattern.compile(".*path=\"(.*)\".*");
+                            Matcher matcher = compile.matcher(line);
+                            if (matcher.matches() && matcher.group(1).endsWith(".jar")) {
+                                currentFiles.add(matcher.group(1));
+                            }
+                        }
+                    } catch (Exception e) {
+                        LOG.warn("Clean up operation failed reading {}", moduleXML.getAbsoluteFile());
+                    }
+                }
+
+                String[] filesToClean = modulePath.toFile().list(new FilenameFilter() {
+                    @Override
+                    public boolean accept(File dir, String name) {
+                        return !currentFiles.contains(name) && name.endsWith(".jar");
+                    }
+                });
+
+                for (String fileName : filesToClean) {
+                    Path path = modulePath.resolve(fileName);
+                    try {
+                        Files.delete(path);
+                    } catch (IOException e) {
+                        LOG.warn("Clean up operation failed to delete {}", path.toString());
+                    }
                 }
             }
         }

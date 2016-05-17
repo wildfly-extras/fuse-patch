@@ -102,7 +102,7 @@ public class Main {
         }
         
 	    boolean opfound = false;
-	    
+
         // Query the repository
 		if (options.queryRepository) {
             PatchTool patchTool = builder.build();
@@ -144,6 +144,7 @@ public class Main {
         // Install to server
         if (options.installId != null) {
             PatchTool patchTool = builder.serverPath(options.serverHome).build();
+            patchTool.getServer().cleanUp();
             patchTool.install(PatchId.fromString(options.installId), options.force);
             opfound = true;
         }
@@ -151,13 +152,15 @@ public class Main {
         // Update the server
         if (options.updateName != null) {
             PatchTool patchTool = builder.serverPath(options.serverHome).build();
+            patchTool.getServer().cleanUp();
             patchTool.update(options.updateName, options.force);
             opfound = true;
         } 
         
-        // Install to server
+        // Uninstall patch from server
         if (options.uninstallId != null) {
             PatchTool patchTool = builder.serverPath(options.serverHome).build();
+            patchTool.getServer().cleanUp();
             patchTool.uninstall(PatchId.fromString(options.uninstallId));
             opfound = true;
         }

@@ -28,6 +28,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.LinkedList;
 import java.util.Properties;
 import java.util.zip.ZipEntry;
@@ -128,17 +129,12 @@ public abstract class AbstractInstaller {
         ClassLoader classLoader = getClass().getClassLoader();
 
         // Install Fuse Patch Tool
-        Path fusepatchPath = eapHome.resolve(Paths.get("modules/system/layers/fuse/org/wildfly/extras/patch"));
-        if (!fusepatchPath.toFile().exists()) {
+        Path fusePatchPath = eapHome.resolve(Paths.get("modules/system/layers/fuse/org/wildfly/extras/patch"));
+        if (mustInstallPatchDistro(fusePatchPath)) {
 
-            String resname = "META-INF/fuse-patch.version";
-            InputStream resource = classLoader.getResourceAsStream(resname);
-            IllegalStateAssertion.assertNotNull(resource, "Cannot obtain resource: " + resname);
-            BufferedReader br = new BufferedReader(new InputStreamReader(resource));
-            String fusepatchVersion = br.readLine().trim();
-
-            resname = "META-INF/repository/fuse-patch-distro-wildfly-" + fusepatchVersion + ".zip";
-            resource = classLoader.getResourceAsStream(resname);
+            Version fusepatchVersion = getVersion();
+            String resname = "META-INF/repository/fuse-patch-distro-wildfly-" + fusepatchVersion + ".zip";
+            InputStream resource = classLoader.getResourceAsStream(resname);;
             IllegalStateAssertion.assertNotNull(resource, "Cannot obtain resource: " + resname);
 
             Properties installedFiles = new Properties();
@@ -175,11 +171,31 @@ public abstract class AbstractInstaller {
         for (String line = br.readLine(); line != null; line = br.readLine()) {
             line = line.trim();
             if (line.length() > 0 && !line.startsWith("#")) {
-                info("Run command: " + line);
-                Process proc = Support.exec(line.split("\\s"), eapHome.toFile());
-                IllegalStateAssertion.assertEquals(0, proc.waitFor(), "Command did not terminate normally");
+                runCommand(line);
             }
         }
+    }
+
+    protected boolean mustInstallPatchDistro(Path fusePatchPath) {
+        return !fusePatchPath.toFile().exists();
+    }
+
+    protected final Version getVersion() {
+        String resname = "META-INF/fuse-patch.version";
+        InputStream resource = Support.class.getClassLoader().getResourceAsStream(resname);
+        IllegalStateAssertion.assertNotNull(resource, "Cannot obtain resource: " + resname);
+        BufferedReader br = new BufferedReader(new InputStreamReader(resource));
+        try {
+            return Version.get(br.readLine().trim());
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to read version metadata", e);
+        }
+    }
+
+    protected void runCommand(String cmd) throws Exception {
+        info("Run command: " + cmd);
+        Process proc = Support.exec(cmd.split("\\s"), eapHome.toFile());
+        IllegalStateAssertion.assertEquals(0, proc.waitFor(), "Command did not terminate normally");
     }
 
     private void validateHomePath(Path homePath) {
@@ -198,16 +214,16 @@ public abstract class AbstractInstaller {
             } else {
                 if (targetPath.toFile().exists()) {
                     if (Support.computeCRC32(targetPath.toFile()) != entry.getCrc()) {
-                        info("WARN: Existing file found: not overwriting: " + targetPath);
+                        info("WARN: Existing file found: " + targetPath);
                     }
-                } else {
-                    debug("extracting: " + entryName);
-                    Files.copy(zipstream, targetPath);
-                    if (targetPath.toString().endsWith(".sh") || targetPath.toString().endsWith(".bat")) {
-                        targetPath.toFile().setExecutable(true);
-                    }
-                    installedFiles.setProperty(entry.getName(), "" + entry.getCrc());
                 }
+
+                debug("extracting: " + entryName);
+                Files.copy(zipstream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                if (targetPath.toString().endsWith(".sh") || targetPath.toString().endsWith(".bat")) {
+                    targetPath.toFile().setExecutable(true);
+                }
+                installedFiles.setProperty(entry.getName(), "" + entry.getCrc());
             }
         }
     }
