@@ -57,26 +57,39 @@ public abstract class PatchTool {
 
     /**
      * Get the server instance
+     * @return The server instance
      */
     public abstract Server getServer();
 
     /**
      * Get the patch repository
+     * @return The patch repository
      */
     public abstract Repository getRepository();
 
     /**
      * Install the given patch id to the server
+     * @param patchId The id of the patch to install
+     * @param force Whether to force patch installation
+     * @return The installed patch
+     * @throws java.io.IOException If an IO exception occurred
      */
     public abstract Patch install(PatchId patchId, boolean force) throws IOException;
 
     /**
      * Update the server for the given patch name
+     * @param symbolicName The symbolic name of the patch
+     * @param force Whether to force patch update
+     * @return The updated patch
+     * @throws java.io.IOException If an IO exception occurred
      */
     public abstract Patch update(String symbolicName, boolean force) throws IOException;
 
     /**
      * Uninstall the given patch id from the server
+     * @param patchId The patch id to uninstall
+     * @return The uninstalled patch
+     * @throws java.io.IOException If an IO exception occurred
      */
     public abstract Patch uninstall(PatchId patchId) throws IOException;
 }

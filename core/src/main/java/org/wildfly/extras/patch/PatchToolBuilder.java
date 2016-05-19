@@ -91,9 +91,6 @@ public final class PatchToolBuilder {
         return this;
     }
 
-    /**
-     * Optional repository credentials
-     */
     public PatchToolBuilder credentials(String username, String password) {
         this.username = username;
         this.password = password;

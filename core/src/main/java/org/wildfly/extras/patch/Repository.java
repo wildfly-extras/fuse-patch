@@ -38,29 +38,36 @@ public interface Repository {
 	
     /**
      * Get the repository base URL
+     * @return The repository URL
      */
     URL getRepositoryURL();
 
     /**
      * Get the list of available patches
      * @param prefix The patch name prefix - null for all patches
+     * @return a list of patches
      */
     List<PatchId> queryAvailable(String prefix);
 
     /**
-     * Get the latest available patche for the given prefix
+     * Get the latest available patches for the given prefix
      * @param prefix The mandatory patch name prefix
+     * @return The latest available patch
      */
     PatchId getLatestAvailable(String prefix);
 
     /**
      * Get the patch set for the given id
+     * @param patchId The id of the patch to retrieve
+     * @return The patch matching the patchId
      */
     Patch getPatch(PatchId patchId);
 
     /**
      * Add the given patch archive
      * @param fileUrl The file URL to the patch archive
+     * @return The PatchId for the added archive
+     * @throws java.io.IOException If an IO exception occurred
      */
     PatchId addArchive(URL fileUrl) throws IOException;
 
@@ -68,6 +75,8 @@ public interface Repository {
      * Add the given patch archive
      * @param fileUrl The file URL to the patch archive
      * @param force Force the add operation
+     * @return The PatchId for the added archive
+     * @throws java.io.IOException If an IO exception occurred
      */
     PatchId addArchive(URL fileUrl, boolean force) throws IOException;
 
@@ -76,11 +85,15 @@ public interface Repository {
      * @param metadata An optional patch id if the given URL is a one-off patch
      * @param dataHandler The data handler to the patch archive
      * @param force Force the add operation
+     * @return the PatchId
+     * @throws java.io.IOException If an IO exception occurred
      */
     PatchId addArchive(PatchMetadata metadata, DataHandler dataHandler, boolean force) throws IOException;
 
     /**
      * Remove the given patch id
+     * @param removeId The id of the patch to remove
+     * @return true or false depending on whether the archive was removed
      */
     boolean removeArchive(PatchId removeId);
 
@@ -88,6 +101,7 @@ public interface Repository {
 	 * Get the smart patch for the given seed.
      * @param seedPatch The patch set obtained from the server - may be null
      * @param patchId The target patch id - null for the latest
+     * @return The patch
 	 */
 	SmartPatch getSmartPatch(Patch seedPatch, PatchId patchId);
 }

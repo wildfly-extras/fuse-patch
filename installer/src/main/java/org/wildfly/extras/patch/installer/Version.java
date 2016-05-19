@@ -48,8 +48,7 @@ import java.util.Stack;
 
 /**
  * Generic implementation of version comparison.
- * <p>
- * <p>Features:
+ * <p>Features:</p>
  * <ul>
  * <li>mixing of '<code>-</code>' (hyphen) and '<code>.</code>' (dot) separators,</li>
  * <li>transition between characters and digits also constitutes a separator:
@@ -69,7 +68,7 @@ import java.util.Stack;
  * Unknown qualifiers are considered after known qualifiers, with lexical order (always case insensitive),
  * </li>
  * <li>a hyphen usually precedes a qualifier, and is always less important than something preceded with a dot.</li>
- * </ul></p>
+ * </ul>
  *
  * @author <a href="mailto:kenney@apache.org">Kenney Westerhof</a>
  * @author <a href="mailto:hboutemy@apache.org">Hervé Boutemy</a>

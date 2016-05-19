@@ -198,7 +198,7 @@ public class RepositoryEndpointTest {
 		return patchFile.toURI().toURL();
 	}
 
-	/**
+	/*
      * foo-1.0.0.zip
      *
      * config/remove-me.properties
@@ -218,7 +218,7 @@ public class RepositoryEndpointTest {
         return archive;
     }
 
-    /**
+    /*
      * foo-1.1.0.zip
      *
      * config/propsA.properties
@@ -236,7 +236,7 @@ public class RepositoryEndpointTest {
         return archive;
     }
 
-    /**
+    /*
      * bar-1.0.0.zip
      *
      * config/propsB.properties

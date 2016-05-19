@@ -32,7 +32,7 @@ import org.wildfly.extras.patch.PatchMetadata;
 import org.wildfly.extras.patch.PatchMetadataBuilder;
 import org.wildfly.extras.patch.PatchId;
 
-/**
+/*
  * Data model for repository add operations
  * 
  *   <package>

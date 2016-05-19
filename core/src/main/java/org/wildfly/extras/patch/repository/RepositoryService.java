@@ -37,19 +37,23 @@ public interface RepositoryService {
     /**
      * Get the list of available patches
      * @param prefix The patch name prefix - null for all patches
+     * @return An array of available patches
      */
     @WebMethod
     String[] queryAvailable(String prefix);
 
     /**
-     * Get the latest available patche for the given prefix
+     * Get the latest available patches for the given prefix
      * @param prefix The mandatory patch name prefix
+     * @return The latest available patch
      */
     @WebMethod
     String getLatestAvailable(String prefix);
 
     /**
      * Get the patch set for the given id
+     * @param patchId The patch id
+     * @return The patch set for the given id
      */
     @WebMethod
     PatchAdapter getPatch(String patchId);
@@ -59,12 +63,16 @@ public interface RepositoryService {
      * @param metadata The package metadata
      * @param dataHandler The data of the patch archive
      * @param force Force the add operation
+     * @return The patch id
+     * @throws java.io.IOException If an IO exception occurred
      */
     @WebMethod
     String addArchive(PatchMetadataAdapter metadata, DataHandler dataHandler, boolean force) throws IOException;
 
     /**
      * Remove the given patch id
+     * @param removeId The id of the archive to remove
+     * @return true or false depending on whether the archive was removed
      */
     @WebMethod
     boolean removeArchive(String removeId);
@@ -73,6 +81,7 @@ public interface RepositoryService {
      * Get the smart patch for the given seed.
      * @param seedPatch The patch set obtained from the server - may be null
      * @param patchId The target patch id - null for the latest
+     * @return The smart patch
      */
     @WebMethod
     SmartPatchAdapter getSmartPatch(PatchAdapter seedPatch, String patchId);

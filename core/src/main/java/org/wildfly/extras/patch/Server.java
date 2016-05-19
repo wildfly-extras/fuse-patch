@@ -36,42 +36,55 @@ public interface Server {
     
 	/**
 	 * Get the server home path
+	 * @return The path to the server home
 	 */
 	Path getServerHome();
 	
 	/**
 	 * Get the default repository URL
+	 * @return The URL for the default repository
 	 */
     URL getDefaultRepositoryURL();
     
     /**
      * Get the audit log
+	 * @return A list containing the audit log content
      */
     List<String> getAuditLog();
     
 	/**
 	 * Query the list of applied packages
+	 * @return A list of applied patches
 	 */
 	List<PatchId> queryAppliedPatches();
 
 	/**
 	 * Query managed server paths
+	 * @param pathsPattern The path pattern to query for
+	 * @return A list of managed server paths
 	 */
     List<ManagedPath> queryManagedPaths(String pathsPattern);
     
     /**
      * Get the applied package for a given prefix
+	 * @param prefix The patch prefix
      * @return package or null
      */
 	Patch getPatch(String prefix);
 
     /**
      * Get the applied package for the given id
+	 * @param patchId The patch id
+	 * @return The patch
      */
     Patch getPatch(PatchId patchId);
     
 	/**
 	 * Apply a smart patch and return the result
+	 * @param smartPatch The patch to apply
+	 * @param force Whether to force application of the patch
+	 * @return The patched that was applied
+	 * @throws java.io.IOException If an IO exception occurred
 	 */
 	Patch applySmartPatch(SmartPatch smartPatch, boolean force) throws IOException;
 

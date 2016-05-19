@@ -33,6 +33,10 @@ public final class IllegalArgumentAssertion {
 
     /**
      * Throws an IllegalArgumentException when the given value is null.
+     * @param value the value to assert if not null
+     * @param name the name of the argument
+     * @param <T> The generic type of the value to assert if not null
+     * @return the value
      */
     public static <T> T assertNotNull(T value, String name) {
         if (value == null)
@@ -43,6 +47,9 @@ public final class IllegalArgumentAssertion {
 
     /**
      * Throws an IllegalArgumentException when the given value is not true.
+     * @param value the value to assert if true
+     * @param message the message to display if the value is false
+     * @return the value
      */
     public static Boolean assertTrue(Boolean value, String message) {
         if (!Boolean.valueOf(value))
@@ -52,6 +59,9 @@ public final class IllegalArgumentAssertion {
 
     /**
      * Throws an IllegalArgumentException when the given value is not false.
+     * @param value the value to assert if false
+     * @param message the message to display if the value is false
+     * @return the value
      */
     public static Boolean assertFalse(Boolean value, String message) {
         if (Boolean.valueOf(value))
