@@ -1,14 +1,16 @@
 Release Notes
 -------------
 
-Fuse Patch 2.3.0
+Fuse Patch 2.4.0
 
-**Features**
+**Bugs**
 
-* [#144][144] Add plugin support for multiple namespace versions
+* [#148][148] wildfly distro does not recognize default repository
+* [#150][150] Patch distribution upgrades fail on Windows
 
-For details see [2.3.0 features](https://github.com/wildfly-extras/fuse-patch/issues?q=milestone%3A"2.3.0"+label%3Afeature)
+For details see [2.4.0 bugs](https://github.com/wildfly-extras/fuse-patch/issues?q=milestone%3A"2.4.0"+label%3Abug)
 
-[144]: https://github.com/wildfly-extras/fuse-patch/issues/144
+[148]: https://github.com/wildfly-extras/fuse-patch/issues/148
+[150]: https://github.com/wildfly-extras/fuse-patch/issues/150
 
 Enjoy
