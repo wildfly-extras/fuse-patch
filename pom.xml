@@ -32,6 +32,9 @@
 
     <!-- Properties -->
     <properties>
+        <!-- maven-resources-plugin -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
         <!-- WildFly version -->
         <version.wildfly>10.0.0.Final</version.wildfly>
         
