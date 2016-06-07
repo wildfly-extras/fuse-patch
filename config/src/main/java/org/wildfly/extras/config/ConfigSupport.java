@@ -26,10 +26,7 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -56,11 +53,11 @@ import org.wildfly.extras.config.internal.IllegalStateAssertion;
 
 public class ConfigSupport {
 
-    public static ConfigContext createContext(Path jbossHome, Path configuration, Document doc) {
+    public static ConfigContext createContext(File jbossHome, File configuration, Document doc) {
         return new ConfigContext(jbossHome, configuration, doc);
     }
 
-    public static void applyConfigChange(Path jbossHome, List<String> configs, boolean enable) throws Exception {
+    public static void applyConfigChange(File jbossHome, List<String> configs, boolean enable) throws Exception {
 
         IllegalStateAssertion.assertFalse(configs.isEmpty(), "No configurations specified");
 
@@ -70,7 +67,7 @@ public class ConfigSupport {
         // In wildfly every plugin lives in its own module.
         // The module identity corresponds to the config name
         if (classLoader instanceof ModuleClassLoader) {
-            List<ConfigPlugin> plugins = new ArrayList<>();
+            List<ConfigPlugin> plugins = new ArrayList<ConfigPlugin>();
             for (String config : configs) {
                 ModuleLoader moduleLoader = Module.getCallerModuleLoader();
                 ModuleIdentifier modid = ModuleIdentifier.create("org.wildfly.extras.config.plugin." + config);
@@ -97,14 +94,17 @@ public class ConfigSupport {
         }
     }
 
-    public static void applyLayerChanges(Path jbossHome, ConfigPlugin plugin, boolean enable) throws IOException {
+    public static void applyLayerChanges(File jbossHome, ConfigPlugin plugin, boolean enable) throws IOException {
 
-        File layersFile = jbossHome.resolve(Paths.get("modules", "layers.conf")).toFile();
+        File layersFile = new File("modules" + File.separator + "layers.conf");
         Properties layersProperties = new Properties();
-        List<String> layers = new ArrayList<>();
+        List<String> layers = new ArrayList<String>();
         if (layersFile.exists()) {
-            try (FileInputStream is = new FileInputStream(layersFile)) {
+            FileInputStream is = new FileInputStream(layersFile);
+            try {
                 layersProperties.load(is);
+            } finally {
+                is.close();
             }
             String layersValue = layersProperties.getProperty("layers");
             if (layersValue == null) {
@@ -130,8 +130,11 @@ public class ConfigSupport {
 
         layersProperties.put("layers", layersValue);
         ConfigLogger.info("\tWriting 'layers=" + layersValue + "' to: " + layersFile);
-        try (FileOutputStream out = new FileOutputStream(layersFile)) {
+        FileOutputStream out = new FileOutputStream(layersFile);
+        try {
             layersProperties.store(out, null);
+        } finally {
+            out.close();
         }
     }
 
@@ -153,8 +156,8 @@ public class ConfigSupport {
             }
         }
 
-        List<LayerData> workingList = new ArrayList<>();
-        ArrayList<LayerConfig> configs = new ArrayList<>(plugin.getLayerConfigs());
+        List<LayerData> workingList = new ArrayList<LayerData>();
+        ArrayList<LayerConfig> configs = new ArrayList<LayerConfig>(plugin.getLayerConfigs());
 
         // Lets match up existing layers to the layer config..
         int secondaryCounter = 0;
@@ -228,7 +231,7 @@ public class ConfigSupport {
         // Now lets sort the layers by primary and secondary priority.
         Collections.sort(workingList);
 
-        List<String> result = new ArrayList<>();
+        List<String> result = new ArrayList<String>();
         for (LayerData layerData : workingList) {
             result.add(layerData.name);
         }
@@ -242,26 +245,26 @@ public class ConfigSupport {
         return Collections.unmodifiableList(result);
     }
 
-    private static void applyConfigurationChanges(Path jbossHome, ConfigPlugin plugin, boolean enable) throws Exception {
+    private static void applyConfigurationChanges(File jbossHome, ConfigPlugin plugin, boolean enable) throws Exception {
 
-        List<Path> standalonePaths = new ArrayList<>();
-        standalonePaths.add(Paths.get("standalone", "configuration", "standalone.xml"));
-        standalonePaths.add(Paths.get("standalone", "configuration", "standalone-full.xml"));
-        standalonePaths.add(Paths.get("standalone", "configuration", "standalone-full-ha.xml"));
-        standalonePaths.add(Paths.get("standalone", "configuration", "standalone-ha.xml"));
+        List<File> standalonePaths = new ArrayList<File>();
+        standalonePaths.add(new File("standalone" + File.separator + "configuration" + File.separator + "standalone.xml"));
+        standalonePaths.add(new File("standalone" + File.separator + "configuration" + File.separator + "standalone-full.xml"));
+        standalonePaths.add(new File("standalone" + File.separator + "configuration" + File.separator + "standalone-full-ha.xml"));
+        standalonePaths.add(new File("standalone" + File.separator + "configuration" + File.separator + "standalone-ha.xml"));
 
-        List<Path> domainPaths = new ArrayList<>();
-        domainPaths.add(Paths.get("domain", "configuration", "domain.xml"));
+        List<File> domainPaths = new ArrayList<File>();
+        domainPaths.add(new File("domain" + File.separator + "configuration" + File.separator + "domain.xml"));
 
         String message = (enable ? "\tEnable " : "\tDisable ") + plugin.getConfigName() + " configuration in: ";
         String lineSeparator = System.getProperty("line.separator");
 
         SAXBuilder jdom = new SAXBuilder();
-        for (Path p : standalonePaths) {
-            Path path = jbossHome.resolve(p);
-            if (path.toFile().isFile()) {
+        for (File p : standalonePaths) {
+            File path = new File(jbossHome, p.getPath());
+            if (path.isFile()) {
                 ConfigLogger.info(message + path);
-                Document doc = jdom.build(path.toUri().toURL());
+                Document doc = jdom.build(path.toURI().toURL());
 
                 ConfigContext context = new ConfigContext(jbossHome, path, doc);
                 plugin.applyStandaloneConfigChange(context, enable);
@@ -274,11 +277,11 @@ public class ConfigSupport {
             }
         }
 
-        for (Path p : domainPaths) {
-            Path path = jbossHome.resolve(p);
-            if (path.toFile().isFile()) {
+        for (File p : domainPaths) {
+            File path = new File(jbossHome, p.getPath());
+            if (path.isFile()) {
                 ConfigLogger.info(message + path);
-                Document doc = jdom.build(path.toUri().toURL());
+                Document doc = jdom.build(path.toURI().toURL());
 
                 ConfigContext context = new ConfigContext(jbossHome, path, doc);
                 plugin.applyDomainConfigChange(context, enable);
@@ -292,22 +295,44 @@ public class ConfigSupport {
         }
     }
 
-    private static void backup(Path path) throws IOException {
+    private static void copyFile(File source, File destination) throws IOException {
+        FileChannel input = new FileInputStream(source).getChannel();
+        try {
+            FileChannel output = new FileOutputStream(destination).getChannel();
+            try {
+                output.transferFrom(input, 0, input.size());
+            } finally {
+                output.close();
+            }
+        } finally {
+            input.close();
+        }
+    }
+
+    private static void backup(File path) throws IOException {
         String name = path + ".bak";
         int counter = 2;
-        while (Files.exists(Paths.get(name))) {
+        File bak = new File(name);
+        while (bak.exists()) {
             name = path + ".bak" + counter;
             counter++;
+            bak = new File(name);
         }
-        Files.copy(path, Paths.get(name));
+        copyFile(path, bak);
     }
 
-    private static Path writeFile(Path path, String value, String encoding) throws IOException {
+    private static File writeFile(File path, String value, String encoding) throws IOException {
         byte[] bytes = value.getBytes(encoding);
-        return Files.write(path, bytes, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+        FileOutputStream output = new FileOutputStream(path);
+        try {
+            output.write(bytes);
+        } finally {
+            output.close();
+        }
+        return path;
     }
 
-    public static Path getJBossHome() throws UnsupportedEncodingException {
+    public static File getJBossHome() throws UnsupportedEncodingException {
 
         String jbossHome = System.getProperty("jboss.home");
         if (jbossHome == null) {
@@ -317,24 +342,25 @@ public class ConfigSupport {
             jbossHome = System.getenv("JBOSS_HOME");
         }
         if (jbossHome == null) {
-            Path currpath = Paths.get(".");
-            if (currpath.resolve("jboss-modules.jar").toFile().exists()) {
-                jbossHome = currpath.toAbsolutePath().toString();
+            File currpath = new File(".");
+            if (new File(currpath, "jboss-modules.jar").exists()) {
+                jbossHome = currpath.getAbsolutePath();
             }
         }
 
-        if (!Paths.get(jbossHome).toFile().isDirectory())
+        File jbossHomeFile = new File(jbossHome);
+        if (!jbossHomeFile.isDirectory())
             throw new ConfigException("Cannot obtain JBOSS_HOME: " + jbossHome);
 
-        Path standalonePath = Paths.get(jbossHome, "standalone", "configuration");
-        if (!standalonePath.toFile().exists())
+        File standalonePath = new File(jbossHomeFile, "standalone" + File.separator + "configuration");
+        if (!standalonePath.exists())
             throw new ConfigException("Path to standalone configutration does not exist: " + standalonePath);
 
-        Path domainPath = Paths.get(jbossHome, "domain", "configuration");
-        if (!domainPath.toFile().exists())
+        File domainPath = new File(jbossHomeFile, "domain" + File.separator + "configuration");
+        if (!domainPath.exists())
             throw new ConfigException("Path to domain configutration does not exist: " + domainPath);
 
-        return Paths.get(jbossHome);
+        return jbossHomeFile;
     }
 
     public static Element createElementFromText(String xml) {
@@ -342,7 +368,9 @@ public class ConfigSupport {
         Document doc;
         try {
             doc = jdom.build(new StringReader(xml));
-        } catch (JDOMException | IOException ex) {
+        } catch (JDOMException ex) {
+            throw new RuntimeException(ex);
+        } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
         return (Element) doc.getRootElement().clone();
@@ -361,13 +389,16 @@ public class ConfigSupport {
     private static byte[] loadBytesFromURL(URL resource) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         final byte[] buffer = new byte[10234];
-        try (InputStream in = resource.openStream()) {
+        InputStream in = resource.openStream();
+        try {
             while (true) {
                 int count = in.read(buffer, 0, buffer.length);
                 if (count < 0)
                     break;
                 out.write(buffer, 0, count);
             }
+        } finally {
+            in.close();
         }
         return out.toByteArray();
     }
@@ -430,7 +461,7 @@ public class ConfigSupport {
 
     @SuppressWarnings("unchecked")
     public static List<Element> findProfileElements(Document doc, Namespace... supportedNamespaces) {
-        List<Element> result = new ArrayList<>();
+        List<Element> result = new ArrayList<Element>();
         for (Namespace ns : supportedNamespaces) {
             Element profile = doc.getRootElement().getChild("profile", ns);
             if (profile != null) {

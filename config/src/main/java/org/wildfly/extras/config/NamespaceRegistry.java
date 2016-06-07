@@ -28,7 +28,7 @@ import org.jdom.Namespace;
 import org.wildfly.extras.config.internal.IllegalArgumentAssertion;
 
 public class NamespaceRegistry {
-    private Map<String, List<Namespace>> namespaces = new LinkedHashMap<>();
+    private Map<String, List<Namespace>> namespaces = new LinkedHashMap<String, List<Namespace>>();
 
     public void registerNamespace(String namespace, String version) {
         if (!namespaces.containsKey(namespace)) {
