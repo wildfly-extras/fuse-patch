@@ -25,8 +25,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 
@@ -50,13 +48,13 @@ public final class LocalFileRepository extends AbstractRepository {
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalFileRepository.class);
 
-    private final Path rootPath;
+    private final File rootPath;
 
-    public LocalFileRepository(Lock lock, Path rootPath) {
+    public LocalFileRepository(Lock lock, File rootPath) {
         super(lock, toRepositoryUrl(rootPath));
         this.rootPath = rootPath;
 
-        PatchAssertion.assertTrue(rootPath.toFile().isDirectory(), "Repository root does not exist: " + rootPath);
+        PatchAssertion.assertTrue(rootPath.isDirectory(), "Repository root does not exist: " + rootPath);
         LOG.debug("Repository location: {}", rootPath);
     }
     
@@ -110,9 +108,9 @@ public final class LocalFileRepository extends AbstractRepository {
         // Remove the source file when it was placed in the repository
         if (dataHandler.getDataSource() instanceof URLDataSource) {
             URL sourceURL = ((URLDataSource)dataHandler.getDataSource()).getURL();
-            Path sourcePath = new File(sourceURL.getPath()).toPath();
-            if (sourcePath.startsWith(rootPath)) {
-            	File sourceFile = sourcePath.toFile();
+            File sourcePath = new File(sourceURL.getPath());
+            if (sourcePath.getPath().startsWith(rootPath.getPath())) {
+            	File sourceFile = sourcePath;
             	File targetFile = new File (sourceFile.getPath().concat(".delete"));
             	sourceFile.renameTo(targetFile);
                 targetFile.delete();
@@ -126,12 +124,15 @@ public final class LocalFileRepository extends AbstractRepository {
     protected PatchId addArchiveInternal(Patch patch, DataHandler dataHandler) throws IOException {
         
         PatchId patchId = patch.getPatchId();
-        Path targetPath = getPatchPath(patchId);
-        File targetFile = targetPath.toFile();
+        File targetPath = getPatchPath(patchId);
+        File targetFile = targetPath;
         targetFile.getParentFile().mkdirs();
         
-        try (OutputStream output = new FileOutputStream(targetFile)) {
+        OutputStream output = new FileOutputStream(targetFile);
+        try {
             IOUtils.copy(dataHandler.getInputStream(), output);
+        } finally {
+            output.close();
         }
         
         // Write repository metadata
@@ -147,7 +148,7 @@ public final class LocalFileRepository extends AbstractRepository {
         try {
             File patchdir = MetadataParser.getMetadataDirectory(rootPath, patchId);
             PatchAssertion.assertTrue(patchdir.isDirectory(), "Archive does not exist: " + patchId);
-            IOUtils.rmdirs(patchdir.toPath());
+            IOUtils.rmdirs(patchdir);
             LOG.info("Removed {}", patchId);
             return true;
         } catch (IOException ex) {
@@ -159,21 +160,23 @@ public final class LocalFileRepository extends AbstractRepository {
 
     @Override
     protected DataSource getDataSource(PatchId patchId) {
-        Path patchPath = getPatchPath(patchId);
-        return new FileDataSource(patchPath.toFile());
+        File patchPath = getPatchPath(patchId);
+        return new FileDataSource(patchPath);
     }
 
 
-    private static URL toRepositoryUrl(Path rootPath) {
+    private static URL toRepositoryUrl(File rootPath) {
         try {
-            return rootPath.toUri().toURL();
+            return rootPath.toURI().toURL();
         } catch (MalformedURLException ex) {
             throw new IllegalArgumentException(ex);
         }
     }
     
-    private Path getPatchPath(PatchId patchId) {
-        return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString(), patchId + ".zip"));
+    private File getPatchPath(PatchId patchId) {
+        return new File(rootPath, patchId.getName()
+                + File.separator + patchId.getVersion().toString()
+                + File.separator + patchId + ".zip");
     }
 
     @Override

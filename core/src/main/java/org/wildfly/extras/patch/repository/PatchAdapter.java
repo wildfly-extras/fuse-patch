@@ -48,7 +48,7 @@ public class PatchAdapter {
     
     public Patch toPatch() {
         PatchMetadata metadata = metadataSpec.toPatchMetadata();
-    	List<Record> records = new ArrayList<>();
+    	List<Record> records = new ArrayList<Record>();
     	for (String spec : recordSpecs) {
     		records.add(Record.fromString(spec));
     	}

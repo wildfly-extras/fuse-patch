@@ -20,11 +20,11 @@
 package org.wildfly.extras.patch.test;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.channels.FileChannel;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -42,10 +42,10 @@ public class LocalRepositoryTest extends AbstractRepositoryTest {
     public static void setUp() throws Exception {
         repoURL = new URL[6];
         for (int i = 0; i < repoURL.length; i++) {
-            Path path = Paths.get("target/repos/LocalRepositoryTest/repo" + (i + 1));
-            repoURL[i] = path.toFile().toURI().toURL();
+            File path = new File("target/repos/LocalRepositoryTest/repo" + (i + 1));
+            repoURL[i] = path.toURI().toURL();
             IOUtils.rmdirs(path);
-            path.toFile().mkdirs();
+            path.mkdirs();
         }
     }
 
@@ -61,9 +61,9 @@ public class LocalRepositoryTest extends AbstractRepositoryTest {
     @Test
     public void testRepoUrlWithSpaces() throws Exception {
 
-        Path path = Paths.get("target/repos/LocalRepositoryTest", "repo && path");
+        File path = new File("target/repos/LocalRepositoryTest", "repo && path");
         IOUtils.rmdirs(path);
-        path.toFile().mkdirs();
+        path.mkdirs();
 
         URL repoURL = new URL("file:./target/repos/LocalRepositoryTest/" + URLEncoder.encode("repo && path", "UTF-8"));
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).build();
@@ -81,9 +81,19 @@ public class LocalRepositoryTest extends AbstractRepositoryTest {
         Repository repo = patchTool.getRepository();
 
         // copy a file to the root of the repository
-        Path zipPathA = new File(Archives.getZipUrlFoo100().toURI()).toPath();
-        File targetFile = new File(repoURL[5].toURI()).toPath().resolve(zipPathA.getFileName()).toFile();
-        Files.copy(zipPathA, targetFile.toPath());
+        File zipPathA = new File(Archives.getZipUrlFoo100().toURI());
+        File targetFile = new File(new File(repoURL[5].toURI()), zipPathA.getName());
+        FileChannel input = new FileInputStream(zipPathA).getChannel();
+        try {
+            FileChannel output = new FileOutputStream(targetFile).getChannel();
+            try {
+                output.transferFrom(input, 0, input.size());
+            } finally {
+                output.close();
+            }
+        } finally {
+            input.close();
+        }
 
         PatchId patchId = repo.addArchive(targetFile.toURI().toURL());
         Patch patch = repo.getPatch(patchId);

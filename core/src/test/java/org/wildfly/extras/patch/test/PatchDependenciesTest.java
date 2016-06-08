@@ -19,9 +19,8 @@
  */
 package org.wildfly.extras.patch.test;
 
+import java.io.File;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 
 import javax.activation.DataHandler;
@@ -41,16 +40,16 @@ import org.wildfly.extras.patch.utils.IOUtils;
 
 public class PatchDependenciesTest {
 
-    final static Path repoPath = Paths.get("target/repos/PatchDependenciesTest/repo");
-    final static Path serverPath = Paths.get("target/servers/PatchDependenciesTest/srvA");
+    final static File repoPath = new File("target/repos/PatchDependenciesTest/repo");
+    final static File serverPath = new File("target/servers/PatchDependenciesTest/srvA");
 
     @BeforeClass
     public static void setUp() throws Exception {
         IOUtils.rmdirs(repoPath);
-        repoPath.toFile().mkdirs();
+        repoPath.mkdirs();
         IOUtils.rmdirs(serverPath);
-        serverPath.toFile().mkdirs();
-        URL repoURL = repoPath.toFile().toURI().toURL();
+        serverPath.mkdirs();
+        URL repoURL = repoPath.toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).build();
         PatchId pid100 = patchTool.getRepository().addArchive(Archives.getZipUrlFoo100());
         URL url110 = Archives.getZipUrlFoo110();
@@ -63,7 +62,7 @@ public class PatchDependenciesTest {
     @Test
     public void testSimpleDependency() throws Exception {
 
-        URL repoURL = repoPath.toFile().toURI().toURL();
+        URL repoURL = repoPath.toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPath).build();
         
         PatchId idA = PatchId.fromURL(Archives.getZipUrlFoo100());

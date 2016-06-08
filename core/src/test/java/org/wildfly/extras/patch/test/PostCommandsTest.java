@@ -19,9 +19,8 @@
  */
 package org.wildfly.extras.patch.test;
 
+import java.io.File;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 import javax.activation.DataHandler;
@@ -45,24 +44,24 @@ import org.wildfly.extras.patch.utils.IOUtils;
 
 public class PostCommandsTest {
 
-    final static Path serverPath = Paths.get("target/servers/PostCommandsTest/srvA");
-    final static Path[] repoPaths = new Path[3];
+    final static File serverPath = new File("target/servers/PostCommandsTest/srvA");
+    final static File[] repoPaths = new File[3];
 
     @BeforeClass
     public static void setUp() throws Exception {
         IOUtils.rmdirs(serverPath);
-        serverPath.toFile().mkdirs();
+        serverPath.mkdirs();
         for (int i = 0; i < repoPaths.length; i++) {
-            repoPaths[i] = Paths.get("target/repos/PostCommandsTest/repo" + (i + 1));
+            repoPaths[i] = new File("target/repos/PostCommandsTest/repo" + (i + 1));
             IOUtils.rmdirs(repoPaths[i]);
-            repoPaths[i].toFile().mkdirs();
+            repoPaths[i].mkdirs();
         }
     }
 
     @Test
     public void testPostCommands() throws Exception {
 
-        URL repoURL = repoPaths[0].toFile().toURI().toURL();
+        URL repoURL = repoPaths[0].toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPath).build();
         Server server = patchTool.getServer();
         Repository repo = patchTool.getRepository();
@@ -98,13 +97,13 @@ public class PostCommandsTest {
     }
 
     @Test
-    public void testAddThroughMainWithCmd() throws Exception {
+    public void testAddThroughMainWithCmd() throws Throwable {
 
         String fileUrl = Archives.getZipUrlFoo100().toString();
-        String repoUrl = repoPaths[1].toUri().toURL().toString();
+        String repoUrl = repoPaths[1].toURI().toURL().toString();
         Main.mainInternal(new String[] {"--repository", repoUrl, "--add", fileUrl, "--add-cmd", "echo hello world"});
         
-        URL repoURL = repoPaths[1].toFile().toURI().toURL();
+        URL repoURL = repoPaths[1].toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).build();
         Repository repo = patchTool.getRepository();
         
@@ -114,14 +113,14 @@ public class PostCommandsTest {
     }
 
     @Test
-    public void testAddThroughMainWithMetadata() throws Exception {
+    public void testAddThroughMainWithMetadata() throws Throwable {
 
         String fileUrl = Archives.getZipUrlFoo100().toString();
-        String repoUrl = repoPaths[2].toUri().toURL().toString();
-        String metadataUrl = Paths.get("src/test/resources/simple-metadata.xml").toUri().toString();
+        String repoUrl = repoPaths[2].toURI().toURL().toString();
+        String metadataUrl = new File("src/test/resources/simple-metadata.xml").toURI().toString();
         Main.mainInternal(new String[] {"--repository", repoUrl, "--add", fileUrl, "--metadata", metadataUrl});
         
-        URL repoURL = repoPaths[2].toFile().toURI().toURL();
+        URL repoURL = repoPaths[2].toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).build();
         Repository repo = patchTool.getRepository();
         

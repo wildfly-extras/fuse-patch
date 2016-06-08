@@ -19,11 +19,10 @@
  */
 package org.wildfly.extras.patch.test;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Properties;
 
 import javax.activation.DataHandler;
@@ -43,19 +42,19 @@ import org.wildfly.extras.patch.utils.IOUtils;
 
 public class OneOffPatchTest {
 
-    final static Path[] serverPaths = new Path[2];
-    final static Path repoPath = Paths.get("target/repos/OneOffPatchTest/repo");
+    final static File[] serverPaths = new File[2];
+    final static File repoPath = new File("target/repos/OneOffPatchTest/repo");
 
     @BeforeClass
     public static void setUp() throws Exception {
         IOUtils.rmdirs(repoPath);
-        repoPath.toFile().mkdirs();
+        repoPath.mkdirs();
         for (int i = 0; i < 2; i++) {
-            serverPaths[i] = Paths.get("target/repos/OneOffPatchTest/srv" + (i + 1));
+            serverPaths[i] = new File("target/repos/OneOffPatchTest/srv" + (i + 1));
             IOUtils.rmdirs(serverPaths[i]);
-            serverPaths[i].toFile().mkdirs();
+            serverPaths[i].mkdirs();
         }
-        URL repoURL = repoPath.toFile().toURI().toURL();
+        URL repoURL = repoPath.toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).build();
         PatchId oneoffId = patchTool.getRepository().addArchive(Archives.getZipUrlFoo100());
         URL url100sp1 = Archives.getZipUrlFoo100SP1();
@@ -68,12 +67,12 @@ public class OneOffPatchTest {
     @Test
     public void testSimpleOneOff() throws Exception {
 
-        URL repoURL = repoPath.toFile().toURI().toURL();
+        URL repoURL = repoPath.toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[0]).build();
         
         PatchId pid100 = PatchId.fromURL(Archives.getZipUrlFoo100());
         PatchId pid100sp1 = PatchId.fromURL(Archives.getZipUrlFoo100SP1());
-        Path filePath = serverPaths[0].resolve("config/propsA.properties");
+        File filePath = new File(serverPaths[0], "config/propsA.properties");
         
         Patch pack100 = patchTool.install(pid100, false);
         Assert.assertEquals("A1", readProperty("some.prop", filePath));
@@ -86,11 +85,11 @@ public class OneOffPatchTest {
     @Test
     public void testOneOffWithoutPriorBase() throws Exception {
 
-        URL repoURL = repoPath.toFile().toURI().toURL();
+        URL repoURL = repoPath.toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[1]).build();
         
         PatchId pid100sp1 = PatchId.fromURL(Archives.getZipUrlFoo100SP1());
-        Path filePath = serverPaths[1].resolve("config/propsA.properties");
+        File filePath = new File(serverPaths[1], "config/propsA.properties");
         
         Patch pack100sp1 = patchTool.install(pid100sp1, false);
         Assert.assertEquals("A2", readProperty("some.prop", filePath));
@@ -100,10 +99,13 @@ public class OneOffPatchTest {
         Archives.assertActionPathEquals("INFO lib/foo-1.0.0.jar", pack100sp1.getRecords().get(3));
     }
 
-    private String readProperty(String key, Path path) throws IOException {
+    private String readProperty(String key, File path) throws IOException {
         Properties properties = new Properties();
-        try (FileInputStream fis = new FileInputStream(path.toFile())) {
+        FileInputStream fis = new FileInputStream(path);
+        try {
             properties.load(fis);
+        } finally {
+            fis.close();
         }
         return properties.getProperty(key);
     }

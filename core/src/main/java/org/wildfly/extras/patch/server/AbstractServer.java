@@ -30,9 +30,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -71,17 +68,17 @@ public abstract class AbstractServer implements Server {
     private static final String AUDIT_LOG = "audit.log";
     
     private final Lock lock;
-    private final Path homePath;
+    private final File homePath;
 
-    public AbstractServer(Lock lock, Path homePath) {
+    public AbstractServer(Lock lock, File homePath) {
         IllegalArgumentAssertion.assertNotNull(lock, "lock");
         IllegalArgumentAssertion.assertNotNull(homePath, "homePath");
-        this.homePath = homePath.toAbsolutePath();
+        this.homePath = homePath.getAbsoluteFile();
         this.lock = lock;
     }
     
     @Override
-    public Path getServerHome() {
+    public File getServerHome() {
         return homePath;
     }
 
@@ -155,7 +152,7 @@ public abstract class AbstractServer implements Server {
 
             // Verify dependencies
             List<PatchId> appliedPatches = queryAppliedPatches();
-            List<PatchId> unsatisfied = new ArrayList<>();
+            List<PatchId> unsatisfied = new ArrayList<PatchId>();
             for (PatchId depId : smartPatch.getMetadata().getDependencies()) {
                 if (!appliedPatches.contains(depId)) {
                     unsatisfied.add(depId);
@@ -168,7 +165,7 @@ public abstract class AbstractServer implements Server {
             PatchId serverId = serverSet != null ? serverSet.getPatchId() : null;
 
             // Get the latest applied records
-            Map<Path, Record> serverRecords = new HashMap<>();
+            Map<File, Record> serverRecords = new HashMap<File, Record>();
             if (serverSet != null) {
                 for (Record rec : serverSet.getRecords()) {
                     serverRecords.put(rec.getPath(), rec);
@@ -196,8 +193,8 @@ public abstract class AbstractServer implements Server {
 
             // Remove all records in the remove set
             for (Record rec : smartPatch.getRemoveSet()) {
-                Path path = homePath.resolve(rec.getPath());
-                if (!path.toFile().exists()) {
+                File path = new File(homePath, rec.getPath().getPath());
+                if (!path.exists()) {
                     LOG.warn("Attempt to delete a non existing file: {}", rec.getPath());
                 }
                 serverRecords.remove(rec.getPath());
@@ -205,9 +202,9 @@ public abstract class AbstractServer implements Server {
 
             // Replace records in the replace set
             for (Record rec : smartPatch.getReplaceSet()) {
-                Path path = homePath.resolve(rec.getPath());
-                String filename = path.getFileName().toString();
-                if (!path.toFile().exists()) {
+                File path = new File(homePath, rec.getPath().getPath());
+                String filename = path.getName();
+                if (!path.exists()) {
                     LOG.warn("Attempt to replace a non existing file: {}", rec.getPath());
                 } else if (filename.endsWith(".xml") || filename.endsWith(".properties")) {
                     Record exprec = serverRecords.get(rec.getPath());
@@ -223,8 +220,8 @@ public abstract class AbstractServer implements Server {
 
             // Add records in the add set
             for (Record rec : smartPatch.getAddSet()) {
-                Path path = homePath.resolve(rec.getPath());
-                if (path.toFile().exists()) {
+                File path = new File(homePath, rec.getPath().getPath());
+                if (path.exists()) {
                     Long expcheck = rec.getChecksum();
                     Long wasCheck = IOUtils.getCRC32(path);
                     if (!expcheck.equals(wasCheck)) {
@@ -256,12 +253,12 @@ public abstract class AbstractServer implements Server {
                     for (PatchId auxId : MetadataParser.queryAvailablePatches(getWorkspace(), patchId.getName(), false)) {
                         if (auxId.compareTo(patchId) > 0) {
                             File packageDir = MetadataParser.getMetadataDirectory(getWorkspace(), auxId).getParentFile();
-                            IOUtils.rmdirs(packageDir.toPath());
+                            IOUtils.rmdirs(packageDir);
                         }
                     }
                 }
 
-                Set<Record> records = new HashSet<>();
+                Set<Record> records = new HashSet<Record>();
                 for (Record rec : serverRecords.values()) {
                     records.add(Record.create(rec.getPath(), rec.getChecksum()));
                 }
@@ -273,7 +270,7 @@ public abstract class AbstractServer implements Server {
             else {
                 result = Patch.create(smartPatch.getMetadata(), smartPatch.getRecords());
                 File packageDir = MetadataParser.getMetadataDirectory(getWorkspace(), patchId).getParentFile();
-                IOUtils.rmdirs(packageDir.toPath());
+                IOUtils.rmdirs(packageDir);
             }
 
             // Write Audit log
@@ -282,7 +279,7 @@ public abstract class AbstractServer implements Server {
             // Run post install commands
             if (!smartPatch.isUninstall()) {
                 Runtime runtime = Runtime.getRuntime();
-                File procdir = homePath.toFile();
+                File procdir = homePath;
                 for (String cmd : smartPatch.getMetadata().getPostCommands()) {
                     LOG.info("Run: {}", cmd);
                     String[] cmdarr = cmd.split("\\s");
@@ -325,12 +322,12 @@ public abstract class AbstractServer implements Server {
 
     protected void updateServerFiles(SmartPatch smartPatch, ManagedPaths managedPaths) throws IOException {
 
-        File tmpFile = Files.createTempFile(getWorkspace(), "smartpatch", ".zip").toFile();
+        File tmpFile = File.createTempFile("smartpatch", ".zip", getWorkspace());
 
         try {
 
             // Verify that the zip contains all expected add/replace paths
-            Set<Path> addupdPaths = new HashSet<>();
+            Set<File> addupdPaths = new HashSet<File>();
             for (Record rec : smartPatch.getAddSet()) {
                 addupdPaths.add(rec.getPath());
             }
@@ -338,46 +335,56 @@ public abstract class AbstractServer implements Server {
                 addupdPaths.add(rec.getPath());
             }
             if (!smartPatch.isUninstall()) {
-                try (FileOutputStream output = new FileOutputStream(tmpFile)) {
+                FileOutputStream output = new FileOutputStream(tmpFile);
+                try {
                     InputStream input = smartPatch.getDataHandler().getInputStream();
                     IOUtils.copy(input, output);
+                } finally {
+                    output.close();
                 }
-                try (ZipInputStream zip = new ZipInputStream(new FileInputStream(tmpFile))) {
+                ZipInputStream zip = new ZipInputStream(new FileInputStream(tmpFile));
+                try {
                     ZipEntry entry = zip.getNextEntry();
                     while (entry != null) {
                         if (!entry.isDirectory()) {
-                            Path path = Paths.get(entry.getName());
+                            File path = new File(entry.getName());
                             addupdPaths.remove(path);
                         }
                         entry = zip.getNextEntry();
                     }
+                } finally {
+                    zip.close();
                 }
             }
             IllegalStateAssertion.assertTrue(addupdPaths.isEmpty(), "Patch file does not contain expected paths: " + addupdPaths);
 
             // Remove all files in the remove set
             for (Record rec : smartPatch.getRemoveSet()) {
-                Path path = rec.getPath();
+                File path = rec.getPath();
                 removeServerFile(managedPaths, path);
             }
 
             // Handle replace and add sets
             if (!smartPatch.isUninstall()) {
-                try (ZipInputStream zip = new ZipInputStream(new FileInputStream(tmpFile))) {
+                ZipInputStream zip = new ZipInputStream(new FileInputStream(tmpFile));
+                try {
                     byte[] buffer = new byte[1024];
                     ZipEntry entry = zip.getNextEntry();
                     while (entry != null) {
                         if (!entry.isDirectory()) {
-                            Path path = Paths.get(entry.getName());
+                            File path = new File(entry.getName());
                             if (smartPatch.isReplacePath(path) || smartPatch.isAddPath(path)) {
-                                File file = homePath.resolve(path).toFile();
+                                File file = new File(homePath, path.getPath());
                                 file.getParentFile().mkdirs();
-                                try (FileOutputStream fos = new FileOutputStream(file)) {
+                                FileOutputStream fos = new FileOutputStream(file);
+                                try {
                                     int read = zip.read(buffer);
                                     while (read > 0) {
                                         fos.write(buffer, 0, read);
                                         read = zip.read(buffer);
                                     }
+                                } finally {
+                                    fos.close();
                                 }
                                 if (file.getName().endsWith(".sh") || file.getName().endsWith(".bat")) {
                                     file.setExecutable(true);
@@ -386,6 +393,8 @@ public abstract class AbstractServer implements Server {
                         }
                         entry = zip.getNextEntry();
                     }
+                } finally {
+                    zip.close();
                 }
             }
         } finally {
@@ -393,41 +402,38 @@ public abstract class AbstractServer implements Server {
         }
     }
 
-    private void removeServerFile(ManagedPaths managedPaths, Path path) throws IOException {
+    private void removeServerFile(ManagedPaths managedPaths, File path) throws IOException {
 
         ManagedPath managedPath = managedPaths.getManagedPath(path);
         List<PatchId> owners = managedPath.getOwners();
         if (!owners.contains(Server.SERVER_ID)) {
-            Path pathToRemove = homePath.resolve(path);
-            try {
-                Files.deleteIfExists(pathToRemove);
-            } catch (Exception e) {
+            File pathToRemove = new File(homePath, path.getPath());
+            if (!pathToRemove.delete()) {
                 // Something prevented the file being deleted, so try again on VM exit
-                File file = pathToRemove.toFile();
-                file.deleteOnExit();
-                LOG.warn("Deleting {} on exit due to: {}", file.getAbsoluteFile(), e.getMessage());
+                pathToRemove.deleteOnExit();
+                LOG.warn("Deleting {} on exit", pathToRemove.getAbsoluteFile());
             }
         }
 
         // Recursively remove managed dirs that are empty 
-        Path parent = path.getParent();
+        File parent = path.getParentFile();
         if (parent != null && managedPaths.getManagedPath(parent) != null) {
-            File dir = homePath.resolve(parent).toFile();
+            File dir = new File(homePath, parent.getPath());
             if (dir.isDirectory() && dir.list().length == 0) {
                 removeServerFile(managedPaths, parent);
             }
         }
     }
 
-    private Path getWorkspace() {
-        Path path = homePath.resolve(Paths.get("fusepatch", "workspace"));
-        path.toFile().mkdirs();
+    private File getWorkspace() {
+        File path = new File(homePath, "fusepatch" + File.separator + "workspace");
+        path.mkdirs();
         return path;
     }
 
-    private List<ManagedPath> queryManagedPaths(Path rootPath, String pattern) {
+    private List<ManagedPath> queryManagedPaths(File rootPath, String pattern) {
         try {
-            List<ManagedPath> result = new ArrayList<>();
+            List<ManagedPath> result = new ArrayList<ManagedPath>();
             ManagedPaths mpaths = readManagedPaths(rootPath);
             for (ManagedPath aux : mpaths.getManagedPaths()) {
                 String path = aux.getPath().toString();
@@ -441,39 +447,46 @@ public abstract class AbstractServer implements Server {
         }
     }
 
-    private ManagedPaths readManagedPaths(Path rootPath) throws IOException {
+    private ManagedPaths readManagedPaths(File rootPath) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
-        List<ManagedPath> managedPaths = new ArrayList<>();
-        File metadataFile = rootPath.resolve(MetadataParser.MANAGED_PATHS).toFile();
+        List<ManagedPath> managedPaths = new ArrayList<ManagedPath>();
+        File metadataFile = new File(rootPath, MetadataParser.MANAGED_PATHS);
         if (metadataFile.exists()) {
-            try (BufferedReader br = new BufferedReader(new FileReader(metadataFile))) {
+            BufferedReader br = new BufferedReader(new FileReader(metadataFile));
+            try {
                 String line = br.readLine();
                 while (line != null) {
                     managedPaths.add(ManagedPath.fromString(line));
                     line = br.readLine();
                 }
+            } finally {
+                br.close();
             }
         }
         return new ManagedPaths(managedPaths);
     }
 
-    private void writeManagedPaths(Path rootPath, ManagedPaths managedPaths) throws IOException {
+    private void writeManagedPaths(File rootPath, ManagedPaths managedPaths) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
         IllegalArgumentAssertion.assertNotNull(managedPaths, "managedPaths");
-        File metadataFile = rootPath.resolve(MetadataParser.MANAGED_PATHS).toFile();
+        File metadataFile = new File(rootPath, MetadataParser.MANAGED_PATHS);
         metadataFile.getParentFile().mkdirs();
-        try (PrintWriter pw = new PrintWriter(new FileWriter(metadataFile))) {
+        PrintWriter pw = new PrintWriter(new FileWriter(metadataFile));
+        try {
             for (ManagedPath path : managedPaths.getManagedPaths()) {
                 pw.println(path.toString());
             }
+        } finally {
+            pw.close();
         }
     }
 
-    private void writeAuditLog(Path rootPath, String message, SmartPatch smartPatch) throws IOException {
+    private void writeAuditLog(File rootPath, String message, SmartPatch smartPatch) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
         IllegalArgumentAssertion.assertNotNull(message, "message");
         IllegalArgumentAssertion.assertNotNull(smartPatch, "smartPatch");
-        try (FileOutputStream fos = new FileOutputStream(rootPath.resolve(AUDIT_LOG).toFile(), true)) {
+        FileOutputStream fos = new FileOutputStream(new File(rootPath, AUDIT_LOG), true);
+        try {
             PrintStream pw = new PrintStream(fos);
             pw.println();
             String date = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss").format(new Date());
@@ -484,20 +497,25 @@ public abstract class AbstractServer implements Server {
             PatchMetadata metadata = new PatchMetadataBuilder().patchId(patchId).postCommands(postCommands).build();
             Patch patch = Patch.create(metadata, smartPatch.getRecords());
             MetadataParser.writePatch(patch, fos, false);
+        } finally {
+            fos.close();
         }
     }
 
-    private List<String> readAuditLog(Path rootPath) throws IOException {
+    private List<String> readAuditLog(File rootPath) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
-        List<String> lines = new ArrayList<>();
-        File auditFile = rootPath.resolve(AUDIT_LOG).toFile();
+        List<String> lines = new ArrayList<String>();
+        File auditFile = new File(rootPath, AUDIT_LOG);
         if (auditFile.exists()) {
-            try (BufferedReader br = new BufferedReader(new FileReader(auditFile))) {
+            BufferedReader br = new BufferedReader(new FileReader(auditFile));
+            try {
                 String line = br.readLine();
                 while (line != null) {
                     lines.add(line);
                     line = br.readLine();
                 }
+            } finally {
+                br.close();
             }
         }
         return Collections.unmodifiableList(lines);

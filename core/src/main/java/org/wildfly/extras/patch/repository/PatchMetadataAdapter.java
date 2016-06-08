@@ -43,13 +43,13 @@ public class PatchMetadataAdapter {
     	PatchMetadataAdapter result = new PatchMetadataAdapter();
     	result.patchId = metadata.getPatchId().toString();
         
-        List<String> roles = new ArrayList<>(metadata.getRoles());
+        List<String> roles = new ArrayList<String>(metadata.getRoles());
         result.roles = new String[roles.size()];
         for (int i = 0; i < roles.size(); i++) {
             result.roles[i] = roles.get(i);
         }
         
-        List<PatchId> dependencies = new ArrayList<>(metadata.getDependencies());
+        List<PatchId> dependencies = new ArrayList<PatchId>(metadata.getDependencies());
         result.dependencySpecs = new String[dependencies.size()];
         for (int i = 0; i < dependencies.size(); i++) {
             result.dependencySpecs[i] = dependencies.get(i).toString();
@@ -63,7 +63,7 @@ public class PatchMetadataAdapter {
     
     public PatchMetadata toPatchMetadata() {
     	PatchId pid = PatchId.fromString(patchId);
-    	Set<PatchId> dependencies = new HashSet<>();
+    	Set<PatchId> dependencies = new HashSet<PatchId>();
     	if (dependencySpecs != null) {
         	for (String spec : dependencySpecs) {
         		dependencies.add(PatchId.fromString(spec));
