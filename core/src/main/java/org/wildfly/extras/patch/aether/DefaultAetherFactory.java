@@ -37,7 +37,7 @@ public abstract class DefaultAetherFactory implements AetherFactory {
         if (system == null) {
             system = ManualRepositorySystemFactory.newRepositorySystem();
             repository = new RemoteRepository.Builder("fusepatch.repository", "default", getRepositoryURL().toString()).build();
-            localRepo = new LocalRepository(getLocalRepositoryPath().toFile());
+            localRepo = new LocalRepository(getLocalRepositoryPath());
         }
         return system;
     }

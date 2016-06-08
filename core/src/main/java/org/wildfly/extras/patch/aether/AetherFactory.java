@@ -10,8 +10,8 @@
  *******************************************************************************/
 package org.wildfly.extras.patch.aether;
 
+import java.io.File;
 import java.net.URL;
-import java.nio.file.Path;
 
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
@@ -21,7 +21,7 @@ public interface AetherFactory {
 
     URL getRepositoryURL();
     
-    Path getLocalRepositoryPath();
+    File getLocalRepositoryPath();
     
     RepositorySystem getRepositorySystem();
     

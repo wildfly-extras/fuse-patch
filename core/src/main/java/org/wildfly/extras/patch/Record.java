@@ -19,8 +19,7 @@
  */
 package org.wildfly.extras.patch;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.File;
 
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 import org.wildfly.extras.patch.utils.IllegalStateAssertion;
@@ -41,18 +40,18 @@ public final class Record {
 
     private final PatchId patchId;
     private final Record.Action action;
-    private final Path path;
+    private final File path;
     private final Long checksum;
 
-    public static Record create(Path path) {
+    public static Record create(File path) {
         return new Record(null, Action.INFO, path, 0L);
     }
 
-    public static Record create(Path path, Long checksum) {
+    public static Record create(File path, Long checksum) {
         return new Record(null, Action.INFO, path, checksum);
     }
     
-    public static Record create(PatchId patchId, Action action, Path path, Long checksum) {
+    public static Record create(PatchId patchId, Action action, File path, Long checksum) {
         return new Record(patchId, action, path, checksum);
     }
 
@@ -60,10 +59,10 @@ public final class Record {
         IllegalArgumentAssertion.assertNotNull(line, "line");
         String[] toks = line.split("[\\s]");
         IllegalStateAssertion.assertEquals(3, toks.length, "Invalid line: " + line);
-        return new Record(null, Record.Action.valueOf(toks[0]), Paths.get(toks[1]), new Long(toks[2]));
+        return new Record(null, Record.Action.valueOf(toks[0]), new File(toks[1]), new Long(toks[2]));
     }
     
-    private Record(PatchId patchId, Action action, Path path, Long checksum) {
+    private Record(PatchId patchId, Action action, File path, Long checksum) {
         IllegalArgumentAssertion.assertNotNull(action, "action");
         IllegalArgumentAssertion.assertNotNull(path, "path");
         IllegalArgumentAssertion.assertNotNull(checksum, "checksum");
@@ -81,7 +80,7 @@ public final class Record {
         return action;
     }
 
-    public Path getPath() {
+    public File getPath() {
         return path;
     }
 

@@ -19,12 +19,11 @@
  */
 package org.wildfly.extras.patch;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Properties;
 
 import org.wildfly.extras.patch.aether.AetherFactory;
@@ -37,7 +36,7 @@ public final class Configuration {
     public static final String PROPERTY_REPOSITORY_PASSWORD = "repository.password";
     public static final String PROPERTY_AETHER_FACTORY = "aether.factory";
 
-    private Path serverPath;
+    private File serverPath;
     private URL repoUrl;
     private String aetherFactory;
     private String username;
@@ -49,8 +48,11 @@ public final class Configuration {
 
     public static Configuration load(URL configURL) throws IOException {
         Properties props = new Properties();
-        try (InputStream input = configURL.openStream()) {
+        InputStream input = configURL.openStream();
+        try {
             props.load(input);
+        } finally {
+            input.close();
         }
         return load(props);
     }
@@ -59,7 +61,7 @@ public final class Configuration {
         Configuration config = new Configuration();
         String propval = props.getProperty(PROPERTY_SERVER_HOME);
         if (propval != null) {
-            config.serverPath = Paths.get(propval);
+            config.serverPath = new File(propval);
         }
         propval = props.getProperty(PROPERTY_REPOSITORY_URL);
         if (propval != null) {

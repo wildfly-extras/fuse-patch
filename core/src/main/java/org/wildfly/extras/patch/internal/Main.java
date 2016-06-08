@@ -59,7 +59,7 @@ public class Main {
     }
 
     // Entry point with no system exit
-    public static void mainInternal(String[] args) throws Exception {
+    public static void mainInternal(String[] args) throws Throwable {
         
         Options options = new Options();
         CmdLineParser parser = new CmdLineParser(options);
@@ -120,7 +120,7 @@ public class Main {
         // Query the server paths
         if (options.queryServerPaths != null) {
             PatchTool patchTool = builder.serverPath(options.serverHome).build();
-            List<String> managedPaths = new ArrayList<>();
+            List<String> managedPaths = new ArrayList<String>();
             for (ManagedPath managedPath : patchTool.getServer().queryManagedPaths(options.queryServerPaths)) {
                 managedPaths.add(managedPath.toString());
             }
@@ -201,7 +201,7 @@ public class Main {
         
         if (options.dependencies != null) {
             IllegalStateAssertion.assertTrue(metadata.getDependencies().isEmpty(), "Dependencies already defined: " + metadata);
-            Set<PatchId> dependencies = new LinkedHashSet<>();
+            Set<PatchId> dependencies = new LinkedHashSet<PatchId>();
             for (String depid : options.dependencies) {
                 dependencies.add(PatchId.fromString(depid));
             }

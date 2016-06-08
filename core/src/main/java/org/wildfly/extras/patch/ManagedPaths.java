@@ -20,7 +20,6 @@
 package org.wildfly.extras.patch;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,7 +39,7 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
  */
 public final class ManagedPaths {
 
-    private final Map<Path, ManagedPath> managedPaths = new HashMap<>();
+    private final Map<File, ManagedPath> managedPaths = new HashMap<File, ManagedPath>();
 
     public ManagedPaths(List<ManagedPath> managedPaths) {
         IllegalArgumentAssertion.assertNotNull(managedPaths, "managedPaths");
@@ -49,21 +48,21 @@ public final class ManagedPaths {
         }
     }
 
-    public ManagedPath getManagedPath(Path path) {
+    public ManagedPath getManagedPath(File path) {
         return managedPaths.get(path);
     }
 
     public List<ManagedPath> getManagedPaths() {
-        List<Path> keys = new ArrayList<>(managedPaths.keySet());
+        List<File> keys = new ArrayList<File>(managedPaths.keySet());
         Collections.sort(keys);
-        List<ManagedPath> result = new ArrayList<>();
-        for (Path path : keys) {
+        List<ManagedPath> result = new ArrayList<ManagedPath>();
+        for (File path : keys) {
             result.add(managedPaths.get(path));
         }
         return Collections.unmodifiableList(result);
     }
 
-    public ManagedPaths updatePaths(Path rootPath, SmartPatch smartPatch, Action... actions) {
+    public ManagedPaths updatePaths(File rootPath, SmartPatch smartPatch, Action... actions) {
         List<Action> actlist = Arrays.asList(actions);
         for (Record rec : smartPatch.getRecords()) {
             Action act = rec.getAction();
@@ -80,12 +79,12 @@ public final class ManagedPaths {
         return this;
     }
 
-    private void addPathOwner(Path rootPath, Path path, PatchId owner) {
+    private void addPathOwner(File rootPath, File path, PatchId owner) {
         
         // Recursively add managed parent dirs
-        Path parent = path.getParent();
+        File parent = path.getParentFile();
         if (parent != null) {
-            File parentDir = rootPath.resolve(parent).toFile();
+            File parentDir = new File(rootPath, parent.getPath());
             if (!parentDir.exists() || managedPaths.get(parent) != null) {
                 addPathOwner(rootPath, parent, owner);
             }
@@ -94,15 +93,15 @@ public final class ManagedPaths {
         ManagedPath mpath = managedPaths.get(path);
         if (mpath == null) {
             List<PatchId> owners = Collections.singletonList(owner);
-            File file = rootPath.resolve(path).toFile();
+            File file = new File(rootPath, path.getPath());
             if (file.isFile()) {
-                owners = new ArrayList<>(owners);
+                owners = new ArrayList<PatchId>(owners);
                 owners.add(0, Server.SERVER_ID);
             }
             mpath = ManagedPath.create(path, owners);
             managedPaths.put(path, mpath);
         } else {
-            List<PatchId> owners = new ArrayList<>(mpath.getOwners());
+            List<PatchId> owners = new ArrayList<PatchId>(mpath.getOwners());
             removeOwner(owners, owner);
             owners.add(owner);
             mpath = ManagedPath.create(mpath.getPath(), owners);
@@ -110,11 +109,11 @@ public final class ManagedPaths {
         }
     }
 
-    private void removePathOwner(Path rootPath, Path path, PatchId owner) {
+    private void removePathOwner(File rootPath, File path, PatchId owner) {
         
         ManagedPath mpath = managedPaths.get(path);
         if (mpath != null) {
-            List<PatchId> owners = new ArrayList<>(mpath.getOwners());
+            List<PatchId> owners = new ArrayList<PatchId>(mpath.getOwners());
             removeOwner(owners, owner);
             if (owners.size() == 1 && owners.contains(Server.SERVER_ID)) {
                 owners.clear();
@@ -128,9 +127,9 @@ public final class ManagedPaths {
         }
         
         // Recursively remove managed parent dirs
-        Path parent = path.getParent();
+        File parent = path.getParentFile();
         if (parent != null) {
-            File file = rootPath.resolve(parent).toFile();
+            File file = new File(rootPath, parent.getPath());
             if (!file.exists()) {
                 removePathOwner(rootPath, parent, owner);
             }

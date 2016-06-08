@@ -25,9 +25,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -83,19 +80,19 @@ public class AetherRepository extends AbstractRepository {
             RepositorySystemSession session = factory.newRepositorySystemSession();
             RemoteRepository target = factory.getRemoteRepository();
             
-            Set<String> names = new HashSet<>();
+            Set<String> names = new HashSet<String>();
             if (prefix == null) {
                 URL repoURL = new URL(target.getUrl());
                 IllegalStateAssertion.assertEquals("file", repoURL.getProtocol(), "Cannot query remote repository");
-                Path repoPath = Paths.get(repoURL.toURI());
-                Path groupPath = repoPath.resolve(GROUP_ID);
-                if (groupPath.toFile().isDirectory()) {
-                    names.addAll(Arrays.asList(groupPath.toFile().list()));
+                File repoPath = new File(repoURL.toURI());
+                File groupPath = new File(repoPath, GROUP_ID);
+                if (groupPath.isDirectory()) {
+                    names.addAll(Arrays.asList(groupPath.list()));
                 }
             } else {
                 names.add(prefix);
             }
-            List<PatchId> result = new ArrayList<>();
+            List<PatchId> result = new ArrayList<PatchId>();
             for (String name : names) {
                 Artifact artifact = new DefaultArtifact(GROUP_ID, name, "", "metadata", "[0,)");
 
@@ -164,7 +161,7 @@ public class AetherRepository extends AbstractRepository {
 
         PatchId patchId = patch.getPatchId();
 
-        File tmpFile = Files.createTempFile("fptmp", ".metadata").toFile();
+        File tmpFile = File.createTempFile("fptmp", ".metadata");
         try {
             RepositorySystem system = factory.getRepositorySystem();
             RepositorySystemSession session = factory.newRepositorySystemSession();
@@ -177,8 +174,11 @@ public class AetherRepository extends AbstractRepository {
                 zipArtifact = zipArtifact.setFile(fileds.getFile());
             }
 
-            try (FileOutputStream fos = new FileOutputStream(tmpFile)) {
+            FileOutputStream fos = new FileOutputStream(tmpFile);
+            try {
                 MetadataParser.writePatch(patch, fos, true);
+            } finally {
+                fos.close();
             }
 
             Artifact metadataArtifact = new SubArtifact(zipArtifact, "", "metadata");
@@ -194,7 +194,7 @@ public class AetherRepository extends AbstractRepository {
             } catch (DeploymentException ex) {
                 throw new IOException(ex);
             }
-            List<Artifact> artifacts = new ArrayList<>(result.getArtifacts());
+            List<Artifact> artifacts = new ArrayList<Artifact>(result.getArtifacts());
             IllegalStateAssertion.assertEquals(2, artifacts.size(), "Not all artifacts deployed: " + result);
 
             return patchId;

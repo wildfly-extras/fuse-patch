@@ -133,7 +133,7 @@ public final class PatchMetadataModel {
         }
 
         public Roles(Set<String> roles) {
-            this.roles = new LinkedHashSet<>(roles);
+            this.roles = new LinkedHashSet<String>(roles);
         }
 
         public Set<String> getRoles() {
@@ -155,7 +155,7 @@ public final class PatchMetadataModel {
         }
 
         public Dependencies(Set<PatchId> dependencies) {
-            patchIds = new LinkedHashSet<> ();
+            patchIds = new LinkedHashSet<String> ();
             for (PatchId aux : dependencies) {
                 patchIds.add(aux.toString());
             }
@@ -180,7 +180,7 @@ public final class PatchMetadataModel {
         }
 
         public Commands(List<String> commands) {
-            this.commands = new ArrayList<>(commands);
+            this.commands = new ArrayList<String>(commands);
         }
 
         public List<String> getCommands() {
