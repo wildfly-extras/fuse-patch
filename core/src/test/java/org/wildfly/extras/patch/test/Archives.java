@@ -126,11 +126,11 @@ class Archives {
     }
 
     static void assertPathsEqual(final Patch expSet, final File rootPath) throws IOException {
-        final Set<File> expPaths = new HashSet<File>();
+        final Set<String> expPaths = new HashSet<String>();
         for (Record rec : expSet.getRecords()) {
-            expPaths.add(rec.getPath());
+            expPaths.add(rec.getPath().toString());
         }
-        final Set<File> wasPaths = new HashSet<File>();
+        final Set<String> wasPaths = new HashSet<String>();
         
         LinkedList<File> dirs = new LinkedList<File>();
         dirs.push(rootPath);
@@ -140,8 +140,8 @@ class Archives {
                 if (sub.isDirectory()) {
                     dirs.push(sub);
                 } else {
-                    File relpath = new File(rootPath.toURI().relativize(sub.toURI()));
-                    if (!relpath.getPath().startsWith("fusepatch")) {
+                    String relpath = rootPath.toURI().relativize(sub.toURI()).toString();
+                    if (!relpath.startsWith("fusepatch")) {
                         wasPaths.add(relpath);
                     }
                 }

@@ -255,8 +255,7 @@ public abstract class AbstractRepository implements Repository {
                                 if (sub.isDirectory()) {
                                     dirs.push(sub);
                                 } else {
-                                    File relpath = new File(workspace.toURI().relativize(sub.toURI()));
-                                    zos.putNextEntry(new ZipEntry(relpath.toString()));
+                                    zos.putNextEntry(new ZipEntry(workspace.toURI().relativize(sub.toURI()).toString()));
                                     FileInputStream fis = new FileInputStream(sub);
                                     try {
                                         IOUtils.copy(fis, zos);

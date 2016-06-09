@@ -65,8 +65,8 @@ public class IOUtils {
             for (File sub : dir.listFiles()) {
                 if (sub.isDirectory()) {
                     dirs.push(sub);
-                    File relpath = new File(sourceDir.toURI().relativize(sub.toURI()));
-                    new File(targetDir, relpath.getPath()).mkdirs();
+                    String relpath = sourceDir.toURI().relativize(sub.toURI()).toString();
+                    new File(targetDir, relpath).mkdirs();
                 }
             }
         }
