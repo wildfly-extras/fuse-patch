@@ -70,7 +70,7 @@ public class RepositoryEndpoint implements RepositoryService {
 	public String[] queryAvailable(String prefix) {
         lock.tryLock();
         try {
-            List<String> result = new ArrayList<>();
+            List<String> result = new ArrayList<String>();
             for (PatchId pid : delegate.queryAvailable(prefix)) {
                 result.add(pid.toString());
             }

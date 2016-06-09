@@ -337,7 +337,7 @@ public class Version implements Comparable<Version> {
 
         ListItem list = items;
 
-        Stack<Item> stack = new Stack<>();
+        Stack<Item> stack = new Stack<Item>();
         stack.push(list);
 
         boolean isDigit = false;

@@ -78,13 +78,11 @@
         <module>config</module>
         <module>core</module>
         <module>distro</module>
-        <!--
         <module>docs</module>
         <module>feature</module>
         <module>installer</module>
         <module>jaxws</module>
         <module>itests</module>
-        -->
     </modules>
 
     <!-- Dependency Management -->

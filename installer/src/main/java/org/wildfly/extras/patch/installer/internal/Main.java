@@ -37,6 +37,6 @@ public final class Main {
                 return "fuse-patch-installer.jar";
             }
         };
-        installer.main(new LinkedList<>(Arrays.asList(originalArgs)));
+        installer.main(new LinkedList<String>(Arrays.asList(originalArgs)));
     }
 }

@@ -64,12 +64,15 @@ final class Support {
 
     static long computeCRC32(File file) throws IOException {
         CRC32 crc32 = new CRC32();
-        try (FileInputStream is = new FileInputStream(file)) {
+        FileInputStream is = new FileInputStream(file);
+        try {
             int len;
             byte[] buffer = new byte[1024 * 4];
             while ((len = is.read(buffer)) > 0) {
                 crc32.update(buffer, 0, len);
             }
+        } finally {
+            is.close();
         }
         return crc32.getValue();
     }
