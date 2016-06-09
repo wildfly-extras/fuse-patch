@@ -68,15 +68,14 @@ public class WildFlyServerCleanUpTest {
 
         // Make sure the correct jars and the module.xml remain
         assertExpectedFileCount(patchModule, 3);
-        assertExpectedFileCount(configModule, 3);
-
         Assert.assertTrue(new File(patchModule, "fuse-patch-core-1.0.1.jar").exists());
         Assert.assertTrue(new File(patchModule, "fuse-patch-core-test-1.0.1.jar").exists());
         Assert.assertTrue(new File(patchModule, "module.xml").exists());
 
-        Assert.assertTrue(new File(patchModule, "fuse-patch-config-1.0.1.jar").exists());
-        Assert.assertTrue(new File(patchModule, "fuse-patch-config-test-1.0.1.jar").exists());
-        Assert.assertTrue(new File(patchModule, "module.xml").exists());
+        assertExpectedFileCount(configModule, 3);
+        Assert.assertTrue(new File(configModule, "fuse-patch-config-1.0.1.jar").exists());
+        Assert.assertTrue(new File(configModule, "fuse-patch-config-test-1.0.1.jar").exists());
+        Assert.assertTrue(new File(configModule, "module.xml").exists());
     }
 
     @Test
