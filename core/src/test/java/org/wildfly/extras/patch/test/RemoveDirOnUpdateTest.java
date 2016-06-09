@@ -22,8 +22,6 @@ package org.wildfly.extras.patch.test;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 import org.jboss.shrinkwrap.api.GenericArchive;
@@ -51,19 +49,19 @@ import org.wildfly.extras.patch.utils.IOUtils;
  */
 public class RemoveDirOnUpdateTest {
 
-    final static Path repoPath = Paths.get("target/repos/RemoveDirOnUpdateTest/repo");
-    final static Path[] serverPaths = new Path[2];
+    final static File repoPath = new File("target/repos/RemoveDirOnUpdateTest/repo");
+    final static File[] serverPaths = new File[2];
 
     @BeforeClass
     public static void setUp() throws Exception {
         IOUtils.rmdirs(repoPath);
-        repoPath.toFile().mkdirs();
+        repoPath.mkdirs();
         for (int i = 0; i < 2; i++) {
-            serverPaths[i] = Paths.get("target/servers/RemoveDirOnUpdateTest/srv" + (i + 1));
+            serverPaths[i] = new File("target/servers/RemoveDirOnUpdateTest/srv" + (i + 1));
             IOUtils.rmdirs(serverPaths[i]);
-            serverPaths[i].toFile().mkdirs();
+            serverPaths[i].mkdirs();
         }
-        URL repoURL = repoPath.toFile().toURI().toURL();
+        URL repoURL = repoPath.toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).build();
         patchTool.getRepository().addArchive(getZipUrlRdou100());
         patchTool.getRepository().addArchive(getZipUrlRdou110());
@@ -72,12 +70,12 @@ public class RemoveDirOnUpdateTest {
     @Test
     public void testRemoveDirOnUpdate() throws Exception {
 
-        URL repoURL = repoPath.toFile().toURI().toURL();
+        URL repoURL = repoPath.toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[0]).build();
         Server server = patchTool.getServer();
         
-        Path configPath = serverPaths[0].resolve("config");
-        Path subPath = configPath.resolve("sub");
+        File configPath = new File(serverPaths[0], "config");
+        File subPath = new File(configPath, "sub");
         
         Patch curSet = patchTool.install(PatchId.fromString("rdou-1.0.0"), false);
         Assert.assertEquals(2, curSet.getRecords().size());
@@ -92,8 +90,8 @@ public class RemoveDirOnUpdateTest {
         Assert.assertEquals(ManagedPath.fromString("lib/rdou-1.0.0.jar [rdou-1.0.0]"), mpaths.get(4));
 
         // Verify that the config dir exists
-        Assert.assertTrue(configPath.toFile().isDirectory());
-        Assert.assertTrue(subPath.toFile().isDirectory());
+        Assert.assertTrue(configPath.isDirectory());
+        Assert.assertTrue(subPath.isDirectory());
         
         curSet = patchTool.update("rdou", false);
         Assert.assertEquals(1, curSet.getRecords().size());
@@ -105,22 +103,22 @@ public class RemoveDirOnUpdateTest {
         Assert.assertEquals(ManagedPath.fromString("lib/rdou-1.1.0.jar [rdou-1.1.0]"), mpaths.get(1));
 
         // Verify that the config dir was removed
-        Assert.assertFalse(subPath.toFile().exists());
-        Assert.assertFalse(configPath.toFile().exists());
+        Assert.assertFalse(subPath.exists());
+        Assert.assertFalse(configPath.exists());
     }
 
     @Test
     public void testKeepDirOnUpdate() throws Exception {
 
-        URL repoURL = repoPath.toFile().toURI().toURL();
+        URL repoURL = repoPath.toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[1]).build();
         Server server = patchTool.getServer();
         
-        Path configPath = serverPaths[1].resolve("config");
-        Path subPath = configPath.resolve("sub");
+        File configPath = new File(serverPaths[1], "config");
+        File subPath = new File(configPath, "sub");
         
         // Create the config path upfront
-        configPath.toFile().mkdirs();
+        configPath.mkdirs();
         
         Patch curSet = patchTool.install(PatchId.fromString("rdou-1.0.0"), false);
         Assert.assertEquals(2, curSet.getRecords().size());
@@ -134,8 +132,8 @@ public class RemoveDirOnUpdateTest {
         Assert.assertEquals(ManagedPath.fromString("lib/rdou-1.0.0.jar [rdou-1.0.0]"), mpaths.get(3));
 
         // Verify that the config dir exists
-        Assert.assertTrue(configPath.toFile().isDirectory());
-        Assert.assertTrue(subPath.toFile().isDirectory());
+        Assert.assertTrue(configPath.isDirectory());
+        Assert.assertTrue(subPath.isDirectory());
         
         curSet = patchTool.update("rdou", false);
         Assert.assertEquals(1, curSet.getRecords().size());
@@ -147,8 +145,8 @@ public class RemoveDirOnUpdateTest {
         Assert.assertEquals(ManagedPath.fromString("lib/rdou-1.1.0.jar [rdou-1.1.0]"), mpaths.get(1));
 
         // Verify that the config dir was removed
-        Assert.assertFalse(subPath.toFile().exists());
-        Assert.assertTrue(configPath.toFile().exists());
+        Assert.assertFalse(subPath.exists());
+        Assert.assertTrue(configPath.exists());
     }
 
     /**
@@ -158,7 +156,7 @@ public class RemoveDirOnUpdateTest {
      * lib/rdou-1.0.0.jar
      */
     static URL getZipUrlRdou100() throws IOException {
-        File targetFile = Paths.get("target/rdou-1.0.0.zip").toFile();
+        File targetFile = new File("target/rdou-1.0.0.zip");
         if (!targetFile.exists()) {
             JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "rdou-1.0.0.jar");
             jar.addClasses(ClassA.class);
@@ -176,7 +174,7 @@ public class RemoveDirOnUpdateTest {
      * lib/rdou-1.1.0.jar
      */
     static URL getZipUrlRdou110() throws IOException {
-        File targetFile = Paths.get("target/rdou-1.1.0.zip").toFile();
+        File targetFile = new File("target/rdou-1.1.0.zip");
         if (!targetFile.exists()) {
             JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "rdou-1.1.0.jar");
             jar.addClasses(ClassA.class);

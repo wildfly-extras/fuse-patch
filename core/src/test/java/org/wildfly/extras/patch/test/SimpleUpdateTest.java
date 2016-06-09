@@ -19,16 +19,14 @@
  */
 package org.wildfly.extras.patch.test;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.channels.FileChannel;
 import java.util.List;
 
 import javax.activation.DataHandler;
@@ -50,19 +48,19 @@ import org.wildfly.extras.patch.utils.IOUtils;
 
 public class SimpleUpdateTest {
 
-    final static Path repoPath = Paths.get("target/repos/SimpleUpdateTest/repo");
-    final static Path[] serverPaths = new Path[5];
+    final static File repoPath = new File("target/repos/SimpleUpdateTest/repo");
+    final static File[] serverPaths = new File[5];
 
     @BeforeClass
     public static void setUp() throws Exception {
         IOUtils.rmdirs(repoPath);
-        repoPath.toFile().mkdirs();
+        repoPath.mkdirs();
         for (int i = 0; i < 5; i++) {
-            serverPaths[i] = Paths.get("target/servers/SimpleUpdateTest/srv" + (i + 1));
+            serverPaths[i] = new File("target/servers/SimpleUpdateTest/srv" + (i + 1));
             IOUtils.rmdirs(serverPaths[i]);
-            serverPaths[i].toFile().mkdirs();
+            serverPaths[i].mkdirs();
         }
-        URL repoURL = repoPath.toFile().toURI().toURL();
+        URL repoURL = repoPath.toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).build();
         patchTool.getRepository().addArchive(Archives.getZipUrlFoo100());
         patchTool.getRepository().addArchive(Archives.getZipUrlFoo110());
@@ -71,7 +69,7 @@ public class SimpleUpdateTest {
     @Test
     public void testInstallUpdateUninstall() throws Exception {
 
-        URL repoURL = repoPath.toFile().toURI().toURL();
+        URL repoURL = repoPath.toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[0]).build();
         Server server = patchTool.getServer();
         
@@ -224,15 +222,25 @@ public class SimpleUpdateTest {
     @Test
     public void testAddingFileThatExists() throws Exception {
         
-        URL repoURL = repoPath.toFile().toURI().toURL();
+        URL repoURL = repoPath.toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[1]).build();
         Server server = patchTool.getServer();
         
-        Path targetPath = serverPaths[1].resolve("config/propsA.properties");
+        File targetPath = new File(serverPaths[1], "config/propsA.properties");
         
         // Copy a file to the server
-        targetPath.getParent().toFile().mkdirs();
-        Files.copy(Paths.get("src/test/resources/propsA2.properties"), targetPath);
+        targetPath.getParentFile().mkdirs();
+        FileChannel input = new FileInputStream(new File("src/test/resources/propsA2.properties")).getChannel();
+        try {
+            FileChannel output = new FileOutputStream(targetPath).getChannel();
+            try {
+                output.transferFrom(input, 0, input.size());
+            } finally {
+                output.close();
+            }
+        } finally {
+            input.close();
+        }
         assertFileContent("some.prop = A2", targetPath);
         
         // Install foo-1.0.0
@@ -249,7 +257,7 @@ public class SimpleUpdateTest {
         assertFileContent("some.prop = A1", targetPath);
         
         // Delete the workspace
-        IOUtils.rmdirs(serverPaths[1].resolve("fusepatch"));
+        IOUtils.rmdirs(new File(serverPaths[1], "fusepatch"));
         Assert.assertTrue("No patches applied", server.queryAppliedPatches().isEmpty());
         
         // Verify that the files can be added if they have the same checksum
@@ -260,17 +268,27 @@ public class SimpleUpdateTest {
     @Test
     public void testOverrideModifiedFile() throws Exception {
         
-        URL repoURL = repoPath.toFile().toURI().toURL();
+        URL repoURL = repoPath.toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[2]).build();
         
-        Path targetPath = serverPaths[2].resolve("config/propsA.properties");
+        File targetPath = new File(serverPaths[2], "config/propsA.properties");
         
         // Install foo-1.0.0
         PatchId idA = PatchId.fromURL(Archives.getZipUrlFoo100());
         patchTool.install(idA, false);
         assertFileContent("some.prop = A1", targetPath);
+        FileChannel input = new FileInputStream(new File("src/test/resources/propsA2.properties")).getChannel();
+        try {
+            FileChannel output = new FileOutputStream(targetPath).getChannel();
+            try {
+                output.transferFrom(input, 0, input.size());
+            } finally {
+                output.close();
+            }
+        } finally {
+            input.close();
+        }
         
-        Files.copy(Paths.get("src/test/resources/propsA2.properties"), targetPath, REPLACE_EXISTING);
         
         // Install foo-1.1.0
         PatchId idB = PatchId.fromURL(Archives.getZipUrlFoo110());
@@ -289,27 +307,30 @@ public class SimpleUpdateTest {
     @Test
     public void testRemoveNonExistingFile() throws Exception {
         
-        URL repoURL = repoPath.toFile().toURI().toURL();
+        URL repoURL = repoPath.toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[3]).build();
         
-        Path targetPath = serverPaths[3].resolve("config/remove-me.properties");
+        File targetPath = new File(serverPaths[3], "config/remove-me.properties");
         
         // Install foo-1.0.0
         PatchId idA = PatchId.fromURL(Archives.getZipUrlFoo100());
         patchTool.install(idA, false);
         assertFileContent("some.prop = A1", targetPath);
         
-        targetPath.toFile().delete();
+        targetPath.delete();
         
         // Install foo-1.1.0
         PatchId idB = PatchId.fromURL(Archives.getZipUrlFoo110());
         patchTool.install(idB, false);
     }
 
-    private void assertFileContent(String exp, Path path) throws IOException {
-        try (BufferedReader br = new BufferedReader(new FileReader(path.toFile()))) {
+    private void assertFileContent(String exp, File path) throws IOException {
+        BufferedReader br = new BufferedReader(new FileReader(path));
+        try {
             String line = br.readLine();
             Assert.assertEquals(exp, line);
+        } finally {
+            br.close();
         }
     }
 }

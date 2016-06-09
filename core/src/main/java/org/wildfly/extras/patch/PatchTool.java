@@ -37,7 +37,8 @@ public abstract class PatchTool {
     public static final Version VERSION;
     static {
         Version versionProp = null;
-        try (InputStream input = SmartPatch.class.getResourceAsStream("version.properties")) {
+        InputStream input = SmartPatch.class.getResourceAsStream("version.properties");
+        try {
             BufferedReader br = new BufferedReader(new InputStreamReader(input));
             String line = br.readLine();
             while (line != null) {

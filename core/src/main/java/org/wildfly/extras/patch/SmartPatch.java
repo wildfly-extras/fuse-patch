@@ -20,8 +20,8 @@
 package org.wildfly.extras.patch;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -49,9 +49,9 @@ public final class SmartPatch implements Closeable {
 
     private final Patch patch;
     private final DataHandler dataHandler;
-    private final Map<Path, Record> delMap = new HashMap<>();
-    private final Map<Path, Record> updMap = new HashMap<>();
-    private final Map<Path, Record> addMap = new HashMap<>();
+    private final Map<File, Record> delMap = new HashMap<File, Record>();
+    private final Map<File, Record> updMap = new HashMap<File, Record>();
+    private final Map<File, Record> addMap = new HashMap<File, Record>();
     
     public static SmartPatch forInstall(Patch patch, DataHandler dataHandler) {
         IllegalArgumentAssertion.assertNotNull(dataHandler, "dataHandler");
@@ -61,7 +61,7 @@ public final class SmartPatch implements Closeable {
     public static SmartPatch forUninstall(Patch patch) {
         IllegalArgumentAssertion.assertNotNull(patch, "patch");
         PatchId patchId = patch.getPatchId();
-        List<Record> records = new ArrayList<>();
+        List<Record> records = new ArrayList<Record>();
         for (Record rec : patch.getRecords()) {
             records.add(Record.create(patchId, Action.DEL, rec.getPath(), rec.getChecksum()));
         }
@@ -115,26 +115,26 @@ public final class SmartPatch implements Closeable {
     }
     
     public Set<Record> getRemoveSet() {
-        return Collections.unmodifiableSet(new HashSet<>(delMap.values()));
+        return Collections.unmodifiableSet(new HashSet<Record>(delMap.values()));
     }
 
-    public boolean isRemovePath(Path path) {
+    public boolean isRemovePath(File path) {
         return delMap.containsKey(path);
     }
 
 	public Set<Record> getReplaceSet() {
-        return Collections.unmodifiableSet(new HashSet<>(updMap.values()));
+        return Collections.unmodifiableSet(new HashSet<Record>(updMap.values()));
 	}
 
-    public boolean isReplacePath(Path path) {
+    public boolean isReplacePath(File path) {
         return updMap.containsKey(path);
     }
 
 	public Set<Record> getAddSet() {
-        return Collections.unmodifiableSet(new HashSet<>(addMap.values()));
+        return Collections.unmodifiableSet(new HashSet<Record>(addMap.values()));
 	}
 
-    public boolean isAddPath(Path path) {
+    public boolean isAddPath(File path) {
         return addMap.containsKey(path);
     }
 

@@ -20,11 +20,11 @@
 package org.wildfly.extras.patch.test;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.channels.FileChannel;
 import java.util.List;
 
 import org.jboss.shrinkwrap.api.GenericArchive;
@@ -52,19 +52,19 @@ import org.wildfly.extras.patch.utils.IOUtils;
  */
 public class OverrideExistingPathTest {
 
-    final static Path repoPath = Paths.get("target/repos/OverrideExistingPathTest/repo");
-    final static Path[] serverPaths = new Path[2];
+    final static File repoPath = new File("target/repos/OverrideExistingPathTest/repo");
+    final static File[] serverPaths = new File[2];
 
     @BeforeClass
     public static void setUp() throws Exception {
         IOUtils.rmdirs(repoPath);
-        repoPath.toFile().mkdirs();
+        repoPath.mkdirs();
         for (int i = 0; i < 2; i++) {
-            serverPaths[i] = Paths.get("target/servers/OverrideExistingPathTest/srv" + (i + 1));
+            serverPaths[i] = new File("target/servers/OverrideExistingPathTest/srv" + (i + 1));
             IOUtils.rmdirs(serverPaths[i]);
-            serverPaths[i].toFile().mkdirs();
+            serverPaths[i].mkdirs();
         }
-        URL repoURL = repoPath.toFile().toURI().toURL();
+        URL repoURL = repoPath.toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).build();
         patchTool.getRepository().addArchive(getZipUrlFoo100());
         patchTool.getRepository().addArchive(getZipUrlBar100(), true);
@@ -74,15 +74,25 @@ public class OverrideExistingPathTest {
     @Test
     public void testPathExistsInServer() throws Exception {
 
-        URL repoURL = repoPath.toFile().toURI().toURL();
+        URL repoURL = repoPath.toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[0]).build();
         Server server = patchTool.getServer();
         
         // Add a file to the server upfront
-        Path filePath = serverPaths[0].resolve("config").resolve("propsA.properties");
-        filePath.getParent().toFile().mkdirs();
-        Files.copy(Paths.get("src/test/resources/propsA1.properties"), filePath);
-        Assert.assertTrue(filePath.toFile().isFile());
+        File filePath = new File(serverPaths[0], "config" + File.separator + "propsA.properties");
+        filePath.getParentFile().mkdirs();
+        FileChannel input = new FileInputStream(new File("src/test/resources/propsA1.properties")).getChannel();
+        try {
+            FileChannel output = new FileOutputStream(filePath).getChannel();
+            try {
+                output.transferFrom(input, 0, input.size());
+            } finally {
+                output.close();
+            }
+        } finally {
+            input.close();
+        }
+        Assert.assertTrue(filePath.isFile());
         
         // Install oepbar-1.0.0
         Patch curSet = patchTool.install(PatchId.fromString("oepbar-1.0.0"), false);
@@ -102,7 +112,7 @@ public class OverrideExistingPathTest {
         Assert.assertEquals(0, mpaths.size());
 
         // Assert that the file is still there
-        Assert.assertTrue(filePath.toFile().isFile());
+        Assert.assertTrue(filePath.isFile());
         
         // Install oepbar-1.0.0
         curSet = patchTool.install(PatchId.fromString("oepbar-1.0.0"), false);
@@ -126,13 +136,13 @@ public class OverrideExistingPathTest {
         Assert.assertEquals(0, mpaths.size());
 
         // Assert that the file is still there
-        Assert.assertTrue(filePath.toFile().isFile());
+        Assert.assertTrue(filePath.isFile());
     }
 
     @Test
     public void testPathExistsInFoo() throws Exception {
 
-        URL repoURL = repoPath.toFile().toURI().toURL();
+        URL repoURL = repoPath.toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[1]).build();
         Server server = patchTool.getServer();
         
@@ -186,7 +196,7 @@ public class OverrideExistingPathTest {
      * lib/oep-1.0.0.jar
      */
     static URL getZipUrlFoo100() throws IOException {
-        File targetFile = Paths.get("target/oepfoo-1.0.0.zip").toFile();
+        File targetFile = new File("target/oepfoo-1.0.0.zip");
         if (!targetFile.exists()) {
             JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "oep-1.0.0.jar");
             jar.addClasses(ClassA.class);
@@ -204,7 +214,7 @@ public class OverrideExistingPathTest {
      * config/propsA.properties
      */
     static URL getZipUrlBar100() throws IOException {
-        File targetFile = Paths.get("target/oepbar-1.0.0.zip").toFile();
+        File targetFile = new File("target/oepbar-1.0.0.zip");
         if (!targetFile.exists()) {
             GenericArchive archive = ShrinkWrap.create(GenericArchive.class);
             archive.add(new FileAsset(new File("src/test/resources/propsA1.properties")), "config/propsA.properties");
@@ -219,7 +229,7 @@ public class OverrideExistingPathTest {
      * config/propsA.properties
      */
     static URL getZipUrlBar110() throws IOException {
-        File targetFile = Paths.get("target/oepbar-1.1.0.zip").toFile();
+        File targetFile = new File("target/oepbar-1.1.0.zip");
         if (!targetFile.exists()) {
             GenericArchive archive = ShrinkWrap.create(GenericArchive.class);
             archive.add(new FileAsset(new File("src/test/resources/propsA2.properties")), "config/propsA.properties");

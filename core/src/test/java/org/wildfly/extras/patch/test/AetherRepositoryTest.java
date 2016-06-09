@@ -22,8 +22,6 @@ package org.wildfly.extras.patch.test;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import org.junit.BeforeClass;
 import org.wildfly.extras.patch.PatchTool;
@@ -37,10 +35,10 @@ public class AetherRepositoryTest extends AbstractRepositoryTest {
     @BeforeClass
     public static void setUp() throws Exception {
         for (int i = 0; i < repoURL.length; i++) {
-            Path path = Paths.get("target/repos/AetherRepositoryTest/repo" + (i + 1));
-            repoURL[i] = path.toFile().toURI().toURL();
+            File path = new File("target/repos/AetherRepositoryTest/repo" + (i + 1));
+            repoURL[i] = path.toURI().toURL();
             IOUtils.rmdirs(path);
-            path.toFile().mkdirs();
+            path.mkdirs();
         }
     }
 
@@ -52,7 +50,7 @@ public class AetherRepositoryTest extends AbstractRepositoryTest {
     PatchTool getPatchTool(final URL repoURL) {
         AetherFactory factory = new DefaultAetherFactory() {
             
-            Path rootPath = new File(repoURL.getPath()).toPath();
+            File rootPath = new File(repoURL.getPath());
             {
                 try {
                     IOUtils.rmdirs(rootPath);
@@ -67,8 +65,8 @@ public class AetherRepositoryTest extends AbstractRepositoryTest {
             }
             
             @Override
-            public Path getLocalRepositoryPath() {
-                return rootPath.resolve("local-repo");
+            public File getLocalRepositoryPath() {
+                return new File(rootPath, "local-repo");
             }
         };
         return new PatchToolBuilder().repositoryURL(repoURL).aetherFactory(factory).build();

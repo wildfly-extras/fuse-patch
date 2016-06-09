@@ -32,6 +32,9 @@
 
     <!-- Properties -->
     <properties>
+        <!-- maven-resources-plugin -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
         <!-- WildFly version -->
         <version.wildfly>10.0.0.Final</version.wildfly>
         
@@ -51,6 +54,7 @@
         <version-exec-maven-plugin>1.4.0</version-exec-maven-plugin>
         <version-license-maven-plugin>1.8</version-license-maven-plugin>
         <version-groovy-maven-plugin>2.0</version-groovy-maven-plugin>
+        <version-maven-assembly-plugin>2.6</version-maven-assembly-plugin>
         <version-maven-compiler-plugin>3.1</version-maven-compiler-plugin>
         <version-maven-jar-plugin>2.6</version-maven-jar-plugin>
         <version-maven-javadoc-plugin>2.9.1</version-maven-javadoc-plugin>
@@ -177,11 +181,16 @@
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>${version-maven-assembly-plugin}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${version-maven-compiler-plugin}</version>
                     <configuration>
-                        <source>1.7</source>
-                        <target>1.7</target>
+                        <source>1.6</source>
+                        <target>1.6</target>
                     </configuration>
                 </plugin>
                 <plugin>

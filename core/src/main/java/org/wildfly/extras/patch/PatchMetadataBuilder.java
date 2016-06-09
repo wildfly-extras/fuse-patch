@@ -29,9 +29,9 @@ public final class PatchMetadataBuilder {
 
     private PatchId patchId;
     private PatchId oneoffId;
-    private Set<String> roles = new LinkedHashSet<>();
-    private Set<PatchId> dependencies = new LinkedHashSet<>();
-    private List<String> postCommands = new ArrayList<>();
+    private Set<String> roles = new LinkedHashSet<String>();
+    private Set<PatchId> dependencies = new LinkedHashSet<PatchId>();
+    private List<String> postCommands = new ArrayList<String>();
 
     public PatchMetadataBuilder patchId(PatchId patchId) {
         this.patchId = patchId;

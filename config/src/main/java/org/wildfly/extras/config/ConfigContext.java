@@ -15,28 +15,28 @@
  */
 package org.wildfly.extras.config;
 
-import java.nio.file.Path;
+import java.io.File;
 
 import org.jdom.Document;
 
 
 public final class ConfigContext {
 
-    private final Path jbossHome;
-    private final Path configuration;
+    private final File jbossHome;
+    private final File configuration;
     private final Document document;
 
-    ConfigContext(Path jbossHome, Path configuration, Document document) {
+    ConfigContext(File jbossHome, File configuration, Document document) {
         this.jbossHome = jbossHome;
         this.configuration = configuration;
         this.document = document;
     }
 
-    public Path getJBossHome() {
+    public File getJBossHome() {
         return jbossHome;
     }
 
-    public Path getConfiguration() {
+    public File getConfiguration() {
         return configuration;
     }
 

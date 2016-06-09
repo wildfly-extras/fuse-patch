@@ -39,7 +39,7 @@ public class Main {
     }
 
     // Entry point with no system exit
-    public static void mainInternal(String[] args) throws Exception {
+    public static void mainInternal(String[] args) throws Throwable {
         
         Options options = new Options();
         CmdLineParser parser = new CmdLineParser(options);
@@ -51,7 +51,7 @@ public class Main {
         }
 
         try {
-            List<String> configs = new ArrayList<>();
+            List<String> configs = new ArrayList<String>();
             if (options.configs != null) {
                 configs.addAll(Arrays.asList(options.configs.split(",")));
             }

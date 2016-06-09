@@ -19,8 +19,8 @@
  */
 package org.wildfly.extras.patch.internal;
 
+import java.io.File;
 import java.net.URL;
-import java.nio.file.Path;
 
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.spi.StringArrayOptionHandler;
@@ -34,7 +34,7 @@ final class Options {
     URL configUrl;
     
 	@Option(name = "--server", usage = "Path to the target server")
-	Path serverHome;
+	File serverHome;
 
 	@Option(name = "--repository", usage = "URL to the patch repository")
 	URL repositoryUrl;

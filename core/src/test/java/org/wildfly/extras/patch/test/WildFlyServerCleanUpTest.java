@@ -22,54 +22,30 @@ package org.wildfly.extras.patch.test;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
-import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.PatchToolBuilder;
 import org.wildfly.extras.patch.Server;
+import org.wildfly.extras.patch.utils.IOUtils;
 
 public class WildFlyServerCleanUpTest {
 
-    private static Path SERVER_PATH = Paths.get("target/my-server");
-    private static Path MODULE_BASE_PATH = Paths.get("target/my-server/modules/system/layers/fuse/org/wildfly/extras");
+    private static File SERVER_PATH = new File("target/my-server");
+    private static File MODULE_BASE_PATH = new File("target/my-server/modules/system/layers/fuse/org/wildfly/extras");
 
     @Before
     public void setUp() throws Exception {
-        SERVER_PATH.resolve("fusepatch/repository").toFile().mkdirs();
+        new File(SERVER_PATH, "fusepatch/repository").mkdirs();
     }
 
     @After
     public void tearDown() throws Exception {
-        Files.walkFileTree(SERVER_PATH, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                Files.delete(file);
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult visitFileFailed(Path file, IOException exception) throws IOException {
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exception) throws IOException {
-                if (exception == null) {
-                    Files.delete(dir);
-                }
-                return FileVisitResult.CONTINUE;
-            }
-        });
+        IOUtils.rmdirs(SERVER_PATH);
     }
 
     @Test
@@ -78,11 +54,11 @@ public class WildFlyServerCleanUpTest {
         PatchTool patchTool = builder.serverPath(SERVER_PATH).build();
         Server server = patchTool.getServer();
 
-        writeDummyModule(MODULE_BASE_PATH.resolve("patch/main"), "fuse-patch-core", true);
-        writeDummyModule(MODULE_BASE_PATH.resolve("config/main"), "fuse-patch-config", true);
+        writeDummyModule(new File(MODULE_BASE_PATH, "patch/main"), "fuse-patch-core", true);
+        writeDummyModule(new File(MODULE_BASE_PATH, "config/main"), "fuse-patch-config", true);
 
-        Path patchModule = MODULE_BASE_PATH.resolve("patch/main");
-        Path configModule = MODULE_BASE_PATH.resolve("config/main");
+        File patchModule = new File(MODULE_BASE_PATH, "patch/main");
+        File configModule = new File(MODULE_BASE_PATH, "config/main");
 
         // Assert files present before cleanup
         assertExpectedFileCount(patchModule, 5);
@@ -92,15 +68,14 @@ public class WildFlyServerCleanUpTest {
 
         // Make sure the correct jars and the module.xml remain
         assertExpectedFileCount(patchModule, 3);
+        Assert.assertTrue(new File(patchModule, "fuse-patch-core-1.0.1.jar").exists());
+        Assert.assertTrue(new File(patchModule, "fuse-patch-core-test-1.0.1.jar").exists());
+        Assert.assertTrue(new File(patchModule, "module.xml").exists());
+
         assertExpectedFileCount(configModule, 3);
-
-        Assert.assertTrue(patchModule.resolve("fuse-patch-core-1.0.1.jar").toFile().exists());
-        Assert.assertTrue(patchModule.resolve("fuse-patch-core-test-1.0.1.jar").toFile().exists());
-        Assert.assertTrue(patchModule.resolve("module.xml").toFile().exists());
-
-        Assert.assertTrue(configModule.resolve("fuse-patch-config-1.0.1.jar").toFile().exists());
-        Assert.assertTrue(configModule.resolve("fuse-patch-config-test-1.0.1.jar").toFile().exists());
-        Assert.assertTrue(configModule.resolve("module.xml").toFile().exists());
+        Assert.assertTrue(new File(configModule, "fuse-patch-config-1.0.1.jar").exists());
+        Assert.assertTrue(new File(configModule, "fuse-patch-config-test-1.0.1.jar").exists());
+        Assert.assertTrue(new File(configModule, "module.xml").exists());
     }
 
     @Test
@@ -109,11 +84,11 @@ public class WildFlyServerCleanUpTest {
         PatchTool patchTool = builder.serverPath(SERVER_PATH).build();
         Server server = patchTool.getServer();
 
-        writeDummyModule(MODULE_BASE_PATH.resolve("patch/main"), "fuse-patch-core", false);
-        writeDummyModule(MODULE_BASE_PATH.resolve("config/main"), "fuse-patch-config", false);
+        writeDummyModule(new File(MODULE_BASE_PATH, "patch/main"), "fuse-patch-core", false);
+        writeDummyModule(new File(MODULE_BASE_PATH, "config/main"), "fuse-patch-config", false);
 
-        Path patchModule = MODULE_BASE_PATH.resolve("patch/main");
-        Path configModule = MODULE_BASE_PATH.resolve("config/main");
+        File patchModule = new File(MODULE_BASE_PATH, "patch/main");
+        File configModule = new File(MODULE_BASE_PATH, "config/main");
 
         assertExpectedFileCount(patchModule, 3);
         assertExpectedFileCount(configModule, 3);
@@ -124,31 +99,34 @@ public class WildFlyServerCleanUpTest {
         assertExpectedFileCount(configModule, 3);
     }
 
-    private void assertExpectedFileCount(Path modulePath, int count) {
+    private void assertExpectedFileCount(File modulePath, int count) {
         FilenameFilter filter = new ModuleFileFilter();
-        String[] moduleFiles = modulePath.toFile().list(filter);
+        String[] moduleFiles = modulePath.list(filter);
 
         Assert.assertEquals("Expected " + count + " files to be present after clean up", count, moduleFiles.length);
     }
 
-    private void writeDummyModule(Path modulePath, String name, boolean addOldVersion) throws Exception {
-        modulePath.toFile().mkdirs();
+    private void writeDummyModule(File modulePath, String name, boolean addOldVersion) throws Exception {
+        modulePath.mkdirs();
 
-        try (FileWriter fw = new FileWriter(modulePath.resolve("module.xml").toFile())) {
+        FileWriter fw = new FileWriter(new File(modulePath, "module.xml"));
+        try {
             fw.write("<module name=\"" + name + "\">\n");
             fw.write("<resources>\n");
             fw.write("<resource-root path=\"" + name + "-1.0.1.jar\"/>\n");
             fw.write("<resource-root path=\"" + name + "-test-1.0.1.jar\"/>\n");
             fw.write("</resources>\n");
             fw.write("</module>");
+        } finally {
+            fw.close();
         }
 
-        modulePath.resolve(name + "-1.0.1.jar").toFile().createNewFile();
-        modulePath.resolve(name + "-test-1.0.1.jar").toFile().createNewFile();
+        new File(modulePath, name + "-1.0.1.jar").createNewFile();
+        new File(modulePath, name + "-test-1.0.1.jar").createNewFile();
 
         if (addOldVersion) {
-            modulePath.resolve(name + "-1.0.0.jar").toFile().createNewFile();
-            modulePath.resolve(name + "-test-1.0.0.jar").toFile().createNewFile();
+            new File(modulePath, name + "-1.0.0.jar").createNewFile();
+            new File(modulePath, name + "-test-1.0.0.jar").createNewFile();
         }
     }
 

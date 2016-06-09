@@ -22,13 +22,11 @@ package org.wildfly.extras.patch.installer;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.Properties;
 import java.util.zip.ZipEntry;
@@ -40,7 +38,7 @@ import java.util.zip.ZipInputStream;
  */
 public abstract class AbstractInstaller {
 
-    protected Path eapHome;
+    protected File eapHome;
     protected boolean verbose;
 
     abstract public String getJarName();
@@ -61,7 +59,7 @@ public abstract class AbstractInstaller {
         }
 
         if (!args.isEmpty()) {
-            eapHome = Paths.get(args.removeFirst());
+            eapHome = new File(args.removeFirst());
         }
 
         try {
@@ -119,9 +117,24 @@ public abstract class AbstractInstaller {
         }
     }
 
+    private static void copyToFile(InputStream input, File output) throws IOException {
+        OutputStream outputStream = new FileOutputStream(output);
+        try {
+            byte[] bytes = new byte[4096];
+            int read = input.read(bytes);
+            while (read > 0) {
+                outputStream.write(bytes, 0, read);
+                read = input.read(bytes);
+            }
+            outputStream.flush();
+        } finally {
+            outputStream.close();
+        }
+    }
+
     private void run() throws Exception {
         if (eapHome == null) {
-            eapHome = new File(".").toPath().toAbsolutePath();
+            eapHome = new File(".").getAbsoluteFile();
         }
 
         validateHomePath(eapHome);
@@ -129,7 +142,7 @@ public abstract class AbstractInstaller {
         ClassLoader classLoader = getClass().getClassLoader();
 
         // Install Fuse Patch Tool
-        Path fusePatchPath = eapHome.resolve(Paths.get("modules/system/layers/fuse/org/wildfly/extras/patch"));
+        File fusePatchPath = new File(eapHome, "modules/system/layers/fuse/org/wildfly/extras/patch");
         if (mustInstallPatchDistro(fusePatchPath)) {
 
             Version fusepatchVersion = getVersion();
@@ -138,29 +151,35 @@ public abstract class AbstractInstaller {
             IllegalStateAssertion.assertNotNull(resource, "Cannot obtain resource: " + resname);
 
             Properties installedFiles = new Properties();
-            try (ZipInputStream distro = new ZipInputStream(resource)) {
+            ZipInputStream distro = new ZipInputStream(resource);
+            try {
                 unpack(resname, distro, installedFiles);
+            } finally {
+                distro.close();
             }
         }
 
         // Copy repository content
-        Path jarPath = Paths.get(getClass().getProtectionDomain().getCodeSource().getLocation().toURI());
-        try (ZipInputStream zipstream = new ZipInputStream(new FileInputStream(jarPath.toFile()))) {
-            Path repoPath = eapHome.resolve(Paths.get("fusepatch/repository"));
-            IllegalStateAssertion.assertTrue(repoPath.toFile().isDirectory(), "Not a valid repository path: " + repoPath);
+        File jarPath = new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI());
+        ZipInputStream zipstream = new ZipInputStream(new FileInputStream(jarPath));
+        try {
+            File repoPath = new File(eapHome, "fusepatch/repository");
+            IllegalStateAssertion.assertTrue(repoPath.isDirectory(), "Not a valid repository path: " + repoPath);
             for (ZipEntry entry = zipstream.getNextEntry(); entry != null; entry = zipstream.getNextEntry()) {
                 String name = entry.getName();
                 if (name.startsWith("META-INF/repository") && !entry.isDirectory()) {
-                    Path path = Paths.get(name);
-                    Path targetPath = repoPath.resolve(path.getFileName());
-                    if (targetPath.toFile().exists()) {
-                        warn("Skip already existing patch file: " + path.getFileName());
+                    File path = new File(name);
+                    File targetPath = new File(repoPath, path.getName());
+                    if (targetPath.exists()) {
+                        warn("Skip already existing patch file: " + path.getName());
                     } else {
-                        warn("Copy to repository: " + path.getFileName());
-                        Files.copy(zipstream, targetPath);
+                        warn("Copy to repository: " + path.getName());
+                        copyToFile(zipstream, targetPath);
                     }
                 }
             }
+        } finally {
+            zipstream.close();
         }
 
         // Run the install commands
@@ -176,8 +195,8 @@ public abstract class AbstractInstaller {
         }
     }
 
-    protected boolean mustInstallPatchDistro(Path fusePatchPath) {
-        return !fusePatchPath.toFile().exists();
+    protected boolean mustInstallPatchDistro(File fusePatchPath) {
+        return !fusePatchPath.exists();
     }
 
     protected final Version getVersion() {
@@ -194,34 +213,34 @@ public abstract class AbstractInstaller {
 
     protected void runCommand(String cmd) throws Exception {
         info("Run command: " + cmd);
-        Process proc = Support.exec(cmd.split("\\s"), eapHome.toFile());
+        Process proc = Support.exec(cmd.split("\\s"), eapHome);
         IllegalStateAssertion.assertEquals(0, proc.waitFor(), "Command did not terminate normally");
     }
 
-    private void validateHomePath(Path homePath) {
-        Path versionPath = homePath.resolve(Paths.get("modules/system/layers/base/org/jboss/as/version/main/module.xml"));
-        IllegalStateAssertion.assertTrue(versionPath.toFile().isFile(), "The path '" + eapHome + "' is not a valid EAP installation location.");
+    private void validateHomePath(File homePath) {
+        File versionPath = new File(homePath, "modules/system/layers/base/org/jboss/as/version/main/module.xml");
+        IllegalStateAssertion.assertTrue(versionPath.isFile(), "The path '" + eapHome + "' is not a valid EAP installation location.");
     }
 
     private void unpack(String resname, ZipInputStream zipstream, Properties installedFiles) throws IOException {
 
-        info("Installing " + Paths.get(resname).getFileName());
+        info("Installing " + new File(resname).getName());
         for (ZipEntry entry = zipstream.getNextEntry(); entry != null; entry = zipstream.getNextEntry()) {
             String entryName = entry.getName();
-            Path targetPath = eapHome.resolve(entryName);
+            File targetPath = new File(eapHome, entryName);
             if (entry.isDirectory()) {
-                targetPath.toFile().mkdirs();
+                targetPath.mkdirs();
             } else {
-                if (targetPath.toFile().exists()) {
-                    if (Support.computeCRC32(targetPath.toFile()) != entry.getCrc()) {
+                if (targetPath.exists()) {
+                    if (Support.computeCRC32(targetPath) != entry.getCrc()) {
                         info("WARN: Existing file found: " + targetPath);
                     }
                 }
 
                 debug("extracting: " + entryName);
-                Files.copy(zipstream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                copyToFile(zipstream, targetPath);
                 if (targetPath.toString().endsWith(".sh") || targetPath.toString().endsWith(".bat")) {
-                    targetPath.toFile().setExecutable(true);
+                    targetPath.setExecutable(true);
                 }
                 installedFiles.setProperty(entry.getName(), "" + entry.getCrc());
             }

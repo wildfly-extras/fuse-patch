@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.nio.file.Path;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.wildfly.extras.patch.aether.AetherFactory;
@@ -47,7 +46,7 @@ public final class PatchToolBuilder {
 
     private ReentrantLock lock = new ReentrantLock();
     private URL repoUrl;
-    private Path serverPath;
+    private File serverPath;
     private ServerFactory serverFactory;
     private AetherFactory aetherFactory;
     private String username;
@@ -68,7 +67,7 @@ public final class PatchToolBuilder {
         return this;
     }
 
-    public PatchToolBuilder serverPath(Path serverPath) {
+    public PatchToolBuilder serverPath(File serverPath) {
         this.serverPath = serverPath;
         return this;
     }
@@ -139,7 +138,7 @@ public final class PatchToolBuilder {
 
                 // Local file repository
                 if (protocol.equals("file")) {
-                    Path rootPath = getAbsolutePath(repoUrl);
+                    File rootPath = getAbsolutePath(repoUrl);
                     repository = new LocalFileRepository(lock, rootPath);
                 }
 
@@ -149,9 +148,9 @@ public final class PatchToolBuilder {
         return repository;
     }
 
-    private Path getAbsolutePath(URL url) {
+    private File getAbsolutePath(URL url) {
         try {
-            return new File(URLDecoder.decode(url.getPath(), "UTF-8")).getAbsoluteFile().toPath();
+            return new File(URLDecoder.decode(url.getPath(), "UTF-8")).getAbsoluteFile();
         } catch (UnsupportedEncodingException ex) {
             throw new IllegalArgumentException(ex);
         }

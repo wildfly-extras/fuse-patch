@@ -19,12 +19,11 @@
  */
 package org.wildfly.extras.patch.test;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.channels.FileChannel;
 import java.util.List;
 
 import javax.activation.DataHandler;
@@ -39,6 +38,7 @@ import org.wildfly.extras.patch.PatchMetadata;
 import org.wildfly.extras.patch.PatchMetadataBuilder;
 import org.wildfly.extras.patch.PatchTool;
 import org.wildfly.extras.patch.Repository;
+import org.wildfly.extras.patch.utils.IOUtils;
 
 public abstract class AbstractRepositoryTest {
 
@@ -112,9 +112,19 @@ public abstract class AbstractRepositoryTest {
         Repository repo = patchTool.getRepository();
 
         repo.addArchive(Archives.getZipUrlFoo100());
-        Path copyPath = Paths.get("target/foo-copy-1.1.0.zip");
-        Files.copy(Paths.get(Archives.getZipUrlFoo110().toURI()), copyPath, REPLACE_EXISTING);
-        URL fileUrl = copyPath.toUri().toURL();
+        File copyPath = new File("target/foo-copy-1.1.0.zip");
+        FileChannel input = new FileInputStream(new File(Archives.getZipUrlFoo110().toURI())).getChannel();
+        try {
+            FileChannel output = new FileOutputStream(copyPath).getChannel();
+            try {
+                output.transferFrom(input, 0, input.size());
+            } finally {
+                output.close();
+            }
+        } finally {
+            input.close();
+        }
+        URL fileUrl = copyPath.toURI().toURL();
         try {
             repo.addArchive(fileUrl);
             Assert.fail("PatchException expected");

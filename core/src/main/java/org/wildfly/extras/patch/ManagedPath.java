@@ -19,8 +19,7 @@
  */
 package org.wildfly.extras.patch;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -37,18 +36,18 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
  */
 public final class ManagedPath {
 
-    private final Path path;
-    private final List<PatchId> owners = new ArrayList<>();
+    private final File path;
+    private final List<PatchId> owners = new ArrayList<PatchId>();
 
-    public static ManagedPath create(Path path, List<PatchId> owners) {
+    public static ManagedPath create(File path, List<PatchId> owners) {
         return new ManagedPath(path, owners);
     }
 
     public static ManagedPath fromString(String line) {
         IllegalArgumentAssertion.assertNotNull(line, "line");
         int index = line.indexOf(' ');
-        List<PatchId> owners = new ArrayList<>();
-        Path path = Paths.get(line.substring(0, index));
+        List<PatchId> owners = new ArrayList<PatchId>();
+        File path = new File(line.substring(0, index));
         String opart = line.substring(index + 1);
         opart = opart.substring(1, opart.length() - 1);
         for (String idspec : opart.split(",")) {
@@ -57,14 +56,14 @@ public final class ManagedPath {
         return new ManagedPath(path, owners);
     }
     
-    private ManagedPath(Path path, List<PatchId> owners) {
+    private ManagedPath(File path, List<PatchId> owners) {
         IllegalArgumentAssertion.assertNotNull(path, "path");
         IllegalArgumentAssertion.assertNotNull(owners, "owners");
         this.path = path;
         this.owners.addAll(owners);
     }
 
-    public Path getPath() {
+    public File getPath() {
         return path;
     }
 

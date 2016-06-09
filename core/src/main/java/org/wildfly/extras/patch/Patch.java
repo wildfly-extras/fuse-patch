@@ -19,7 +19,7 @@
  */
 package org.wildfly.extras.patch;
 
-import java.nio.file.Path;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -44,7 +44,7 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 public final class Patch {
 
     private final PatchMetadata metadata;
-    private final Map<Path, Record> recordsMap = new LinkedHashMap<>();
+    private final Map<File, Record> recordsMap = new LinkedHashMap<File, Record>();
     private int hashCache;
 
     public static Patch create(PatchMetadata metadata, Collection<Record> records) {
@@ -55,16 +55,16 @@ public final class Patch {
         IllegalArgumentAssertion.assertNotNull(targetSet, "targetSet");
 
         // All seed patch records are remove candidates
-        Map<Path, Record> removeMap = new HashMap<>();
+        Map<File, Record> removeMap = new HashMap<File, Record>();
         if (seedPatch != null) {
             for (Record rec : seedPatch.getRecords()) {
                 removeMap.put(rec.getPath(), Record.create(null, Action.DEL, rec.getPath(), rec.getChecksum()));
             }
         }
 
-        Set<Record> records = new HashSet<>();
+        Set<Record> records = new HashSet<Record>();
         for (Record rec : targetSet.getRecords()) {
-            Path path = rec.getPath();
+            File path = rec.getPath();
             Long checksum = rec.getChecksum();
             if (removeMap.containsValue(rec)) {
                 removeMap.remove(path);
@@ -88,13 +88,13 @@ public final class Patch {
         this.metadata = metadata;
 
         // Sort the records by path
-        Map<Path, Record> auxmap = new HashMap<>();
+        Map<File, Record> auxmap = new HashMap<File, Record>();
         for (Record aux : records) {
             auxmap.put(aux.getPath(), Record.create(metadata.getPatchId(), aux.getAction(), aux.getPath(), aux.getChecksum()));
         }
-        List<Path> paths = new ArrayList<>(auxmap.keySet());
+        List<File> paths = new ArrayList<File>(auxmap.keySet());
         Collections.sort(paths);
-        for (Path path : paths) {
+        for (File path : paths) {
             recordsMap.put(path, auxmap.get(path));
         }
     }
@@ -108,14 +108,14 @@ public final class Patch {
     }
 
     public List<Record> getRecords() {
-        return Collections.unmodifiableList(new ArrayList<>(recordsMap.values()));
+        return Collections.unmodifiableList(new ArrayList<Record>(recordsMap.values()));
     }
 
-    public boolean containsPath(Path path) {
+    public boolean containsPath(File path) {
         return recordsMap.containsKey(path);
     }
 
-    public Record getRecord(Path path) {
+    public Record getRecord(File path) {
         return recordsMap.get(path);
     }
 

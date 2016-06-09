@@ -25,8 +25,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 import javax.activation.DataHandler;
@@ -186,13 +184,16 @@ public class RepositoryEndpointTest {
 	}
 
 	private URL getArchiveURL(String name) throws IOException {
-    	Path dataDir = Paths.get(System.getProperty("jboss.server.data.dir"));
-    	Path patchDir = dataDir.resolve("fusepatch");
-    	patchDir.toFile().mkdirs();
-    	File patchFile = patchDir.resolve(name + ".zip").toFile();
+    	File dataDir = new File(System.getProperty("jboss.server.data.dir"));
+    	File patchDir = new File(dataDir, "fusepatch");
+    	patchDir.mkdirs();
+    	File patchFile = new File(patchDir, name + ".zip");
     	if (!patchFile.isFile()) {
-        	try (InputStream input = deployer.getDeployment(name)) {
+    	    InputStream input = deployer.getDeployment(name);
+        	try {
         		IOUtils.copy(input, new FileOutputStream(patchFile));
+        	} finally {
+        	    input.close();
         	}
     	}
 		return patchFile.toURI().toURL();

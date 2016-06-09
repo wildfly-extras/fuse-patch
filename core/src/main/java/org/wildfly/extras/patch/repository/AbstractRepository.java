@@ -27,19 +27,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.locks.Lock;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -90,7 +86,7 @@ public abstract class AbstractRepository implements Repository {
         IllegalArgumentAssertion.assertNotNull(prefix, "prefix");
         lock.tryLock();
         try {
-            List<PatchId> list = new ArrayList<>(queryAvailable(prefix));
+            List<PatchId> list = new ArrayList<PatchId>(queryAvailable(prefix));
             Collections.sort(list);
             return list.isEmpty() ? null : list.get(list.size() - 1);
         } finally {
@@ -157,7 +153,7 @@ public abstract class AbstractRepository implements Repository {
             LOG.info(message);
             
             // Collect the paths from the latest other patches
-            Map<Path, Record> combinedPathsMap = new HashMap<>();
+            Map<File, Record> combinedPathsMap = new HashMap<File, Record>();
             for (PatchId auxid : queryAvailable(null)) {
                 if (!patchId.getName().equals(auxid.getName())) {
                     for (Record rec : getPatch(auxid).getRecords()) {
@@ -166,78 +162,111 @@ public abstract class AbstractRepository implements Repository {
                 }
             }
 
-            final Path targetPath = Files.createTempFile("fptmp", ".zip");
-            final File targetFile = targetPath.toFile();
+            final File targetPath = File.createTempFile("fptmp", ".zip");
+            final File targetFile = targetPath;
             
             // Copy regular patch content to a target file
             if (oneoffId == null) {
-                try (InputStream input = dataHandler.getInputStream(); OutputStream output = new FileOutputStream(targetFile)) {
-                    IOUtils.copy(input, output);
+                InputStream input = dataHandler.getInputStream();
+                OutputStream output = new FileOutputStream(targetFile);
+                try {
+                    try {
+                        IOUtils.copy(input, output);
+                    } finally {
+                        output.close();
+                    }
+                } finally {
+                    input.close();
                 }
             }
             
             // Combine oneoff base contant with patch content to a target file
             if (oneoffId != null) {
                 
-                final Path workspace = Files.createTempDirectory("oneoff-workspace");
+                final File workspaceFile = File.createTempFile("oneoff-workspace", "");
+                final File workspace = new File(workspaceFile.getPath() + ".d");
+                workspaceFile.delete();
+                workspace.mkdir();
                 try {
                     
                     // Unzip the base patch into the workspace
                     DataSource dataSource = getDataSource(oneoffId);
-                    try (ZipInputStream zipInput = new ZipInputStream(dataSource.getInputStream())) {
+                    ZipInputStream zipInput = new ZipInputStream(dataSource.getInputStream());
+                    try {
                         byte[] buffer = new byte[64 * 1024];
                         ZipEntry entry = zipInput.getNextEntry();
                         while (entry != null) {
                             if (!entry.isDirectory()) {
                                 String name = entry.getName();
-                                File entryFile = workspace.resolve(Paths.get(name)).toFile();
+                                File entryFile = new File(workspace, name);
                                 entryFile.getParentFile().mkdirs();
-                                try (FileOutputStream fos = new FileOutputStream(entryFile)) {
+                                FileOutputStream fos = new FileOutputStream(entryFile);
+                                try {
                                     int read = zipInput.read(buffer);
                                     while (read > 0) {
                                         fos.write(buffer, 0, read);
                                         read = zipInput.read(buffer);
                                     }
+                                } finally {
+                                    fos.close();
                                 }
                             }
                             entry = zipInput.getNextEntry();
                         }
+                    } finally {
+                        zipInput.close();
                     }
 
                     // Unzip the one-off patch into the workspace
-                    try (ZipInputStream zipInput = new ZipInputStream(dataHandler.getInputStream())) {
+                    zipInput = new ZipInputStream(dataHandler.getInputStream());
+                    try {
                         byte[] buffer = new byte[64 * 1024];
                         ZipEntry entry = zipInput.getNextEntry();
                         while (entry != null) {
                             if (!entry.isDirectory()) {
                                 String name = entry.getName();
-                                File entryFile = workspace.resolve(Paths.get(name)).toFile();
+                                File entryFile = new File(workspace, name);
                                 entryFile.getParentFile().mkdirs();
-                                try (FileOutputStream fos = new FileOutputStream(entryFile)) {
+                                FileOutputStream fos = new FileOutputStream(entryFile);
+                                try {
                                     int read = zipInput.read(buffer);
                                     while (read > 0) {
                                         fos.write(buffer, 0, read);
                                         read = zipInput.read(buffer);
                                     }
+                                } finally {
+                                    fos.close();
                                 }
                             }
                             entry = zipInput.getNextEntry();
                         }
+                    } finally {
+                        zipInput.close();
                     }
 
                     // Create the target zip file
-                    try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(targetFile))) {
-                        Files.walkFileTree(workspace, new SimpleFileVisitor<Path>() {
-                            @Override
-                            public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
-                                Path relpath = workspace.relativize(path);
-                                zos.putNextEntry(new ZipEntry(relpath.toString()));
-                                try (FileInputStream fis = new FileInputStream(path.toFile())) {
-                                    IOUtils.copy(fis, zos);
+                    ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(targetFile));
+                    try {
+                        LinkedList<File> dirs = new LinkedList<File>();
+                        dirs.push(workspace);
+                        File dir;
+                        while ((dir = dirs.poll()) != null) {
+                            for (File sub : dir.listFiles()) {
+                                if (sub.isDirectory()) {
+                                    dirs.push(sub);
+                                } else {
+                                    zos.putNextEntry(new ZipEntry(workspace.toURI().relativize(sub.toURI()).toString()));
+                                    FileInputStream fis = new FileInputStream(sub);
+                                    try {
+                                        IOUtils.copy(fis, zos);
+                                    } finally {
+                                        fis.close();
+                                    }
                                 }
-                                return FileVisitResult.CONTINUE;
                             }
-                        });
+                        }
+                    } finally {
+                        zos.close();
                     }
                 } finally {
                     IOUtils.rmdirs(workspace);
@@ -246,13 +275,16 @@ public abstract class AbstractRepository implements Repository {
                 
             // Build the patch
             Patch patch;
-            try (ZipInputStream zipInput = new ZipInputStream(new FileInputStream(targetFile))) {
+            ZipInputStream zipInput = new ZipInputStream(new FileInputStream(targetFile));
+            try {
                 Patch source = MetadataParser.buildPatchFromZip(patchId, Record.Action.INFO, zipInput);
                 patch = Patch.create(metadata, source.getRecords());
+            } finally {
+                zipInput.close();
             }
             
             // Assert no duplicate paths
-            Set<PatchId> duplicates = new HashSet<>();
+            Set<PatchId> duplicates = new HashSet<PatchId>();
             for (Record rec : patch.getRecords()) {
                 Record otherRec = combinedPathsMap.get(rec.getPath());
                 if (otherRec != null) {
@@ -300,16 +332,18 @@ public abstract class AbstractRepository implements Repository {
 
     private CloseableDataSource getSmartDataSource(Patch smartSet, PatchId patchId) throws IOException {
         
-        final Path targetPath = Files.createTempFile("smart-content", ".zip");
+        final File targetPath = File.createTempFile("smart-content", ".zip");
         
         // Create a temporary zip file that only contains ADD && UPD records
         DataSource dataSource = getDataSource(patchId);
-        try (ZipInputStream zin = new ZipInputStream(dataSource.getInputStream())) {
-            try (ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(targetPath.toFile()))) {
+        ZipInputStream zin = new ZipInputStream(dataSource.getInputStream());
+        try {
+            ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(targetPath));
+            try {
                 byte[] buffer = new byte[64 * 1024];
                 ZipEntry entry = zin.getNextEntry();
                 while (entry != null) {
-                    Record rec = smartSet.getRecord(Paths.get(entry.getName()));
+                    Record rec = smartSet.getRecord(new File(entry.getName()));
                     if (!entry.isDirectory() && rec != null && (rec.getAction() == Action.ADD || rec.getAction() == Action.UPD)) {
                         zout.putNextEntry(new ZipEntry(entry.getName()));
                         int read = zin.read(buffer);
@@ -320,14 +354,18 @@ public abstract class AbstractRepository implements Repository {
                     }
                     entry = zin.getNextEntry();
                 }
+            } finally {
+                zout.close();
             }
+        } finally {
+            zin.close();
         }
         
-        DataSource datasource = new FileDataSource(targetPath.toFile());
+        DataSource datasource = new FileDataSource(targetPath);
         return new CloseableDataSource(datasource) {
             @Override
             public void close() throws IOException {
-                targetPath.toFile().delete();
+                targetPath.delete();
             }
         };
     }

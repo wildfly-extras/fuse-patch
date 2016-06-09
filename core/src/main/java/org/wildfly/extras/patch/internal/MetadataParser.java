@@ -26,16 +26,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,7 +57,7 @@ public final class MetadataParser {
     public static Patch buildPatchFromZip(PatchId patchId, Record.Action action, ZipInputStream zipInput) throws IOException {
         IllegalArgumentAssertion.assertNotNull(zipInput, "zipInput");
 
-        Set<Record> records = new HashSet<>();
+        Set<Record> records = new HashSet<Record>();
         byte[] buffer = new byte[64 * 1024];
         ZipEntry entry = zipInput.getNextEntry();
         while (entry != null) {
@@ -73,7 +68,7 @@ public final class MetadataParser {
                     read = zipInput.read(buffer);
                 }
                 long crc = entry.getCrc();
-                records.add(Record.create(patchId, action, Paths.get(name), crc));
+                records.add(Record.create(patchId, action, new File(name), crc));
             }
             entry = zipInput.getNextEntry();
         }
@@ -81,41 +76,46 @@ public final class MetadataParser {
         return Patch.create(mdbuilder.build(), records);
     }
 
-    public static Patch readPatch(Path rootPath, PatchId patchId) throws IOException {
+    public static Patch readPatch(File rootPath, PatchId patchId) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
         File metadata = getMetadataFile(rootPath, patchId);
         return metadata.isFile() ? readPatch(metadata) : null;
     }
 
-    public static List<PatchId> queryAvailablePatches(Path rootPath, final String prefix, boolean latest) {
+    public static List<PatchId> queryAvailablePatches(File rootPath, final String prefix, boolean latest) {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
-        final Map<String, TreeSet<PatchId>> auxmap = new HashMap<>();
-        if (rootPath.toFile().exists()) {
+        final Map<String, TreeSet<PatchId>> auxmap = new HashMap<String, TreeSet<PatchId>>();
+        if (rootPath.exists()) {
+            LinkedList<File> dirs = new LinkedList<File>();
+            dirs.push(rootPath);
             try {
-                Files.walkFileTree(rootPath, new SimpleFileVisitor<Path>() {
-                    @Override
-                    public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
-                        String name = path.getFileName().toString();
-                        if (!MANAGED_PATHS.equals(name) && name.endsWith(".metadata")) {
-                            if (prefix == null || name.startsWith(prefix)) {
-                                PatchId patchId = PatchId.fromURL(path.toUri().toURL());
-                                TreeSet<PatchId> idset = auxmap.get(patchId.getName());
-                                if (idset == null) {
-                                    idset = new TreeSet<>();
-                                    auxmap.put(patchId.getName(), idset);
+                File dir;
+                while ((dir = dirs.poll()) != null) {
+                    for (File sub : dir.listFiles()) {
+                        if (sub.isDirectory()) {
+                            dirs.push(sub);
+                        } else {
+                            String name = sub.getName();
+                            if (!MANAGED_PATHS.equals(name) && name.endsWith(".metadata")) {
+                                if (prefix == null || name.startsWith(prefix)) {
+                                    PatchId patchId = PatchId.fromURL(sub.toURI().toURL());
+                                    TreeSet<PatchId> idset = auxmap.get(patchId.getName());
+                                    if (idset == null) {
+                                        idset = new TreeSet<PatchId>();
+                                        auxmap.put(patchId.getName(), idset);
+                                    }
+                                    idset.add(patchId);
                                 }
-                                idset.add(patchId);
                             }
                         }
-                        return FileVisitResult.CONTINUE;
                     }
-                });
+                }
             } catch (IOException ex) {
                 throw new IllegalStateException(ex);
             }
         }
-        Set<PatchId> sortedSet = new TreeSet<>();
+        Set<PatchId> sortedSet = new TreeSet<PatchId>();
         for (TreeSet<PatchId> set : auxmap.values()) {
             if (latest) {
                 sortedSet.add(set.last());
@@ -123,33 +123,37 @@ public final class MetadataParser {
                 sortedSet.addAll(set);
             }
         }
-        List<PatchId> result = new ArrayList<>(sortedSet);
+        List<PatchId> result = new ArrayList<PatchId>(sortedSet);
         Collections.reverse(result);
         return Collections.unmodifiableList(result);
     }
 
-    public static void writePatch(Path rootPath, Patch patch) throws IOException {
+    public static void writePatch(File rootPath, Patch patch) throws IOException {
         IllegalArgumentAssertion.assertNotNull(rootPath, "rootPath");
         IllegalArgumentAssertion.assertNotNull(patch, "patch");
         File metadataFile = getMetadataFile(rootPath, patch.getPatchId());
         metadataFile.getParentFile().mkdirs();
-        try (FileOutputStream fos = new FileOutputStream(metadataFile)) {
+        FileOutputStream fos = new FileOutputStream(metadataFile);
+        try {
             writePatch(patch, fos, true);
+        } finally {
+            fos.close();
         }
     }
 
-    public static File getMetadataDirectory(Path rootPath, PatchId patchId) {
-        return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString())).toFile();
+    public static File getMetadataDirectory(File rootPath, PatchId patchId) {
+        return new File(rootPath, patchId.getName() + File.separator + patchId.getVersion().toString());
     }
 
-    public static File getMetadataFile(Path rootPath, PatchId patchId) {
-        return getMetadataDirectory(rootPath, patchId).toPath().resolve(patchId + ".metadata").toFile();
+    public static File getMetadataFile(File rootPath, PatchId patchId) {
+        return new File(getMetadataDirectory(rootPath, patchId), patchId + ".metadata");
     }
 
     public static void writePatch(Patch patch, OutputStream outstream, boolean addHeader) throws IOException {
         IllegalArgumentAssertion.assertNotNull(patch, "patch");
         IllegalArgumentAssertion.assertNotNull(outstream, "outstream");
-        try (PrintStream pw = new PrintStream(outstream)) {
+        PrintStream pw = new PrintStream(outstream);
+        try {
 
             if (addHeader) {
                 pw.println(VERSION_PREFIX + " " + PatchTool.VERSION);
@@ -184,6 +188,8 @@ public final class MetadataParser {
                     pw.println(cmd);
                 }
             }
+        } finally {
+            pw.close();
         }
     }
 
@@ -192,9 +198,10 @@ public final class MetadataParser {
         IllegalArgumentAssertion.assertTrue(metadataFile.isFile(), "Cannot find metadata file: " + metadataFile);
 
         PatchMetadataBuilder mdbuilder = new PatchMetadataBuilder();
-        Set<Record> records = new HashSet<>();
+        Set<Record> records = new HashSet<Record>();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(metadataFile))) {
+        BufferedReader br = new BufferedReader(new FileReader(metadataFile));
+        try {
             String line = br.readLine().trim();
             IllegalStateAssertion.assertTrue(line.startsWith(VERSION_PREFIX), "Cannot obtain version info");
             line = br.readLine().trim();
@@ -238,6 +245,8 @@ public final class MetadataParser {
                 line = br.readLine();
             }
             return Patch.create(mdbuilder.build(), records);
+        } finally {
+            br.close();
         }
     }
 }

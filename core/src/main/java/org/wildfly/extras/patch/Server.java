@@ -19,9 +19,9 @@
  */
 package org.wildfly.extras.patch;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -38,7 +38,7 @@ public interface Server {
 	 * Get the server home path
 	 * @return The path to the server home
 	 */
-	Path getServerHome();
+	File getServerHome();
 	
 	/**
 	 * Get the default repository URL

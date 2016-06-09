@@ -74,7 +74,7 @@ public final class RepositoryClient implements Repository {
     public List<PatchId> queryAvailable(String prefix) {
         lock.tryLock();
         try {
-            List<PatchId> result = new ArrayList<>();
+            List<PatchId> result = new ArrayList<PatchId>();
             String[] available = delegate.queryAvailable(prefix);
             if (available != null) {
                 for (String spec : available) {

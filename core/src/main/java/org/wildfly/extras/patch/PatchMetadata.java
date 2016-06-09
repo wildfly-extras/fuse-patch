@@ -34,9 +34,9 @@ public final class PatchMetadata {
 
     private final PatchId patchId;
     private final PatchId oneoffId;
-    private final Set<String> roles = new LinkedHashSet<>();
-    private final Set<PatchId> dependencies = new LinkedHashSet<>();
-    private final List<String> commands = new ArrayList<>();
+    private final Set<String> roles = new LinkedHashSet<String>();
+    private final Set<PatchId> dependencies = new LinkedHashSet<PatchId>();
+    private final List<String> commands = new ArrayList<String>();
     private final String stringCache;
     
     PatchMetadata(PatchId patchId, Set<String> roles, PatchId oneoffId, Set<PatchId> dependencies, List<String> commands) {

@@ -39,17 +39,17 @@ public class SmartPatchAdapter {
         SmartPatchAdapter result = new SmartPatchAdapter();
         result.dataHandler = smartPatch.getDataHandler();
         result.patch = PatchAdapter.fromPatch(smartPatch.getPatch());
-        List<Record> removeSet = new ArrayList<>(smartPatch.getRemoveSet());
+        List<Record> removeSet = new ArrayList<Record>(smartPatch.getRemoveSet());
         result.removeRecs = new String[removeSet.size()];
         for (int i = 0; i < removeSet.size(); i++) {
             result.removeRecs[i] = removeSet.get(i).toString();
         }
-        List<Record> replaceSet = new ArrayList<>(smartPatch.getReplaceSet());
+        List<Record> replaceSet = new ArrayList<Record>(smartPatch.getReplaceSet());
         result.replaceRecs = new String[replaceSet.size()];
         for (int i = 0; i < replaceSet.size(); i++) {
             result.replaceRecs[i] = replaceSet.get(i).toString();
         }
-        List<Record> addSet = new ArrayList<>(smartPatch.getAddSet());
+        List<Record> addSet = new ArrayList<Record>(smartPatch.getAddSet());
         result.addRecs = new String[addSet.size()];
         for (int i = 0; i < addSet.size(); i++) {
             result.addRecs[i] = addSet.get(i).toString();

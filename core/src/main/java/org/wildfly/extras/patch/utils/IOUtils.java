@@ -19,15 +19,12 @@
  */
 package org.wildfly.extras.patch.utils;
 
-import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.util.LinkedList;
 import java.util.zip.CRC32;
 
 public class IOUtils {
@@ -57,50 +54,87 @@ public class IOUtils {
         output.flush();
     }
 
-    public static void copydirs(final Path targetDir, final Path sourceDir) throws IOException {
+    public static void copydirs(final File targetDir, final File sourceDir) throws IOException {
         IllegalArgumentAssertion.assertNotNull(targetDir, "targetDir");
         IllegalArgumentAssertion.assertNotNull(sourceDir, "sourceDir");
-        Files.walkFileTree(sourceDir, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                Path targetdir = targetDir.resolve(dir.relativize(sourceDir));
-                targetdir.toFile().mkdirs();
-                return FileVisitResult.CONTINUE;
-            }
 
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                return FileVisitResult.CONTINUE;
+        LinkedList<File> dirs = new LinkedList<File>();
+        dirs.push(sourceDir);
+        File dir;
+        while ((dir = dirs.poll()) != null) {
+            for (File sub : dir.listFiles()) {
+                if (sub.isDirectory()) {
+                    dirs.push(sub);
+                    String relpath = sourceDir.toURI().relativize(sub.toURI()).toString();
+                    new File(targetDir, relpath).mkdirs();
+                }
             }
-        });
+        }
     }
 
-    public static void rmdirs(final Path targetDir) throws IOException {
+    public static void rmdirs(final File targetDir) throws IOException {
         IllegalArgumentAssertion.assertNotNull(targetDir, "targetDir");
-        if (targetDir.toFile().exists()) {
-            Files.walkFileTree(targetDir, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                    Files.delete(dir);
-                    return FileVisitResult.CONTINUE;
-                }
 
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    Files.delete(file);
-                    return FileVisitResult.CONTINUE;
+        if (targetDir.exists()) {
+            LinkedList<File> dirs = new LinkedList<File>();
+            dirs.push(targetDir);
+            LinkedList<File> toDelete = new LinkedList<File>();
+            toDelete.push(targetDir);
+            File dir;
+            while ((dir = dirs.poll()) != null) {
+                for (File sub : dir.listFiles()) {
+                    if (sub.isDirectory()) {
+                        dirs.push(sub);
+                        toDelete.push(sub);
+                    } else {
+                        sub.delete();
+                    }
                 }
-            });
+            }
+            while ((dir = toDelete.pollLast()) != null) {
+                dir.delete();
+            }
+        }
+    }
+
+    public static class Crc32Stream extends OutputStream {
+        private CRC32 crc32;
+
+        public Crc32Stream() {
+            crc32 = new CRC32();
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            crc32.update(b);
+        }
+
+        @Override
+        public void write(byte[] b) throws IOException {
+            crc32.update(b);
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            crc32.update(b, off, len);
+        }
+
+        public long getValue() {
+            return crc32.getValue();
         }
     }
     
-    public static long getCRC32 (Path path) throws IOException {
+    public static long getCRC32 (File path) throws IOException {
         IllegalArgumentAssertion.assertNotNull(path, "path");
-        IllegalStateAssertion.assertTrue(path.toFile().isFile(), "Invalid file path: " + path);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Files.copy(path, baos);
-        CRC32 crc32 = new CRC32();
-        crc32.update(baos.toByteArray());
-        return crc32.getValue();
+        IllegalStateAssertion.assertTrue(path.isFile(), "Invalid file path: " + path);
+
+        Crc32Stream crc32Stream = new Crc32Stream();
+        InputStream input = new FileInputStream(path);
+        try {
+            copy(input, crc32Stream);
+        } finally {
+            input.close();
+        }
+        return crc32Stream.getValue();
     } 
 }

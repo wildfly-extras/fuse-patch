@@ -32,8 +32,11 @@ public final class ParserAccess {
 
     public static Patch getPatch(URL zipurl) throws IOException {
         PatchId patchId = PatchId.fromURL(zipurl);
-        try (ZipInputStream zipInput = new ZipInputStream(zipurl.openStream())) {
+        ZipInputStream zipInput = new ZipInputStream(zipurl.openStream());
+        try {
             return MetadataParser.buildPatchFromZip(patchId, Record.Action.ADD, zipInput);
+        } finally {
+            zipInput.close();
         }
     }
 

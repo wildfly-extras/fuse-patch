@@ -22,15 +22,11 @@ package org.wildfly.extras.patch.test;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.jboss.shrinkwrap.api.GenericArchive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -40,6 +36,7 @@ import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.wildfly.extras.patch.Patch;
+import org.wildfly.extras.patch.PatchId;
 import org.wildfly.extras.patch.Record;
 import org.wildfly.extras.patch.test.subA.ClassA;
 
@@ -54,7 +51,7 @@ class Archives {
      * lib/foo-1.0.0.jar
      */
     static URL getZipUrlFoo100() throws IOException {
-        File targetFile = Paths.get("target/foo-1.0.0.zip").toFile();
+        File targetFile = new File("target/foo-1.0.0.zip");
         if (!targetFile.exists()) {
             JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "foo-1.0.0.jar");
             jar.addClasses(ClassA.class);
@@ -74,7 +71,7 @@ class Archives {
      * config/propsA.properties
      */
     static URL getZipUrlFoo100SP1() throws IOException {
-        File targetFile = Paths.get("target/foo-1.0.0.SP1.zip").toFile();
+        File targetFile = new File("target/foo-1.0.0.SP1.zip");
         if (!targetFile.exists()) {
             GenericArchive archive = ShrinkWrap.create(GenericArchive.class);
             archive.add(new FileAsset(new File("src/test/resources/propsA2.properties")), "config/propsA.properties");
@@ -91,7 +88,7 @@ class Archives {
      * lib/foo-1.1.0.jar
      */
     static URL getZipUrlFoo110() throws IOException {
-        File targetFile = Paths.get("target/foo-1.1.0.zip").toFile();
+        File targetFile = new File("target/foo-1.1.0.zip");
         if (!targetFile.exists()) {
             JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "foo-1.1.0.jar");
             jar.addClasses(ClassA.class);
@@ -111,7 +108,7 @@ class Archives {
      * lib/bar-1.0.0.jar
      */
     static URL getZipUrlBar100() throws IOException {
-        File targetFile = Paths.get("target/bar-1.0.0.zip").toFile();
+        File targetFile = new File("target/bar-1.0.0.zip");
         if (!targetFile.exists()) {
             JavaArchive jar = ShrinkWrap.create(JavaArchive.class, "bar-1.0.0.jar");
             jar.addClasses(ClassA.class);
@@ -128,31 +125,37 @@ class Archives {
         Assert.assertEquals(exp.getAction() + " " + exp.getPath(), was.getAction() + " " + was.getPath());
     }
 
-    static void assertPathsEqual(final Patch expSet, final Path rootPath) throws IOException {
-        final Set<Path> expPaths = new HashSet<>();
+    static void assertPathsEqual(final Patch expSet, final File rootPath) throws IOException {
+        final Set<String> expPaths = new HashSet<String>();
         for (Record rec : expSet.getRecords()) {
-            expPaths.add(rec.getPath());
+            expPaths.add(rec.getPath().toString());
         }
-        final Set<Path> wasPaths = new HashSet<>();
-        Files.walkFileTree(rootPath, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
-                Path relpath = rootPath.relativize(path);
-                if (!relpath.startsWith("fusepatch")) {
-                    wasPaths.add(relpath);
+        final Set<String> wasPaths = new HashSet<String>();
+        
+        LinkedList<File> dirs = new LinkedList<File>();
+        dirs.push(rootPath);
+        File dir;
+        while ((dir = dirs.poll()) != null) {
+            for (File sub : dir.listFiles()) {
+                if (sub.isDirectory()) {
+                    dirs.push(sub);
+                } else {
+                    String relpath = rootPath.toURI().relativize(sub.toURI()).toString();
+                    if (!relpath.startsWith("fusepatch")) {
+                        wasPaths.add(relpath);
+                    }
                 }
-                return FileVisitResult.CONTINUE;
             }
-        });
+        }
         Assert.assertEquals(expPaths, wasPaths);
     }
 
     static void assertPathsEqual(List<Record> exp, List<Record> was) {
-        final Set<Path> expPaths = new HashSet<>();
+        final Set<File> expPaths = new HashSet<File>();
         for (Record rec : exp) {
             expPaths.add(rec.getPath());
         }
-        final Set<Path> wasPaths = new HashSet<>();
+        final Set<File> wasPaths = new HashSet<File>();
         for (Record rec : was) {
             wasPaths.add(rec.getPath());
         }
