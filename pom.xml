@@ -33,7 +33,7 @@
     <!-- Properties -->
     <properties>
         <!-- WildFly version -->
-        <version.wildfly>10.1.0.Final</version.wildfly>
+        <version.wildfly>10.2.0.Final-SNAPSHOT</version.wildfly>
         
         <version.args4j>2.0.31</version.args4j>
         <version.apache.maven>3.3.3</version.apache.maven>
