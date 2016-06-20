@@ -33,7 +33,7 @@
     <!-- Properties -->
     <properties>
         <!-- WildFly version -->
-        <version.wildfly>10.1.0.Final</version.wildfly>
+        <version.wildfly>11.0.0.Final</version.wildfly>
         
         <version.args4j>2.0.31</version.args4j>
         <version.apache.maven>3.3.3</version.apache.maven>
@@ -45,7 +45,7 @@
         <version.junit>4.11</version.junit>
         <version.log4j>1.2.17</version.log4j>
         <version.slf4j>1.6.6</version.slf4j>
-        <version.wildfly.arquillian>1.0.2.Final</version.wildfly.arquillian>
+        <version.wildfly.arquillian>2.0.0.Final</version.wildfly.arquillian>
 
         <!-- Plugin versions -->
         <version-exec-maven-plugin>1.4.0</version-exec-maven-plugin>
@@ -58,8 +58,8 @@
         <version-maven-release-plugin>2.5</version-maven-release-plugin>
         <version-maven-source-plugin>2.3</version-maven-source-plugin>
         <version-maven-surefire-plugin>2.18.1</version-maven-surefire-plugin>
-        <version-wildfly-build-tools>1.1.3.Final</version-wildfly-build-tools>
-        <version-wildfly-maven-plugin>1.1.0.Alpha10</version-wildfly-maven-plugin>
+        <version-wildfly-build-tools>1.1.6.Final</version-wildfly-build-tools>
+        <version-wildfly-maven-plugin>1.2.0.Final</version-wildfly-maven-plugin>
     </properties>
 
     <!-- Source Control -->
