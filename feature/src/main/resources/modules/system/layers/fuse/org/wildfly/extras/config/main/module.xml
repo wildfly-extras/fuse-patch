@@ -33,6 +33,7 @@
 
     <dependencies>
         <module name="args4j"/>
+        <module name="org.apache.xerces" />
         <module name="org.jboss.modules" />
         <module name="org.jdom" />
     </dependencies>
