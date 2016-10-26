@@ -32,7 +32,7 @@
 
     <!-- Properties -->
     <properties>
-        <jboss.home>${project.build.directory}/wildfly-${version.wildfly}</jboss.home>
+        <jboss.home>${project.build.directory}/jboss-eap-${version.wildfly}</jboss.home>
     </properties>
     
     <dependencies>
@@ -93,7 +93,7 @@
                         <phase>process-test-sources</phase>
                         <configuration>
                             <config-file>src/test/resources/server-provisioning.xml</config-file>
-                            <server-name>wildfly-${version.wildfly}</server-name>
+                            <server-name>jboss-eap-${version.wildfly}</server-name>
                         </configuration>
                     </execution>
                 </executions>

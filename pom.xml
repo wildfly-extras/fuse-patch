@@ -32,8 +32,10 @@
 
     <!-- Properties -->
     <properties>
-        <!-- WildFly version -->
-        <version.wildfly>10.1.0.Final</version.wildfly>
+    
+        <!-- http://download.eng.bos.redhat.com/brewroot/repos/jb-eap-7.1-rhel-7-maven-build/latest/maven/org/jboss/eap/wildfly-dist -->
+        <version.wildfly>7.1.0.Alpha1-redhat-12</version.wildfly>
+        <version.wildfly.arquillian>2.1.0.Alpha1</version.wildfly.arquillian>
         
         <version.args4j>2.0.31</version.args4j>
         <version.apache.maven>3.3.3</version.apache.maven>
@@ -45,7 +47,6 @@
         <version.junit>4.11</version.junit>
         <version.log4j>1.2.17</version.log4j>
         <version.slf4j>1.6.6</version.slf4j>
-        <version.wildfly.arquillian>1.0.2.Final</version.wildfly.arquillian>
 
         <!-- Plugin versions -->
         <version-exec-maven-plugin>1.4.0</version-exec-maven-plugin>
@@ -63,10 +64,9 @@
 
     <!-- Source Control -->
     <scm>
-        <connection>scm:git:https://github.com/wildfly-extras/fuse-patch.git</connection>
-        <developerConnection>scm:git:https://github.com/wildfly-extras/fuse-patch.git</developerConnection>
-        <url>http://github.com/wildfly-extras/fuse-patch</url>
-        <tag>2.7.0</tag>
+        <connection>scm:git:https://github.com/jboss-fuse/fuse-patch.git</connection>
+        <developerConnection>scm:git:https://github.com/jboss-fuse/fuse-patch.git</developerConnection>
+        <url>http://github.com/jboss-fuse/fuse-patch</url>
     </scm>
 
     <!-- Modules -->
@@ -152,8 +152,8 @@
                 <version>${version.slf4j}</version>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-parent</artifactId>
+                <groupId>org.jboss.eap</groupId>
+                <artifactId>jboss-eap-parent</artifactId>
                 <version>${version.wildfly}</version>
                 <scope>import</scope>
                 <type>pom</type>
@@ -312,6 +312,10 @@
         <repository>
             <id>jboss-public-repository</id>
             <url>http://repository.jboss.org/nexus/content/groups/public/</url>
+        </repository>
+        <repository>
+            <id>jboss-early-access-repository</id>
+            <url>http://download.eng.bos.redhat.com/brewroot/repos/jb-eap-7.1-rhel-7-maven-build/latest/maven</url>
         </repository>
     </repositories>
     
