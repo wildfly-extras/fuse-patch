@@ -36,7 +36,6 @@
 package org.wildfly.extras.patch;
 
 import java.util.NoSuchElementException;
-import java.util.StringTokenizer;
 
 /**
  * Semantic version identifier.
@@ -115,7 +114,7 @@ public class Version implements Comparable<Version> {
      * Version string grammar:
      *
      * <pre>
-     * version ::= major('.'minor('.'micro('.'qualifier)?)?)?
+     * version ::= major('.'minor('.'micro('-'qualifier)?)?)?
      * major ::= digit+
      * minor ::= digit+
      * micro ::= digit+
@@ -129,40 +128,23 @@ public class Version implements Comparable<Version> {
      * @throws IllegalArgumentException If {@code version} is improperly
      *         formatted.
      */
-    public Version(String version) {
-        int maj = 0;
-        int min = 0;
-        int mic = 0;
+    public Version(final String version) {
+        int arr[] = new int[3];
         String qual = "";
 
         try {
-            StringTokenizer st = new StringTokenizer(version, SEPARATOR, true);
-            maj = parseInt(st.nextToken(), version);
-
-            if (st.hasMoreTokens()) { // minor
-                st.nextToken(); // consume delimiter
-                min = parseInt(st.nextToken(), version);
-
-                if (st.hasMoreTokens()) { // micro
-                    st.nextToken(); // consume delimiter
-                    String micval = st.nextToken();
-                    if (micval.endsWith("-SNAPSHOT")) {
-                        micval = micval.substring(0, micval.indexOf('-'));
-                        mic = parseInt(micval, version);
-                        qual = "SNAPSHOT";
-                    } else {
-                        mic = parseInt(micval, version);
-                    }
-
-                    if (st.hasMoreTokens()) { // qualifier separator
-                        st.nextToken(); // consume delimiter
-                        qual = st.nextToken(""); // remaining string
-
-                        if (st.hasMoreTokens()) { // fail safe
-                            throw new IllegalArgumentException("invalid version \"" + version + "\": invalid format");
-                        }
-                    }
+            String part = version;
+            for (int i = 0; i < 3; i++) {
+                PRes res = parse(part, version);
+                arr[i] = res.val;
+                if (res.rest == null) {
+                    break;
                 }
+                if (i == 2 || res.rest.startsWith("-")) {
+                    qual = res.rest;
+                    break;
+                }
+                part = res.rest.substring(1);
             }
         } catch (NoSuchElementException e) {
             IllegalArgumentException iae = new IllegalArgumentException("invalid version \"" + version + "\": invalid format");
@@ -170,13 +152,37 @@ public class Version implements Comparable<Version> {
             throw iae;
         }
 
-        major = maj;
-        minor = min;
-        micro = mic;
+        major = arr[0];
+        minor = arr[1];
+        micro = arr[2];
         qualifier = qual;
         validate();
     }
+    
+    class PRes {
+        int val;
+        String rest;
+    }
+    
+    private PRes parse(String part, String version) {
+        PRes result = new PRes();
+        int idx = nextdelim(part);
+        if (idx < 0) {
+            result.val = parseInt(part, version);
+        } else if (idx > 0) {
+            result.val = parseInt(part.substring(0, idx), version);
+            result.rest = part.substring(idx);
+        } else {
+            throw new IllegalArgumentException("invalid version \"" + version + "\": invalid format");
+        }
+        return result;
+    }
 
+    private int nextdelim(String part) {
+        int result = part.indexOf(SEPARATOR);
+        return result >= 0 ? result : part.indexOf('-');
+    }
+    
     /**
      * Parse numeric component into an int.
      *
@@ -184,7 +190,7 @@ public class Version implements Comparable<Version> {
      * @param version Complete version string for exception message, if any
      * @return int value of numeric component
      */
-    private static int parseInt(String value, String version) {
+    private static int parseInt(final String value, final String version) {
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
@@ -210,7 +216,8 @@ public class Version implements Comparable<Version> {
         if (micro < 0) {
             throw new IllegalArgumentException("invalid version \"" + toString0() + "\": negative number \"" + micro + "\"");
         }
-        for (char ch : qualifier.toCharArray()) {
+        String qual = qualifier.length() > 1 ? qualifier.substring(1) : "";
+        for (char ch : qual.toCharArray()) {
             if (('A' <= ch) && (ch <= 'Z')) {
                 continue;
             }
@@ -287,7 +294,7 @@ public class Version implements Comparable<Version> {
      * @return The qualifier component.
      */
     public String getQualifier() {
-        return qualifier;
+        return qualifier != null ? qualifier.substring(1) : null;
     }
 
     /**
@@ -321,8 +328,6 @@ public class Version implements Comparable<Version> {
         result.append(SEPARATOR);
         result.append(micro);
         if (q > 0) {
-            boolean snap = qualifier.equals("SNAPSHOT");
-            result.append(snap ? "-" : SEPARATOR);
             result.append(qualifier);
         }
         return versionString = result.toString();

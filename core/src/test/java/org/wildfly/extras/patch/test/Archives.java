@@ -74,7 +74,7 @@ class Archives {
      * config/propsA.properties
      */
     static URL getZipUrlFoo100SP1() throws IOException {
-        File targetFile = Paths.get("target/foo-1.0.0.SP1.zip").toFile();
+        File targetFile = Paths.get("target/foo-1.0.0-SP1.zip").toFile();
         if (!targetFile.exists()) {
             GenericArchive archive = ShrinkWrap.create(GenericArchive.class);
             archive.add(new FileAsset(new File("src/test/resources/propsA2.properties")), "config/propsA.properties");
