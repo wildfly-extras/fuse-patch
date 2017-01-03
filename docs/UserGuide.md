@@ -48,7 +48,7 @@ fusepatch [options...]
  --uninstall VAL          : Uninstall the given patch id from the server
  --update VAL             : Update the server for the given patch name
  ```
- 
+
 The standalone distribution already contains the fuse-patch wildfly patch.
 
 ```
@@ -102,18 +102,18 @@ modules/system/layers/fuse/org/wildfly/extras/patch/main/module.xml [fuse-patch-
 
 ###  Loading the Repository
 
-The repository contains patches identified by symbolic-name and version. 
+The repository contains patches identified by symbolic-name and version.
 
 Lets add three versions of a given patch to the repository.
 
 ```
-$ bin/fusepatch.sh --add file:foo-1.0.0.zip 
+$ bin/fusepatch.sh --add file:foo-1.0.0.zip
 Added foo-1.0.0
 
-$ bin/fusepatch.sh --add file:foo-1.1.0.zip 
+$ bin/fusepatch.sh --add file:foo-1.1.0.zip
 Added foo-1.1.0
 
-$ bin/fusepatch.sh --metadata file://.../foo-1.2.0-metadata.xml --add file:foo-1.2.0.zip 
+$ bin/fusepatch.sh --metadata file://.../foo-1.2.0-metadata.xml --add file:foo-1.2.0.zip
 Added foo-1.2.0
 
 $ bin/fusepatch.sh --query-repository
@@ -143,7 +143,7 @@ Patches may have additional metadata associated with it.
 Unwanted patches can be removed from the repository.
 
 ```
-$ bin/fusepatch.sh --remove foo-1.0.0 
+$ bin/fusepatch.sh --remove foo-1.0.0
 Removed foo-1.0.0
 ```
 
@@ -161,7 +161,7 @@ $ bin/fusepatch.sh --update foo
 Upgraded from foo-1.0.0 to foo-1.1.0
 ```
 
-The server side maintains an audit log 
+The server side maintains an audit log
 
 ```
 $ bin/fusepatch.sh --audit-log
@@ -212,10 +212,10 @@ DEL lib/foo-1.1.0.jar 2509787836
 
 ###  Uninstalling a Patch
 
-Patchds can be unsinstalled from the server.
+Patches can be unsinstalled from the server.
 
 ```
-$ bin/fusepatch.sh --install foo-1.0.0
+$ bin/fusepatch.sh --uninstall foo-1.0.0
 Uninstalled foo-1.0.0
 ```
 
@@ -241,16 +241,16 @@ DEL lib/foo-1.0.0.jar 3303198020
 It is guaranteed that the repository does not contain conflicting patches. Specifically, the set of paths associated with one patch cannot overlap with the set of paths from another patch. This allows patches to get applied to the server independently without the possibility that content from one patch overrides the files from another.
 
 Not enforcing this constraint would mean to create an ordering issue between patches.
-For example: `bar-1.0.0` can only be installed after `foo-1.1.0` 
+For example: `bar-1.0.0` can only be installed after `foo-1.1.0`
 
 Lets test this on clean repository
 
 ```
-$ bin/fusepatch.sh --add file:foo-1.0.0.zip 
+$ bin/fusepatch.sh --add file:foo-1.0.0.zip
 Adding foo-1.0.0
 
 $ cp foo-1.1.0.zip bar-1.0.0.zip
-$ bin/fusepatch.sh --add file:bar-1.0.0.zip 
+$ bin/fusepatch.sh --add file:bar-1.0.0.zip
 ERROR Path 'config/propsA.properties' already contained in: foo-1.0.0
 ERROR Cannot add bar-1.0.0 because of duplicate paths in [foo-1.0.0]
 
@@ -260,13 +260,13 @@ foo-1.0.0
 
 ### Conflicting Server Paths
 
-There are the three possible conflict scenarios 
+There are the three possible conflict scenarios
 
-1. An install/update operation wants to add a file that already exists 
+1. An install/update operation wants to add a file that already exists
 2. An update operation wants modify a file that has been changed by the user
 3. An update operation wants to remove a file that has already been removed
 
-#### Adding a file that already exists 
+#### Adding a file that already exists
 
 By default, the install/update operation fails if the target file already exists.
 
@@ -290,7 +290,7 @@ Installed foo-1.0.0
 By default, the update operation fails if the target file had been modified. This is checked for `*.xml` and `*.properties` extensions.
 
 ```
-$ echo x >> config/propsA.properties 
+$ echo x >> config/propsA.properties
 
 $ bin/fusepatch.sh --update foo
 Error: Attempt to override an already modified file config/propsA.properties
@@ -309,7 +309,7 @@ Upgraded from foo-1.0.0 to foo-1.1.0
 In this case, we only issue a warming because the file would be deleted anyway.
 
 ```
-$ rm config/remove-me.properties 
+$ rm config/remove-me.properties
 
 $ bin/fusepatch.sh --update foo
 Warning: Attempt to delete a non existing file config/remove-me.properties
@@ -349,7 +349,7 @@ hello new world
 Already existing patches can be patched by "one-off" patches. A one-off patch does not contain the full set of paths that an ordinary patch contains. Instead, it contains a set of files that need to get patched in an already existing patch. A one-off patch cannot remove files on the target server.
 
 ```
-$ bin/fusepatch.sh --add file:foo-1.0.0.zip 
+$ bin/fusepatch.sh --add file:foo-1.0.0.zip
 Added foo-1.0.0
 
 $ bin/fusepatch.sh --add file:foo-1.0.0.SP1.zip --one-off foo-1.0.0
@@ -364,10 +364,10 @@ Upgraded from foo-1.0.0 to foo-1.0.0.SP1
 
 ### Support for Patch dependencies
 
-A patch can define dependencies on other patches. 
+A patch can define dependencies on other patches.
 
 ```
-$ bin/fusepatch.sh --add file:foo-1.0.0.zip 
+$ bin/fusepatch.sh --add file:foo-1.0.0.zip
 Added foo-1.0.0
 
 $ bin/fusepatch.sh --add file:foo-1.1.0.zip --depends foo-1.0.0
@@ -382,4 +382,3 @@ Installed foo-1.0.0
 $ bin/fusepatch.sh --install foo-1.1.0
 Upgraded from foo-1.0.0 to foo-1.1.0
 ```
-
