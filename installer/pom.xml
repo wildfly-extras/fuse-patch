@@ -38,7 +38,7 @@
     <parent>
         <groupId>org.wildfly.extras.patch</groupId>
         <artifactId>fuse-patch</artifactId>
-        <version>2.7.0</version>
+        <version>2.7.0.redhat-1-SNAPSHOT</version>
     </parent>
 
     <name>Fuse Patch :: Installer</name>
