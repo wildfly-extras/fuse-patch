@@ -264,7 +264,9 @@ public class ConfigSupport {
                 Document doc = jdom.build(path.toUri().toURL());
 
                 ConfigContext context = new ConfigContext(jbossHome, path, doc);
-                plugin.applyStandaloneConfigChange(context, enable);
+                if (plugin.applyStandaloneConfigChange(context, enable)) {
+                    
+                }
 
                 XMLOutputter output = new XMLOutputter();
                 output.setFormat(Format.getRawFormat().setLineSeparator(lineSeparator));
@@ -277,11 +279,12 @@ public class ConfigSupport {
         for (Path p : domainPaths) {
             Path path = jbossHome.resolve(p);
             if (path.toFile().isFile()) {
-                ConfigLogger.info(message + path);
                 Document doc = jdom.build(path.toUri().toURL());
 
                 ConfigContext context = new ConfigContext(jbossHome, path, doc);
-                plugin.applyDomainConfigChange(context, enable);
+                if (plugin.applyDomainConfigChange(context, enable)) {
+                    ConfigLogger.info(message + path);
+                }
 
                 XMLOutputter output = new XMLOutputter();
                 output.setFormat(Format.getRawFormat().setLineSeparator(lineSeparator));
