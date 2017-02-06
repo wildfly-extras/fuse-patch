@@ -41,7 +41,6 @@ import java.util.ServiceLoader;
 
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleClassLoader;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jdom.Attribute;
 import org.jdom.Document;
@@ -73,8 +72,7 @@ public class ConfigSupport {
             List<ConfigPlugin> plugins = new ArrayList<>();
             for (String config : configs) {
                 ModuleLoader moduleLoader = Module.getCallerModuleLoader();
-                ModuleIdentifier modid = ModuleIdentifier.create("org.wildfly.extras.config.plugin." + config);
-                ModuleClassLoader modcl = moduleLoader.loadModule(modid).getClassLoader();
+                ModuleClassLoader modcl = moduleLoader.loadModule("org.wildfly.extras.config.plugin." + config).getClassLoader();
                 Iterator<ConfigPlugin> auxit = ServiceLoader.load(ConfigPlugin.class, modcl).iterator();
                 while (auxit.hasNext()) {
                     plugins.add(auxit.next());
@@ -264,7 +262,9 @@ public class ConfigSupport {
                 Document doc = jdom.build(path.toUri().toURL());
 
                 ConfigContext context = new ConfigContext(jbossHome, path, doc);
-                plugin.applyStandaloneConfigChange(context, enable);
+                if (plugin.applyStandaloneConfigChange(context, enable)) {
+                    
+                }
 
                 XMLOutputter output = new XMLOutputter();
                 output.setFormat(Format.getRawFormat().setLineSeparator(lineSeparator));
@@ -277,11 +277,12 @@ public class ConfigSupport {
         for (Path p : domainPaths) {
             Path path = jbossHome.resolve(p);
             if (path.toFile().isFile()) {
-                ConfigLogger.info(message + path);
                 Document doc = jdom.build(path.toUri().toURL());
 
                 ConfigContext context = new ConfigContext(jbossHome, path, doc);
-                plugin.applyDomainConfigChange(context, enable);
+                if (plugin.applyDomainConfigChange(context, enable)) {
+                    ConfigLogger.info(message + path);
+                }
 
                 XMLOutputter output = new XMLOutputter();
                 output.setFormat(Format.getRawFormat().setLineSeparator(lineSeparator));

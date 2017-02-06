@@ -24,7 +24,7 @@ public interface ConfigPlugin {
     
     List<LayerConfig> getLayerConfigs();
     
-    void applyDomainConfigChange(ConfigContext context, boolean enable);
+    boolean applyDomainConfigChange(ConfigContext context, boolean enable);
 
-    void applyStandaloneConfigChange(ConfigContext context, boolean enable);
+    boolean applyStandaloneConfigChange(ConfigContext context, boolean enable);
 }
