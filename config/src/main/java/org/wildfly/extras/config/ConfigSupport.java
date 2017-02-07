@@ -41,6 +41,7 @@ import java.util.ServiceLoader;
 
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleClassLoader;
+import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jdom.Attribute;
 import org.jdom.Document;
@@ -72,7 +73,8 @@ public class ConfigSupport {
             List<ConfigPlugin> plugins = new ArrayList<>();
             for (String config : configs) {
                 ModuleLoader moduleLoader = Module.getCallerModuleLoader();
-                ModuleClassLoader modcl = moduleLoader.loadModule("org.wildfly.extras.config.plugin." + config).getClassLoader();
+                ModuleIdentifier moduleIdentifier = ModuleIdentifier.create("org.wildfly.extras.config.plugin." + config);
+                ModuleClassLoader modcl = moduleLoader.loadModule(moduleIdentifier).getClassLoader();
                 Iterator<ConfigPlugin> auxit = ServiceLoader.load(ConfigPlugin.class, modcl).iterator();
                 while (auxit.hasNext()) {
                     plugins.add(auxit.next());
