@@ -22,9 +22,11 @@ package org.wildfly.extras.patch.installer;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -45,7 +47,7 @@ public abstract class AbstractInstaller {
 
     abstract public String getJarName();
 
-    public void main(LinkedList<String> args) {
+    public final void main(LinkedList<String> args) {
         while (!args.isEmpty()) {
             String arg = args.peekFirst();
             if ("--help".equals(arg)) {
@@ -66,7 +68,6 @@ public abstract class AbstractInstaller {
 
         try {
             run();
-            System.exit(0);
         } catch (Throwable th) {
             if (verbose) {
                 th.printStackTrace(System.err);
@@ -80,6 +81,20 @@ public abstract class AbstractInstaller {
             }
             System.exit(1);
         }
+    }
+
+    protected void run() throws Exception {
+
+        if (eapHome == null) 
+            eapHome = new File(".").toPath().toAbsolutePath();
+
+        validateHomePath(eapHome);
+
+        instalPatchTool();
+
+        copyRepositoryContent();
+
+        runInstallCommands();
     }
 
     protected void printHelp() {
@@ -119,22 +134,28 @@ public abstract class AbstractInstaller {
         }
     }
 
-    private void run() throws Exception {
-        if (eapHome == null) {
-            eapHome = new File(".").toPath().toAbsolutePath();
+    protected boolean mustInstallPatchDistro(Path fusePatchPath) {
+        return !fusePatchPath.toFile().exists();
+    }
+
+    protected final Version getVersion() {
+        String resname = "META-INF/fuse-patch.version";
+        InputStream resource = Support.class.getClassLoader().getResourceAsStream(resname);
+        IllegalStateAssertion.assertNotNull(resource, "Cannot obtain resource: " + resname);
+        BufferedReader br = new BufferedReader(new InputStreamReader(resource));
+        try {
+            return Version.get(br.readLine().trim());
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to read version metadata", e);
         }
+    }
 
-        validateHomePath(eapHome);
-
-        ClassLoader classLoader = getClass().getClassLoader();
-
-        // Install Fuse Patch Tool
+    protected void instalPatchTool() throws IOException {
         Path fusePatchPath = eapHome.resolve(Paths.get("modules/system/layers/fuse/org/wildfly/extras/patch"));
         if (mustInstallPatchDistro(fusePatchPath)) {
-
             Version fusepatchVersion = getVersion();
             String resname = "META-INF/repository/fuse-patch-distro-wildfly-" + fusepatchVersion + ".zip";
-            InputStream resource = classLoader.getResourceAsStream(resname);;
+            InputStream resource = getClass().getClassLoader().getResourceAsStream(resname);
             IllegalStateAssertion.assertNotNull(resource, "Cannot obtain resource: " + resname);
 
             Properties installedFiles = new Properties();
@@ -142,8 +163,9 @@ public abstract class AbstractInstaller {
                 unpack(resname, distro, installedFiles);
             }
         }
+    }
 
-        // Copy repository content
+    protected void copyRepositoryContent() throws URISyntaxException, IOException, FileNotFoundException {
         Path jarPath = Paths.get(getClass().getProtectionDomain().getCodeSource().getLocation().toURI());
         try (ZipInputStream zipstream = new ZipInputStream(new FileInputStream(jarPath.toFile()))) {
             Path repoPath = eapHome.resolve(Paths.get("fusepatch/repository"));
@@ -162,10 +184,11 @@ public abstract class AbstractInstaller {
                 }
             }
         }
+    }
 
-        // Run the install commands
+    protected void runInstallCommands() throws IOException, Exception {
         String resname = "META-INF/fuse-install.commands";
-        InputStream resource = classLoader.getResourceAsStream(resname);
+        InputStream resource = getClass().getClassLoader().getResourceAsStream(resname);
         IllegalStateAssertion.assertNotNull(resource, "Cannot obtain resource: " + resname);
         BufferedReader br = new BufferedReader(new InputStreamReader(resource));
         for (String line = br.readLine(); line != null; line = br.readLine()) {
@@ -173,22 +196,6 @@ public abstract class AbstractInstaller {
             if (line.length() > 0 && !line.startsWith("#")) {
                 runCommand(line);
             }
-        }
-    }
-
-    protected boolean mustInstallPatchDistro(Path fusePatchPath) {
-        return !fusePatchPath.toFile().exists();
-    }
-
-    protected final Version getVersion() {
-        String resname = "META-INF/fuse-patch.version";
-        InputStream resource = Support.class.getClassLoader().getResourceAsStream(resname);
-        IllegalStateAssertion.assertNotNull(resource, "Cannot obtain resource: " + resname);
-        BufferedReader br = new BufferedReader(new InputStreamReader(resource));
-        try {
-            return Version.get(br.readLine().trim());
-        } catch (IOException e) {
-            throw new IllegalStateException("Unable to read version metadata", e);
         }
     }
 
