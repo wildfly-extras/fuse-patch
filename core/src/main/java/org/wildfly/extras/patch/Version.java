@@ -54,11 +54,13 @@ import java.util.NoSuchElementException;
  */
 public class Version implements Comparable<Version> {
 
+    private static final String DOT_SEPARATOR = ".";
+    private static final String DASH_SEPARATOR = "-";
+    
     private final int           major;
     private final int           minor;
     private final int           micro;
     private final String        qualifier;
-    private static final String SEPARATOR       = ".";
     private transient String    versionString /* default to null */;
     private transient int       hash /* default to 0 */;
 
@@ -114,11 +116,11 @@ public class Version implements Comparable<Version> {
      * Version string grammar:
      *
      * <pre>
-     * version ::= major('.'minor('.'micro('-'qualifier)?)?)?
+     * version ::= major('.'minor('.'micro([.-]qualifier)?)?)?
      * major ::= digit+
      * minor ::= digit+
      * micro ::= digit+
-     * qualifier ::= (alpha|digit|'_'|'-')+
+     * qualifier ::= (alpha|digit|[_-.])+
      * digit ::= [0..9]
      * alpha ::= [a..zA..Z]
      * </pre>
@@ -162,6 +164,9 @@ public class Version implements Comparable<Version> {
     class PRes {
         int val;
         String rest;
+        public String toString() {
+            return "[" + val + "," + rest + "]";
+        }
     }
     
     private PRes parse(String part, String version) {
@@ -179,8 +184,11 @@ public class Version implements Comparable<Version> {
     }
 
     private int nextdelim(String part) {
-        int result = part.indexOf(SEPARATOR);
-        return result >= 0 ? result : part.indexOf('-');
+        int dot = part.indexOf(DOT_SEPARATOR);
+        int dash = part.indexOf(DASH_SEPARATOR);
+        if (dot < 0) return dash;
+        if (dash < 0) return dot;
+        return Math.min(dot, dash);
     }
     
     /**
@@ -227,7 +235,7 @@ public class Version implements Comparable<Version> {
             if (('0' <= ch) && (ch <= '9')) {
                 continue;
             }
-            if ((ch == '_') || (ch == '-')) {
+            if ((ch == '_') || (ch == '-') || (ch == '.')) {
                 continue;
             }
             throw new IllegalArgumentException("invalid version \"" + toString0() + "\": invalid qualifier \"" + qualifier + "\"");
@@ -323,9 +331,9 @@ public class Version implements Comparable<Version> {
         int q = qualifier.length();
         StringBuffer result = new StringBuffer(20 + q);
         result.append(major);
-        result.append(SEPARATOR);
+        result.append(DOT_SEPARATOR);
         result.append(minor);
-        result.append(SEPARATOR);
+        result.append(DOT_SEPARATOR);
         result.append(micro);
         if (q > 0) {
             result.append(qualifier);

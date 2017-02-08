@@ -38,6 +38,8 @@ public class VersionTest {
         Assert.assertEquals("SP1-redhat-1", Version.parseVersion("1.0.0.SP1-redhat-1").getQualifier());
         Assert.assertEquals("1.0.0.SP1-SNAPSHOT", Version.parseVersion("1.0.0.SP1-SNAPSHOT").toString());
         Assert.assertEquals("SP1-SNAPSHOT", Version.parseVersion("1.0.0.SP1-SNAPSHOT").getQualifier());
+
+        Assert.assertEquals(-1, Version.parseVersion("1.0.0.SP1-redhat-1").compareTo(Version.parseVersion("1.0.0.SP2-redhat-1")));
     }
     
     @Test
@@ -53,5 +55,10 @@ public class VersionTest {
         Assert.assertEquals("SP1-redhat-1", Version.parseVersion("1.0.0-SP1-redhat-1").getQualifier());
         Assert.assertEquals("1.0.0-SP1-SNAPSHOT", Version.parseVersion("1.0.0-SP1-SNAPSHOT").toString());
         Assert.assertEquals("SP1-SNAPSHOT", Version.parseVersion("1.0.0-SP1-SNAPSHOT").getQualifier());
+        Assert.assertEquals("2.7.0-4.fuse-000001", Version.parseVersion("2.7.0-4.fuse-000001").toString());
+        Assert.assertEquals("4.fuse-000001", Version.parseVersion("2.7.0-4.fuse-000001").getQualifier());
+
+        Assert.assertEquals(-1, Version.parseVersion("1.0.0-SP1-redhat-1").compareTo(Version.parseVersion("1.0.0-SP2-redhat-1")));
+        Assert.assertEquals(-1, Version.parseVersion("2.7.0-4.fuse-000001").compareTo(Version.parseVersion("2.7.0-5.fuse-000001")));
     }
 }
