@@ -73,6 +73,7 @@
                             <goal>single</goal>
                         </goals>
                         <configuration>
+                            <id>directory</id>
                             <finalName>fuse-patch-${project.version}</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
                             <descriptors>

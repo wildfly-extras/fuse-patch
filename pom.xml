@@ -51,6 +51,7 @@
         <version-exec-maven-plugin>1.4.0</version-exec-maven-plugin>
         <version-license-maven-plugin>1.8</version-license-maven-plugin>
         <version-groovy-maven-plugin>2.0</version-groovy-maven-plugin>
+        <version-maven-assembly-plugin>2.6</version-maven-assembly-plugin>
         <version-maven-compiler-plugin>3.1</version-maven-compiler-plugin>
         <version-maven-jar-plugin>2.6</version-maven-jar-plugin>
         <version-maven-javadoc-plugin>2.9.1</version-maven-javadoc-plugin>
@@ -175,6 +176,11 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>${version-maven-assembly-plugin}</version>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
