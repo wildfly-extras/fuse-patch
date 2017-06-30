@@ -1,5 +1,15 @@
 ### Changelog
 
+#### Fuse Patch 2.7.0
+
+**Bugs**
+
+* [#163][163] Cannot parse Versions with dash qualifier
+
+For details see [2.7.0 bugs](https://github.com/wildfly-extras/fuse-patch/issues?q=milestone%3A"2.7.0"+label%3Abug)
+
+[163]: https://github.com/wildfly-extras/fuse-patch/issues/163
+
 #### Fuse Patch 2.6.0
 
 **Tasks**
