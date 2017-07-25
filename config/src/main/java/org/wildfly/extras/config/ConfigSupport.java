@@ -249,6 +249,7 @@ public class ConfigSupport {
         standalonePaths.add(Paths.get("standalone", "configuration", "standalone-full.xml"));
         standalonePaths.add(Paths.get("standalone", "configuration", "standalone-full-ha.xml"));
         standalonePaths.add(Paths.get("standalone", "configuration", "standalone-ha.xml"));
+        standalonePaths.add(Paths.get("standalone", "configuration", "standalone-openshift.xml"));
 
         List<Path> domainPaths = new ArrayList<>();
         domainPaths.add(Paths.get("domain", "configuration", "domain.xml"));
