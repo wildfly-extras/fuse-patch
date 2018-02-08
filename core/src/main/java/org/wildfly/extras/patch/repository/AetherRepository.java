@@ -82,7 +82,7 @@ public class AetherRepository extends AbstractRepository {
             RepositorySystem system = factory.getRepositorySystem();
             RepositorySystemSession session = factory.newRepositorySystemSession();
             RemoteRepository target = factory.getRemoteRepository();
-            
+
             Set<String> names = new HashSet<>();
             if (prefix == null) {
                 URL repoURL = new URL(target.getUrl());
@@ -130,7 +130,7 @@ public class AetherRepository extends AbstractRepository {
             RepositorySystem system = factory.getRepositorySystem();
             RepositorySystemSession session = factory.newRepositorySystemSession();
             RemoteRepository target = factory.getRemoteRepository();
-            
+
             Artifact artifact = new DefaultArtifact(GROUP_ID, patchId.getName(), "", "metadata", patchId.getVersion().toString());
 
             ArtifactRequest artifactRequest = new ArtifactRequest();
@@ -143,7 +143,7 @@ public class AetherRepository extends AbstractRepository {
             } catch (ArtifactResolutionException ex) {
                 return null;
             }
-            
+
             artifact = artifactResult.getArtifact();
             return MetadataParser.readPatch(artifact.getFile());
 
@@ -169,7 +169,7 @@ public class AetherRepository extends AbstractRepository {
             RepositorySystem system = factory.getRepositorySystem();
             RepositorySystemSession session = factory.newRepositorySystemSession();
             RemoteRepository target = factory.getRemoteRepository();
-            
+
             Artifact zipArtifact = new DefaultArtifact(GROUP_ID, patchId.getName(), "", "zip", patchId.getVersion().toString());
             DataSource dataSource = dataHandler.getDataSource();
             if (dataSource instanceof FileDataSource) {
@@ -206,11 +206,11 @@ public class AetherRepository extends AbstractRepository {
     @Override
     protected DataSource getDataSource(PatchId patchId) {
         IllegalArgumentAssertion.assertNotNull(patchId, "patchId");
-        
+
         RepositorySystem system = factory.getRepositorySystem();
         RepositorySystemSession session = factory.newRepositorySystemSession();
         RemoteRepository target = factory.getRemoteRepository();
-        
+
         Artifact artifact = new DefaultArtifact(GROUP_ID, patchId.getName(), "", "zip", patchId.getVersion().toString());
 
         ArtifactRequest artifactRequest = new ArtifactRequest();

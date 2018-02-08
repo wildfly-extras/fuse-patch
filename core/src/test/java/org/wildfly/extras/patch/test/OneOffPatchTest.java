@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -70,14 +70,14 @@ public class OneOffPatchTest {
 
         URL repoURL = repoPath.toFile().toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[0]).build();
-        
+
         PatchId pid100 = PatchId.fromURL(Archives.getZipUrlFoo100());
         PatchId pid100sp1 = PatchId.fromURL(Archives.getZipUrlFoo100SP1());
         Path filePath = serverPaths[0].resolve("config/propsA.properties");
-        
+
         Patch pack100 = patchTool.install(pid100, false);
         Assert.assertEquals("A1", readProperty("some.prop", filePath));
-        
+
         Patch pack100sp1 = patchTool.install(pid100sp1, false);
         Assert.assertEquals("A2", readProperty("some.prop", filePath));
         Archives.assertPathsEqual(pack100.getRecords(), pack100sp1.getRecords());
@@ -88,10 +88,10 @@ public class OneOffPatchTest {
 
         URL repoURL = repoPath.toFile().toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[1]).build();
-        
+
         PatchId pid100sp1 = PatchId.fromURL(Archives.getZipUrlFoo100SP1());
         Path filePath = serverPaths[1].resolve("config/propsA.properties");
-        
+
         Patch pack100sp1 = patchTool.install(pid100sp1, false);
         Assert.assertEquals("A2", readProperty("some.prop", filePath));
         Archives.assertActionPathEquals("INFO config/propsA.properties", pack100sp1.getRecords().get(0));

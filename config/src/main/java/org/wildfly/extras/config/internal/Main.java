@@ -40,7 +40,7 @@ public class Main {
 
     // Entry point with no system exit
     public static void mainInternal(String[] args) throws Exception {
-        
+
         Options options = new Options();
         CmdLineParser parser = new CmdLineParser(options);
         try {

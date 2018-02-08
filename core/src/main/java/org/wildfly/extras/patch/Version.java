@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -48,7 +48,7 @@ import java.util.NoSuchElementException;
  * <li>Micro version. A non-negative integer.</li>
  * <li>Qualifier. A text string. See {@code Version(String)} for the format of the qualifier string.</li>
  * </ol>
- * 
+ *
  * <p>
  * A {@code Version} is immutable.
  */
@@ -56,7 +56,7 @@ public class Version implements Comparable<Version> {
 
     private static final String DOT_SEPARATOR = ".";
     private static final String DASH_SEPARATOR = "-";
-    
+
     private final int           major;
     private final int           minor;
     private final int           micro;
@@ -160,7 +160,7 @@ public class Version implements Comparable<Version> {
         qualifier = qual;
         validate();
     }
-    
+
     class PRes {
         int val;
         String rest;
@@ -168,7 +168,7 @@ public class Version implements Comparable<Version> {
             return "[" + val + "," + rest + "]";
         }
     }
-    
+
     private PRes parse(String part, String version) {
         PRes result = new PRes();
         int idx = nextdelim(part);
@@ -190,7 +190,7 @@ public class Version implements Comparable<Version> {
         if (dash < 0) return dot;
         return Math.min(dot, dash);
     }
-    
+
     /**
      * Parse numeric component into an int.
      *

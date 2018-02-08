@@ -266,7 +266,7 @@ public class ConfigSupport {
 
                 ConfigContext context = new ConfigContext(jbossHome, path, doc);
                 if (plugin.applyStandaloneConfigChange(context, enable)) {
-                    
+
                 }
 
                 XMLOutputter output = new XMLOutputter();

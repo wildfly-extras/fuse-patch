@@ -55,7 +55,7 @@ import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 public final class MetadataParser {
 
     public static final String MANAGED_PATHS = "managed-paths.metadata";
-    
+
     static final String VERSION_PREFIX = "# fusepatch:";
     static final String PATCHID_PREFIX = "# patch id:";
 
@@ -200,7 +200,7 @@ public final class MetadataParser {
             line = br.readLine().trim();
             IllegalStateAssertion.assertTrue(line.startsWith(PATCHID_PREFIX), "Cannot obtain patch id");
             mdbuilder.patchId(PatchId.fromString(line.substring(PATCHID_PREFIX.length()).trim()));
-            
+
             String mode = null;
             while (line != null) {
                 line = line.trim();

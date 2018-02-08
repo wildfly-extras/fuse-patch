@@ -59,7 +59,7 @@ public final class LocalFileRepository extends AbstractRepository {
         PatchAssertion.assertTrue(rootPath.toFile().isDirectory(), "Repository root does not exist: " + rootPath);
         LOG.debug("Repository location: {}", rootPath);
     }
-    
+
     public static boolean isWindows () {
     	return System.getProperty("os.name").toLowerCase().contains("win");
     }
@@ -79,7 +79,7 @@ public final class LocalFileRepository extends AbstractRepository {
         }
         return repoUrl;
     }
-    
+
     @Override
     public List<PatchId> queryAvailable(final String prefix) {
         lock.tryLock();
@@ -124,16 +124,16 @@ public final class LocalFileRepository extends AbstractRepository {
 
     @Override
     protected PatchId addArchiveInternal(Patch patch, DataHandler dataHandler) throws IOException {
-        
+
         PatchId patchId = patch.getPatchId();
         Path targetPath = getPatchPath(patchId);
         File targetFile = targetPath.toFile();
         targetFile.getParentFile().mkdirs();
-        
+
         try (OutputStream output = new FileOutputStream(targetFile)) {
             IOUtils.copy(dataHandler.getInputStream(), output);
         }
-        
+
         // Write repository metadata
         MetadataParser.writePatch(rootPath, patch);
 
@@ -171,7 +171,7 @@ public final class LocalFileRepository extends AbstractRepository {
             throw new IllegalArgumentException(ex);
         }
     }
-    
+
     private Path getPatchPath(PatchId patchId) {
         return rootPath.resolve(Paths.get(patchId.getName(), patchId.getVersion().toString(), patchId + ".zip"));
     }

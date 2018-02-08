@@ -21,9 +21,9 @@ import java.util.List;
 public interface ConfigPlugin {
 
     String getConfigName();
-    
+
     List<LayerConfig> getLayerConfigs();
-    
+
     boolean applyDomainConfigChange(ConfigContext context, boolean enable);
 
     boolean applyStandaloneConfigChange(ConfigContext context, boolean enable);

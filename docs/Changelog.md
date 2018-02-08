@@ -176,10 +176,10 @@ For details see [2.0.0 features](https://github.com/wildfly-extras/fuse-patch/is
 **Tasks**
 
 * [#77][77] Add changelog and release notes
-* [#107][107] Migrate parameters to structured metadata 
+* [#107][107] Migrate parameters to structured metadata
 * [#110][110] Combine oneoff upload with base patch content
 * [#114][114] Consistently use Patch instead of Package in API
-* [#126][126] Document repository flavours, roles, client config 
+* [#126][126] Document repository flavours, roles, client config
 
 For details see [2.0.0 tasks](https://github.com/wildfly-extras/fuse-patch/issues?q=milestone%3A"2.0.0"+label%3Atask)
 
@@ -345,7 +345,7 @@ For details see [1.3.1 bugs](https://github.com/wildfly-extras/fuse-patch/issues
 **Features**
 
 * [#12][12] Prevent target content override not managed by fusepatch
-* [#21][21] Enforce non overlapping patch sets on --add 
+* [#21][21] Enforce non overlapping patch sets on --add
 * [#24][24] Add support for one-off patches
 * [#35][35] Add support to print the audit log
 * [#45][45] Add support for package dependencies

@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -47,7 +47,7 @@ import org.wildfly.extras.patch.utils.IOUtils;
 
 /**
  * [#57] Already existing paths may incorrectly get removed on update
- * 
+ *
  * https://github.com/wildfly-extras/fuse-patch/issues/57
  */
 public class OverrideExistingPathTest {
@@ -77,22 +77,22 @@ public class OverrideExistingPathTest {
         URL repoURL = repoPath.toFile().toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[0]).build();
         Server server = patchTool.getServer();
-        
+
         // Add a file to the server upfront
         Path filePath = serverPaths[0].resolve("config").resolve("propsA.properties");
         filePath.getParent().toFile().mkdirs();
         Files.copy(Paths.get("src/test/resources/propsA1.properties"), filePath);
         Assert.assertTrue(filePath.toFile().isFile());
-        
+
         // Install oepbar-1.0.0
         Patch curSet = patchTool.install(PatchId.fromString("oepbar-1.0.0"), false);
         Assert.assertEquals(1, curSet.getRecords().size());
-        
+
         // Verify managed paths
         List<ManagedPath> mpaths = server.queryManagedPaths(null);
         Assert.assertEquals(1, mpaths.size());
         Assert.assertEquals(ManagedPath.fromString("config/propsA.properties [server-0.0.0, oepbar-1.0.0]"), mpaths.get(0));
-        
+
         // Uninstall oepbar-1.0.0
         curSet = patchTool.uninstall(PatchId.fromString("oepbar-1.0.0"));
         Assert.assertEquals(1, curSet.getRecords().size());
@@ -103,20 +103,20 @@ public class OverrideExistingPathTest {
 
         // Assert that the file is still there
         Assert.assertTrue(filePath.toFile().isFile());
-        
+
         // Install oepbar-1.0.0
         curSet = patchTool.install(PatchId.fromString("oepbar-1.0.0"), false);
         Assert.assertEquals(1, curSet.getRecords().size());
-        
+
         // Update oepbar-1.1.0
         curSet = patchTool.update("oepbar", false);
         Assert.assertEquals(1, curSet.getRecords().size());
-        
+
         // Verify managed paths
         mpaths = server.queryManagedPaths(null);
         Assert.assertEquals(1, mpaths.size());
         Assert.assertEquals(ManagedPath.fromString("config/propsA.properties [server-0.0.0, oepbar-1.1.0]"), mpaths.get(0));
-        
+
         // Uninstall oepbar-1.1.0
         curSet = patchTool.uninstall(PatchId.fromString("oepbar-1.1.0"));
         Assert.assertEquals(1, curSet.getRecords().size());
@@ -135,11 +135,11 @@ public class OverrideExistingPathTest {
         URL repoURL = repoPath.toFile().toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[1]).build();
         Server server = patchTool.getServer();
-        
+
         // Install oepfoo-1.0.0
         Patch curSet = patchTool.install(PatchId.fromString("oepfoo-1.0.0"), false);
         Assert.assertEquals(2, curSet.getRecords().size());
-        
+
         // Verify managed paths
         List<ManagedPath> mpaths = server.queryManagedPaths(null);
         Assert.assertEquals(4, mpaths.size());
@@ -147,11 +147,11 @@ public class OverrideExistingPathTest {
         Assert.assertEquals(ManagedPath.fromString("config/propsA.properties [oepfoo-1.0.0]"), mpaths.get(1));
         Assert.assertEquals(ManagedPath.fromString("lib [oepfoo-1.0.0]"), mpaths.get(2));
         Assert.assertEquals(ManagedPath.fromString("lib/oep-1.0.0.jar [oepfoo-1.0.0]"), mpaths.get(3));
-        
+
         // Install oepbar-1.0.0
         curSet = patchTool.install(PatchId.fromString("oepbar-1.0.0"), false);
         Assert.assertEquals(1, curSet.getRecords().size());
-        
+
         // Verify managed paths
         mpaths = server.queryManagedPaths(null);
         Assert.assertEquals(4, mpaths.size());
@@ -163,7 +163,7 @@ public class OverrideExistingPathTest {
         // Uninstall oepfoo-1.0.0
         curSet = patchTool.uninstall(PatchId.fromString("oepfoo-1.0.0"));
         Assert.assertEquals(2, curSet.getRecords().size());
-        
+
         // Verify managed paths
         mpaths = server.queryManagedPaths(null);
         Assert.assertEquals(2, mpaths.size());
@@ -173,15 +173,15 @@ public class OverrideExistingPathTest {
         // Uninstall oepbar-1.0.0
         curSet = patchTool.uninstall(PatchId.fromString("oepbar-1.0.0"));
         Assert.assertEquals(1, curSet.getRecords().size());
-        
+
         // Verify managed paths
         mpaths = server.queryManagedPaths(null);
         Assert.assertEquals(0, mpaths.size());
     }
-    
+
     /**
      * oepfoo-1.0.0.zip
-     * 
+     *
      * config/propsA.properties
      * lib/oep-1.0.0.jar
      */
@@ -200,7 +200,7 @@ public class OverrideExistingPathTest {
 
     /**
      * oepbar-1.0.0.zip
-     * 
+     *
      * config/propsA.properties
      */
     static URL getZipUrlBar100() throws IOException {
@@ -215,7 +215,7 @@ public class OverrideExistingPathTest {
 
     /**
      * oepbar-1.1.0.zip
-     * 
+     *
      * config/propsA.properties
      */
     static URL getZipUrlBar110() throws IOException {

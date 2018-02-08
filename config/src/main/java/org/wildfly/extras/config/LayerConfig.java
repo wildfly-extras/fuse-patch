@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 public class LayerConfig {
 
     public static LayerConfig FUSE_LAYER = new LayerConfig("fuse", LayerConfig.Type.INSTALLING, -10);
-    
+
     static public enum Type {
         INSTALLING, OPTIONAL, REQUIRED,
     }

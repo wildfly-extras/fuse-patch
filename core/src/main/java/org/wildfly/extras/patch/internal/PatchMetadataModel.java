@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,7 +34,7 @@ import org.wildfly.extras.patch.PatchId;
 
 /*
  * Data model for repository add operations
- * 
+ *
  *   <package>
  *       <patchId>foo-1.0.0.SP1</patchId>
  *       <oneoffId>foo-1.0.0</oneoffId>
@@ -68,7 +68,7 @@ public final class PatchMetadataModel {
         model.postCommands = new Commands(metadata.getPostCommands());
         return model;
     }
-    
+
     public PatchMetadata toPatchMetadata() {
         PatchMetadataBuilder builder = new PatchMetadataBuilder().patchId(PatchId.fromString(patchId));
         if (roles != null) {
@@ -87,7 +87,7 @@ public final class PatchMetadataModel {
         }
         return builder.build();
     }
-    
+
     public String getPatchId() {
         return patchId;
     }
@@ -126,7 +126,7 @@ public final class PatchMetadataModel {
 
     @XmlType
     public static class Roles {
-        
+
         private Set<String> roles;
 
         public Roles() {
@@ -145,12 +145,12 @@ public final class PatchMetadataModel {
             this.roles = roles;
         }
     }
-    
+
     @XmlType
     public static class Dependencies {
-        
+
         private Set<String> patchIds;
-        
+
         public Dependencies() {
         }
 
@@ -173,7 +173,7 @@ public final class PatchMetadataModel {
 
     @XmlType
     public static class Commands {
-        
+
         private List<String> commands;
 
         public Commands() {

@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -36,29 +36,29 @@ public class IdentityTest {
         PatchId id1 = PatchId.create("aaa", Version.parseVersion("2.0.0"));
         PatchId id2 = PatchId.create("fuse", Version.parseVersion("1.2.0"));
         PatchId id3 = PatchId.create("fuse", Version.parseVersion("1.12.0"));
-        
+
         List<PatchId> list = Arrays.asList(id3, id2, id1);
         Collections.sort(list);
-        
+
         Assert.assertEquals(id1, list.get(0));
         Assert.assertEquals(id2, list.get(1));
         Assert.assertEquals(id3, list.get(2));
     }
-    
+
     @Test
     public void testFromString() throws Exception {
 
         PatchId id = PatchId.fromString("aaa-2.0.0");
         Assert.assertEquals(PatchId.create("aaa", Version.parseVersion("2.0.0")), id);
-        
+
         id = PatchId.fromString("aaa-2.0.0-SNAPSHOT");
         Assert.assertEquals(PatchId.create("aaa", Version.parseVersion("2.0.0-SNAPSHOT")), id);
         Assert.assertEquals("aaa-2.0.0-SNAPSHOT", id.getCanonicalForm());
-        
+
         id = PatchId.fromString("aaa-2.0.0-redhat-SNAPSHOT");
         Assert.assertEquals(PatchId.create("aaa", Version.parseVersion("2.0.0-redhat-SNAPSHOT")), id);
         Assert.assertEquals("aaa-2.0.0-redhat-SNAPSHOT", id.getCanonicalForm());
-        
+
         id = PatchId.fromString("aaa-bbb-ccc");
         Assert.assertEquals(PatchId.create("aaa-bbb-ccc", Version.parseVersion("0.0.0")), id);
     }

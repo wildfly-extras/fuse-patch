@@ -68,9 +68,9 @@ import org.wildfly.extras.patch.utils.PatchAssertion;
 public abstract class AbstractRepository implements Repository {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractRepository.class);
-    
+
     protected final Lock lock;
-    
+
     private final URL repositoryURL;
 
     public AbstractRepository(Lock lock, URL repoURL) {
@@ -128,12 +128,12 @@ public abstract class AbstractRepository implements Repository {
     public PatchId addArchive(PatchMetadata metadata, DataHandler dataHandler, boolean force) throws IOException {
         IllegalArgumentAssertion.assertNotNull(metadata, "metadata");
         IllegalArgumentAssertion.assertNotNull(dataHandler, "dataHandler");
-        
+
         // Unwrap the package metadata
         PatchId patchId = metadata.getPatchId();
         PatchId oneoffId = metadata.getOneoffId();
         Set<PatchId> dependencies = metadata.getDependencies();
-        
+
         lock.tryLock();
         try {
             // Cannot add already existing archive
@@ -155,7 +155,7 @@ public abstract class AbstractRepository implements Repository {
                 message += " with dependencies on " + dependencies;
             }
             LOG.info(message);
-            
+
             // Collect the paths from the latest other patches
             Map<Path, Record> combinedPathsMap = new HashMap<>();
             for (PatchId auxid : queryAvailable(null)) {
@@ -168,20 +168,20 @@ public abstract class AbstractRepository implements Repository {
 
             final Path targetPath = Files.createTempFile("fptmp", ".zip");
             final File targetFile = targetPath.toFile();
-            
+
             // Copy regular patch content to a target file
             if (oneoffId == null) {
                 try (InputStream input = dataHandler.getInputStream(); OutputStream output = new FileOutputStream(targetFile)) {
                     IOUtils.copy(input, output);
                 }
             }
-            
+
             // Combine oneoff base contant with patch content to a target file
             if (oneoffId != null) {
-                
+
                 final Path workspace = Files.createTempDirectory("oneoff-workspace");
                 try {
-                    
+
                     // Unzip the base patch into the workspace
                     DataSource dataSource = getDataSource(oneoffId);
                     try (ZipInputStream zipInput = new ZipInputStream(dataSource.getInputStream())) {
@@ -243,14 +243,14 @@ public abstract class AbstractRepository implements Repository {
                     IOUtils.rmdirs(workspace);
                 }
             }
-                
+
             // Build the patch
             Patch patch;
             try (ZipInputStream zipInput = new ZipInputStream(new FileInputStream(targetFile))) {
                 Patch source = MetadataParser.buildPatchFromZip(patchId, Record.Action.INFO, zipInput);
                 patch = Patch.create(metadata, source.getRecords());
             }
-            
+
             // Assert no duplicate paths
             Set<PatchId> duplicates = new HashSet<>();
             for (Record rec : patch.getRecords()) {
@@ -270,7 +270,7 @@ public abstract class AbstractRepository implements Repository {
             }
             PatchAssertion.assertTrue(force || duplicates.isEmpty(), "Cannot add " + patchId + " because of duplicate paths in " + duplicates);
             return addArchiveInternal(patch, new DataHandler(new FileDataSource(targetFile)));
-            
+
         } finally {
             lock.unlock();
         }
@@ -299,9 +299,9 @@ public abstract class AbstractRepository implements Repository {
     }
 
     private CloseableDataSource getSmartDataSource(Patch smartSet, PatchId patchId) throws IOException {
-        
+
         final Path targetPath = Files.createTempFile("smart-content", ".zip");
-        
+
         // Create a temporary zip file that only contains ADD && UPD records
         DataSource dataSource = getDataSource(patchId);
         try (ZipInputStream zin = new ZipInputStream(dataSource.getInputStream())) {
@@ -322,7 +322,7 @@ public abstract class AbstractRepository implements Repository {
                 }
             }
         }
-        
+
         DataSource datasource = new FileDataSource(targetPath.toFile());
         return new CloseableDataSource(datasource) {
             @Override
@@ -331,7 +331,7 @@ public abstract class AbstractRepository implements Repository {
             }
         };
     }
-    
+
     protected abstract PatchId addArchiveInternal(Patch patch, DataHandler dataHandler) throws IOException;
 
     protected abstract DataSource getDataSource(PatchId patchId);
@@ -339,12 +339,12 @@ public abstract class AbstractRepository implements Repository {
     static abstract class CloseableDataSource implements DataSource, Closeable {
 
         private final DataSource delegate;
-        
+
         CloseableDataSource(DataSource delegate) {
             IllegalArgumentAssertion.assertNotNull(delegate, "delegate");
             this.delegate = delegate;
         }
-        
+
         public String getContentType() {
             return delegate.getContentType();
         }

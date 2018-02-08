@@ -34,33 +34,33 @@ public class PatchMetadataAdapter {
     private String[] roles;
     private String[] dependencySpecs;
     private String[] commands;
-    
+
     public static PatchMetadataAdapter fromPatchMetadata(PatchMetadata metadata) {
-    	
+
     	if (metadata == null)
     		return null;
-    	
+
     	PatchMetadataAdapter result = new PatchMetadataAdapter();
     	result.patchId = metadata.getPatchId().toString();
-        
+
         List<String> roles = new ArrayList<>(metadata.getRoles());
         result.roles = new String[roles.size()];
         for (int i = 0; i < roles.size(); i++) {
             result.roles[i] = roles.get(i);
         }
-        
+
         List<PatchId> dependencies = new ArrayList<>(metadata.getDependencies());
         result.dependencySpecs = new String[dependencies.size()];
         for (int i = 0; i < dependencies.size(); i++) {
             result.dependencySpecs[i] = dependencies.get(i).toString();
         }
-    	
+
     	List<String> cmdlist = metadata.getPostCommands();
     	result.commands = new String[cmdlist.size()];
     	cmdlist.toArray(result.commands);
     	return result;
     }
-    
+
     public PatchMetadata toPatchMetadata() {
     	PatchId pid = PatchId.fromString(patchId);
     	Set<PatchId> dependencies = new HashSet<>();
@@ -71,7 +71,7 @@ public class PatchMetadataAdapter {
     	}
     	return new PatchMetadataBuilder().patchId(pid).roles(roles).dependencies(dependencies).postCommands(commands).build();
     }
-    
+
     public String getPatchId() {
 		return patchId;
 	}

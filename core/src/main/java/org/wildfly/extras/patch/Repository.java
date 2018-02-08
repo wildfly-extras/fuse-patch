@@ -35,7 +35,7 @@ public interface Repository {
 
 	String SYSTEM_PROPERTY_REPOSITORY_URL = "fusepatch.repository";
 	String ENV_PROPERTY_REPOSITORY_URL = "FUSEPATCH_REPOSITORY";
-	
+
     /**
      * Get the repository base URL
      * @return The repository URL

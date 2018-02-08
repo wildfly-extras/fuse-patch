@@ -54,11 +54,11 @@ public class RepositoryEndpoint implements RepositoryService {
 
 	@Resource
 	private WebServiceContext context;
-	
+
     private final ReentrantLock lock = new ReentrantLock();
-    
+
 	private Repository delegate;
-	
+
     @PostConstruct
     public void postConstruct() {
         URL repoURL = getRepositoryURL();
@@ -132,14 +132,14 @@ public class RepositoryEndpoint implements RepositoryService {
         try {
             Patch seed = seedPatch != null ? seedPatch.toPatch() : null;
             PatchId pid = patchId != null ? PatchId.fromString(patchId) : null;
-            
+
             // Derive the target patch id from the seed patch id
             if (pid == null) {
                 IllegalArgumentAssertion.assertNotNull(seedPatch, "seedPatch");
                 PatchMetadata metadata = seedPatch.getMetadata().toPatchMetadata();
                 pid = delegate.getLatestAvailable(metadata.getPatchId().getName());
             }
-            
+
             // Assert user has required roles
             PatchMetadata metadata = delegate.getPatch(pid).getMetadata();
             HttpServletRequest servletRequest = (HttpServletRequest) context.getMessageContext().get(MessageContext.SERVLET_REQUEST);
@@ -148,7 +148,7 @@ public class RepositoryEndpoint implements RepositoryService {
                     throw new WebServiceException(new SecurityException("User does not have required role: " + role));
                 }
             }
-            
+
             SmartPatch smartPatch = delegate.getSmartPatch(seed, pid);
             return SmartPatchAdapter.fromSmartPatch(smartPatch);
         } finally {

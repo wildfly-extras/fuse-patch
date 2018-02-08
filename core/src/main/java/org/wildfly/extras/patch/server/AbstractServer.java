@@ -67,9 +67,9 @@ import org.wildfly.extras.patch.utils.PatchAssertion;
 public abstract class AbstractServer implements Server {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractServer.class);
-    
+
     private static final String AUDIT_LOG = "audit.log";
-    
+
     private final Lock lock;
     private final Path homePath;
 
@@ -79,7 +79,7 @@ public abstract class AbstractServer implements Server {
         this.homePath = homePath.toAbsolutePath();
         this.lock = lock;
     }
-    
+
     @Override
     public Path getServerHome() {
         return homePath;
@@ -409,7 +409,7 @@ public abstract class AbstractServer implements Server {
             }
         }
 
-        // Recursively remove managed dirs that are empty 
+        // Recursively remove managed dirs that are empty
         Path parent = path.getParent();
         if (parent != null && managedPaths.getManagedPath(parent) != null) {
             File dir = homePath.resolve(parent).toFile();

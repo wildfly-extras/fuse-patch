@@ -40,7 +40,7 @@ public class ConfigSupportTest {
     public void testApplyLayerConfigChange() throws Exception {
 
         ConfigPlugin plugin = new ConfigPlugin () {
-            
+
             @Override
             public String getConfigName() {
                 return "foo";
@@ -54,7 +54,7 @@ public class ConfigSupportTest {
                         new LayerConfig("brms_6.2.1", OPTIONAL, -11)
                 );
             }
-            
+
             @Override
             public boolean applyStandaloneConfigChange(ConfigContext context, boolean enable) {
                 return false;
@@ -93,12 +93,12 @@ public class ConfigSupportTest {
     public void testApplyLayerConfigChange2() throws Exception {
 
         ConfigPlugin plugin = new ConfigPlugin() {
-            
+
             @Override
             public String getConfigName() {
                 return "foo";
             }
-            
+
             @Override
             public List<LayerConfig> getLayerConfigs() {
                 return Arrays.asList(
@@ -107,7 +107,7 @@ public class ConfigSupportTest {
                         new LayerConfig("brms_6.2.1", INSTALLING, -9)
                 );
             }
-            
+
             @Override
             public boolean applyStandaloneConfigChange(ConfigContext context, boolean enable) {
                 return false;

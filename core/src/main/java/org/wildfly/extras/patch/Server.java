@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -33,25 +33,25 @@ import java.util.List;
 public interface Server {
 
     PatchId SERVER_ID = PatchId.fromString("server");
-    
+
 	/**
 	 * Get the server home path
 	 * @return The path to the server home
 	 */
 	Path getServerHome();
-	
+
 	/**
 	 * Get the default repository URL
 	 * @return The URL for the default repository
 	 */
     URL getDefaultRepositoryURL();
-    
+
     /**
      * Get the audit log
 	 * @return A list containing the audit log content
      */
     List<String> getAuditLog();
-    
+
 	/**
 	 * Query the list of applied packages
 	 * @return A list of applied patches
@@ -64,7 +64,7 @@ public interface Server {
 	 * @return A list of managed server paths
 	 */
     List<ManagedPath> queryManagedPaths(String pathsPattern);
-    
+
     /**
      * Get the applied package for a given prefix
 	 * @param prefix The patch prefix
@@ -78,7 +78,7 @@ public interface Server {
 	 * @return The patch
      */
     Patch getPatch(PatchId patchId);
-    
+
 	/**
 	 * Apply a smart patch and return the result
 	 * @param smartPatch The patch to apply

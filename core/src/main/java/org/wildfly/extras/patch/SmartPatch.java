@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -38,10 +38,10 @@ import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 
 
 /**
- * A smart patch defines add/update/delete records. 
+ * A smart patch defines add/update/delete records.
  *
  * A {@code SmartPatch} is immutable.
- * 
+ *
  * @author thomas.diesler@jboss.com
  * @since 10-Jun-2015
  */
@@ -52,12 +52,12 @@ public final class SmartPatch implements Closeable {
     private final Map<Path, Record> delMap = new HashMap<>();
     private final Map<Path, Record> updMap = new HashMap<>();
     private final Map<Path, Record> addMap = new HashMap<>();
-    
+
     public static SmartPatch forInstall(Patch patch, DataHandler dataHandler) {
         IllegalArgumentAssertion.assertNotNull(dataHandler, "dataHandler");
         return new SmartPatch(patch, dataHandler);
     }
-    
+
     public static SmartPatch forUninstall(Patch patch) {
         IllegalArgumentAssertion.assertNotNull(patch, "patch");
         PatchId patchId = patch.getPatchId();
@@ -67,7 +67,7 @@ public final class SmartPatch implements Closeable {
         }
         return new SmartPatch(Patch.create(patch.getMetadata(), records), null);
     }
-    
+
     private SmartPatch(Patch patch, DataHandler dataHandler) {
         IllegalArgumentAssertion.assertNotNull(patch, "patch");
         this.patch = patch;
@@ -105,15 +105,15 @@ public final class SmartPatch implements Closeable {
     public boolean isUninstall() {
         return dataHandler == null;
     }
-    
+
     public List<Record> getRecords() {
         return patch.getRecords();
     }
-    
+
     public PatchMetadata getMetadata() {
         return patch.getMetadata();
     }
-    
+
     public Set<Record> getRemoveSet() {
         return Collections.unmodifiableSet(new HashSet<>(delMap.values()));
     }

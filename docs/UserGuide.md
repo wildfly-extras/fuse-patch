@@ -68,7 +68,7 @@ Currently Fuse-Patch supports three flavours of repository
 * Aether based repository that delegates to a Maven repository
 
 The repository client can be configured by a config URL that points to a [properties](https://github.com/wildfly-extras/fuse-patch/blob/master/core/src/main/java/org/wildfly/extras/patch/Configuration.java) file.
-The webservice enpoint is expected to be hosted on an application server, which provides a user/role mapping. Access to repository contend can such be secured by roles on an individual bassis.   
+The webservice enpoint is expected to be hosted on an application server, which provides a user/role mapping. Access to repository contend can such be secured by roles on an individual bassis.
 
 ### Installing a Patch
 

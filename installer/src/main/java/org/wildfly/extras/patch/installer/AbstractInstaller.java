@@ -85,7 +85,7 @@ public abstract class AbstractInstaller {
 
     protected void run() throws Exception {
 
-        if (eapHome == null) 
+        if (eapHome == null)
             eapHome = new File(".").toPath().toAbsolutePath();
 
         validateHomePath(eapHome);

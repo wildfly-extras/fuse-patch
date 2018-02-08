@@ -36,7 +36,7 @@
         <github.namespace>wildfly-extras</github.namespace>
         <github.project>fuse-patch</github.project>
     </properties>
-    
+
     <!--
         Generates the fuse-patch changelog.
 

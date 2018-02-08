@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -51,21 +51,21 @@ public class AetherRepositoryTest extends AbstractRepositoryTest {
 
     PatchTool getPatchTool(final URL repoURL) {
         AetherFactory factory = new DefaultAetherFactory() {
-            
+
             Path rootPath = new File(repoURL.getPath()).toPath();
             {
                 try {
                     IOUtils.rmdirs(rootPath);
                 } catch (IOException ex) {
-                    
+
                 }
             }
-            
+
             @Override
             public URL getRepositoryURL() {
                 return repoURL;
             }
-            
+
             @Override
             public Path getLocalRepositoryPath() {
                 return rootPath.resolve("local-repo");

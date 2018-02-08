@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -41,7 +41,7 @@ public class VersionTest {
 
         Assert.assertEquals(-1, Version.parseVersion("1.0.0.SP1-redhat-1").compareTo(Version.parseVersion("1.0.0.SP2-redhat-1")));
     }
-    
+
     @Test
     public void testDashQualifier() throws Exception {
 

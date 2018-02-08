@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -66,13 +66,13 @@ public class PostCommandsTest {
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPath).build();
         Server server = patchTool.getServer();
         Repository repo = patchTool.getRepository();
-        
+
         String[] cmdarr = new String[] {"echo first", "echo after"};
         if (LocalFileRepository.isWindows()) {
         	cmdarr[0] = "cmd /c " + cmdarr[0];
         	cmdarr[1] = "cmd /c " + cmdarr[1];
         }
-        
+
         PatchId pid100 = PatchId.fromURL(Archives.getZipUrlFoo100());
         PatchMetadata md100 = new PatchMetadataBuilder().patchId(pid100).postCommands(cmdarr).build();
         DataHandler data100 = new DataHandler(new URLDataSource(Archives.getZipUrlFoo100()));
@@ -81,17 +81,17 @@ public class PostCommandsTest {
         // Verify clean server
         List<PatchId> patches = server.queryAppliedPatches();
         Assert.assertTrue("Patch set empty", patches.isEmpty());
-        
+
         // Obtain the smart patch from the repo
         SmartPatch smartPatch = repo.getSmartPatch(null, PatchId.fromString("foo-1.0.0"));
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), smartPatch.getPatchId());
-        
+
         // Verify post install commands
         List<String> cmds = smartPatch.getMetadata().getPostCommands();
         Assert.assertEquals(2, cmds.size());
         Assert.assertEquals(cmdarr[0], cmds.get(0));
         Assert.assertEquals(cmdarr[1], cmds.get(1));
-        
+
         // Update the server with a known patch
         Patch patch = server.applySmartPatch(smartPatch, false);
         Assert.assertEquals(PatchId.fromString("foo-1.0.0"), patch.getPatchId());
@@ -103,11 +103,11 @@ public class PostCommandsTest {
         String fileUrl = Archives.getZipUrlFoo100().toString();
         String repoUrl = repoPaths[1].toUri().toURL().toString();
         Main.mainInternal(new String[] {"--repository", repoUrl, "--add", fileUrl, "--add-cmd", "echo hello world"});
-        
+
         URL repoURL = repoPaths[1].toFile().toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).build();
         Repository repo = patchTool.getRepository();
-        
+
         Patch patch = repo.getPatch(PatchId.fromString("foo-1.0.0"));
         Assert.assertEquals(1, patch.getMetadata().getPostCommands().size());
         Assert.assertEquals("echo hello world", patch.getMetadata().getPostCommands().get(0));
@@ -120,11 +120,11 @@ public class PostCommandsTest {
         String repoUrl = repoPaths[2].toUri().toURL().toString();
         String metadataUrl = Paths.get("src/test/resources/simple-metadata.xml").toUri().toString();
         Main.mainInternal(new String[] {"--repository", repoUrl, "--add", fileUrl, "--metadata", metadataUrl});
-        
+
         URL repoURL = repoPaths[2].toFile().toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).build();
         Repository repo = patchTool.getRepository();
-        
+
         Patch patch = repo.getPatch(PatchId.fromString("foo-1.0.0"));
         Assert.assertEquals(1, patch.getMetadata().getPostCommands().size());
         Assert.assertEquals("echo hello world", patch.getMetadata().getPostCommands().get(0));

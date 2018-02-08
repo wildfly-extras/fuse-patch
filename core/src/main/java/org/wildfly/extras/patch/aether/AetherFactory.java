@@ -20,12 +20,12 @@ import org.eclipse.aether.repository.RemoteRepository;
 public interface AetherFactory {
 
     URL getRepositoryURL();
-    
+
     Path getLocalRepositoryPath();
-    
+
     RepositorySystem getRepositorySystem();
-    
+
     RepositorySystemSession newRepositorySystemSession();
-    
+
     RemoteRepository getRemoteRepository();
 }

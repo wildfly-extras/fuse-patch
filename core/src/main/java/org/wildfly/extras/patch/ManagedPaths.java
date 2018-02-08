@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -33,7 +33,7 @@ import org.wildfly.extras.patch.Record.Action;
 import org.wildfly.extras.patch.utils.IllegalArgumentAssertion;
 
 /**
- * A set of managed server paths. 
+ * A set of managed server paths.
  *
  * @author thomas.diesler@jboss.com
  * @since 05-Aug-2015
@@ -81,7 +81,7 @@ public final class ManagedPaths {
     }
 
     private void addPathOwner(Path rootPath, Path path, PatchId owner) {
-        
+
         // Recursively add managed parent dirs
         Path parent = path.getParent();
         if (parent != null) {
@@ -90,7 +90,7 @@ public final class ManagedPaths {
                 addPathOwner(rootPath, parent, owner);
             }
         }
-        
+
         ManagedPath mpath = managedPaths.get(path);
         if (mpath == null) {
             List<PatchId> owners = Collections.singletonList(owner);
@@ -111,7 +111,7 @@ public final class ManagedPaths {
     }
 
     private void removePathOwner(Path rootPath, Path path, PatchId owner) {
-        
+
         ManagedPath mpath = managedPaths.get(path);
         if (mpath != null) {
             List<PatchId> owners = new ArrayList<>(mpath.getOwners());
@@ -126,7 +126,7 @@ public final class ManagedPaths {
                 managedPaths.remove(mpath.getPath());
             }
         }
-        
+
         // Recursively remove managed parent dirs
         Path parent = path.getParent();
         if (parent != null) {

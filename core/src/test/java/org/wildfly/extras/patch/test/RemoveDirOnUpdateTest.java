@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -46,7 +46,7 @@ import org.wildfly.extras.patch.utils.IOUtils;
 
 /**
  * [#100] Directories not deleted during update
- * 
+ *
  * https://github.com/wildfly-extras/fuse-patch/issues/100
  */
 public class RemoveDirOnUpdateTest {
@@ -75,13 +75,13 @@ public class RemoveDirOnUpdateTest {
         URL repoURL = repoPath.toFile().toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[0]).build();
         Server server = patchTool.getServer();
-        
+
         Path configPath = serverPaths[0].resolve("config");
         Path subPath = configPath.resolve("sub");
-        
+
         Patch curSet = patchTool.install(PatchId.fromString("rdou-1.0.0"), false);
         Assert.assertEquals(2, curSet.getRecords().size());
-        
+
         // Verify managed paths for rdou-1.0.0
         List<ManagedPath> mpaths = server.queryManagedPaths(null);
         Assert.assertEquals(5, mpaths.size());
@@ -94,10 +94,10 @@ public class RemoveDirOnUpdateTest {
         // Verify that the config dir exists
         Assert.assertTrue(configPath.toFile().isDirectory());
         Assert.assertTrue(subPath.toFile().isDirectory());
-        
+
         curSet = patchTool.update("rdou", false);
         Assert.assertEquals(1, curSet.getRecords().size());
-        
+
         // Verify managed paths for rdou-1.0.0
         mpaths = server.queryManagedPaths(null);
         Assert.assertEquals(2, mpaths.size());
@@ -115,16 +115,16 @@ public class RemoveDirOnUpdateTest {
         URL repoURL = repoPath.toFile().toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[1]).build();
         Server server = patchTool.getServer();
-        
+
         Path configPath = serverPaths[1].resolve("config");
         Path subPath = configPath.resolve("sub");
-        
+
         // Create the config path upfront
         configPath.toFile().mkdirs();
-        
+
         Patch curSet = patchTool.install(PatchId.fromString("rdou-1.0.0"), false);
         Assert.assertEquals(2, curSet.getRecords().size());
-        
+
         // Verify managed paths for rdou-1.0.0
         List<ManagedPath> mpaths = server.queryManagedPaths(null);
         Assert.assertEquals(4, mpaths.size());
@@ -136,10 +136,10 @@ public class RemoveDirOnUpdateTest {
         // Verify that the config dir exists
         Assert.assertTrue(configPath.toFile().isDirectory());
         Assert.assertTrue(subPath.toFile().isDirectory());
-        
+
         curSet = patchTool.update("rdou", false);
         Assert.assertEquals(1, curSet.getRecords().size());
-        
+
         // Verify managed paths for rdou-1.0.0
         mpaths = server.queryManagedPaths(null);
         Assert.assertEquals(2, mpaths.size());
@@ -153,7 +153,7 @@ public class RemoveDirOnUpdateTest {
 
     /**
      * rdou-1.0.0.zip
-     * 
+     *
      * config/sub/propsA.properties
      * lib/rdou-1.0.0.jar
      */
@@ -172,7 +172,7 @@ public class RemoveDirOnUpdateTest {
 
     /**
      * rdou-1.1.0.zip
-     * 
+     *
      * lib/rdou-1.1.0.jar
      */
     static URL getZipUrlRdou110() throws IOException {

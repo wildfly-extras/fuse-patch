@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -49,7 +49,7 @@ import org.wildfly.extras.patch.utils.IllegalStateAssertion;
 public class Main {
 
 	private static final Logger LOG = LoggerFactory.getLogger(Main.class);
-	
+
     public static void main(String[] args) {
         try {
             mainInternal(args);
@@ -60,7 +60,7 @@ public class Main {
 
     // Entry point with no system exit
     public static void mainInternal(String[] args) throws Exception {
-        
+
         Options options = new Options();
         CmdLineParser parser = new CmdLineParser(options);
         try {
@@ -83,14 +83,14 @@ public class Main {
     }
 
 	private static void run(CmdLineParser cmdParser, Options options) throws IOException, JAXBException {
-		
+
         // Configure the patch tool builder
         PatchToolBuilder builder = new PatchToolBuilder();
         URL defaultRepoURL = LocalFileRepository.getDefaultRepositoryURL();
         if (defaultRepoURL != null) {
             builder.repositoryURL(defaultRepoURL);
         }
-        
+
         if (options.configUrl != null) {
             builder.loadConfiguration(options.configUrl);
         }
@@ -100,7 +100,7 @@ public class Main {
         if (options.serverHome != null) {
             builder.serverPath(options.serverHome);
         }
-        
+
 	    boolean opfound = false;
 
         // Query the repository
@@ -108,15 +108,15 @@ public class Main {
             PatchTool patchTool = builder.build();
             printPatches(patchTool.getRepository().queryAvailable(null));
             opfound = true;
-        } 
-        
+        }
+
         // Query the server
         if (options.queryServer) {
             PatchTool patchTool = builder.serverPath(options.serverHome).build();
             printPatches(patchTool.getServer().queryAppliedPatches());
             opfound = true;
-        } 
-        
+        }
+
         // Query the server paths
         if (options.queryServerPaths != null) {
             PatchTool patchTool = builder.serverPath(options.serverHome).build();
@@ -126,21 +126,21 @@ public class Main {
             }
             printLines(managedPaths);
             opfound = true;
-        } 
-        
+        }
+
         // Add to repository
         if (options.addUrl != null) {
             addArchive(builder.build(), options);
             opfound = true;
         }
-        
+
         // Remove from repository
         if (options.removeId != null) {
             PatchTool patchTool = builder.build();
             patchTool.getRepository().removeArchive(PatchId.fromString(options.removeId));
             opfound = true;
         }
-        
+
         // Install to server
         if (options.installId != null) {
             PatchTool patchTool = builder.serverPath(options.serverHome).build();
@@ -148,15 +148,15 @@ public class Main {
             patchTool.install(PatchId.fromString(options.installId), options.force);
             opfound = true;
         }
-        
+
         // Update the server
         if (options.updateName != null) {
             PatchTool patchTool = builder.serverPath(options.serverHome).build();
             patchTool.getServer().cleanUp();
             patchTool.update(options.updateName, options.force);
             opfound = true;
-        } 
-        
+        }
+
         // Uninstall patch from server
         if (options.uninstallId != null) {
             PatchTool patchTool = builder.serverPath(options.serverHome).build();
@@ -164,14 +164,14 @@ public class Main {
             patchTool.uninstall(PatchId.fromString(options.uninstallId));
             opfound = true;
         }
-        
+
         // Print the audit log
         if (options.auditLog) {
             PatchTool patchTool = builder.serverPath(options.serverHome).build();
             printLines(patchTool.getServer().getAuditLog());
             opfound = true;
-        } 
-        
+        }
+
 		// Show help screen
 		if (!opfound) {
             helpScreen(cmdParser);
@@ -179,7 +179,7 @@ public class Main {
 	}
 
     private static void addArchive(PatchTool patchTool, Options options) throws IOException, JAXBException {
-        
+
         PatchId patchId = PatchId.fromURL(options.addUrl);
         PatchMetadataBuilder mdbuilder = new PatchMetadataBuilder().patchId(patchId);
         if (options.metadataUrl != null) {
@@ -192,13 +192,13 @@ public class Main {
             mdbuilder.postCommands(auxmd.getPostCommands());
         }
         PatchMetadata metadata = mdbuilder.build();
-        
+
         if (options.oneoffId != null) {
             IllegalStateAssertion.assertNull(metadata.getOneoffId(), "One-Off patch id already defined: " + metadata);
             PatchId oneoffId = PatchId.fromString(options.oneoffId);
             mdbuilder.oneoffId(oneoffId);
         }
-        
+
         if (options.dependencies != null) {
             IllegalStateAssertion.assertTrue(metadata.getDependencies().isEmpty(), "Dependencies already defined: " + metadata);
             Set<PatchId> dependencies = new LinkedHashSet<>();
@@ -207,17 +207,17 @@ public class Main {
             }
             mdbuilder.dependencies(dependencies);
         }
-        
+
         if (options.roles != null) {
             IllegalStateAssertion.assertTrue(metadata.getRoles().isEmpty(), "Roles already defined: " + metadata);
             mdbuilder.roles(options.roles);
         }
-        
+
         if (options.addCmd != null) {
             IllegalStateAssertion.assertTrue(metadata.getPostCommands().isEmpty(), "Post commands already defined: " + metadata);
             mdbuilder.postCommands(options.addCmd);
         }
-        
+
         DataHandler dataHandler = new DataHandler(new URLDataSource(options.addUrl));
         patchTool.getRepository().addArchive(mdbuilder.build(), dataHandler, options.force);
     }

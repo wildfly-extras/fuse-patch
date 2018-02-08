@@ -30,12 +30,12 @@ public class PatchAdapter {
 
     private PatchMetadataAdapter metadataSpec;
     private String[] recordSpecs;
-    
+
     public static PatchAdapter fromPatch(Patch patch) {
-    	
+
     	if (patch == null)
     		return null;
-    	
+
     	PatchAdapter result = new PatchAdapter();
     	result.metadataSpec = PatchMetadataAdapter.fromPatchMetadata(patch.getMetadata());
     	List<Record> records = patch.getRecords();
@@ -45,7 +45,7 @@ public class PatchAdapter {
     	}
     	return result;
     }
-    
+
     public Patch toPatch() {
         PatchMetadata metadata = metadataSpec.toPatchMetadata();
     	List<Record> records = new ArrayList<>();
@@ -54,7 +54,7 @@ public class PatchAdapter {
     	}
     	return Patch.create(metadata, records);
     }
-    
+
 	public PatchMetadataAdapter getMetadata() {
         return metadataSpec;
     }

@@ -31,7 +31,7 @@ public abstract class DefaultAetherFactory implements AetherFactory {
     private RepositorySystem system;
     private RemoteRepository repository;
     private LocalRepository localRepo;
-    
+
     @Override
     public RepositorySystem getRepositorySystem() {
         if (system == null) {

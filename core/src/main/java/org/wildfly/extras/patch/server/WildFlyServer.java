@@ -95,7 +95,7 @@ public final class WildFlyServer extends AbstractServer {
         super.updateServerFiles(smartPatch, managedPaths);
 
         Path homePath = getServerHome();
-        
+
         // Ensure Fuse layer exists
         Path modulesPath = homePath.resolve("modules");
         if (modulesPath.toFile().isDirectory()) {

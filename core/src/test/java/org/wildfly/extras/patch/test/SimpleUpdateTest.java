@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -74,10 +74,10 @@ public class SimpleUpdateTest {
         URL repoURL = repoPath.toFile().toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[0]).build();
         Server server = patchTool.getServer();
-        
+
         List<PatchId> patches = server.queryAppliedPatches();
         Assert.assertTrue("Patch set empty", patches.isEmpty());
-        
+
         // Cannot install non-existing package
         try {
             patchTool.install(PatchId.fromString("xxx-1.0.0"), false);
@@ -86,14 +86,14 @@ public class SimpleUpdateTest {
             String message = ex.getMessage();
             Assert.assertTrue(message, message.contains("does not contain package: xxx-1.0.0"));
         }
-        
+
         // Verify smart patch to install foo-1.0.0
         Patch setA = ParserAccess.getPatch(Archives.getZipUrlFoo100());
         PatchId idA = setA.getPatchId();
         SmartPatch smartPatch = SmartPatch.forInstall(setA, new DataHandler(new URLDataSource(Archives.getZipUrlFoo100())));
         Assert.assertEquals(idA, smartPatch.getPatchId());
         Assert.assertEquals(setA.getRecords(), smartPatch.getRecords());
-        
+
         // Install foo-1.0.0
         Patch curSet = patchTool.install(idA, false);
         Assert.assertEquals(idA, curSet.getPatchId());
@@ -110,7 +110,7 @@ public class SimpleUpdateTest {
         Assert.assertEquals(ManagedPath.fromString("config/remove-me.properties [foo-1.0.0]"), mpaths.get(3));
         Assert.assertEquals(ManagedPath.fromString("lib [foo-1.0.0]"), mpaths.get(4));
         Assert.assertEquals(ManagedPath.fromString("lib/foo-1.0.0.jar [foo-1.0.0]"), mpaths.get(5));
-        
+
         // Verify smart patch to update to foo-1.1.0
         Patch setB = ParserAccess.getPatch(Archives.getZipUrlFoo110());
         PatchId idB = setB.getPatchId();
@@ -129,7 +129,7 @@ public class SimpleUpdateTest {
         Assert.assertEquals(setB.getRecords(), curSet.getRecords());
         Archives.assertPathsEqual(setB.getRecords(), server.getPatch(idB).getRecords());
         Archives.assertPathsEqual(setB, serverPaths[0]);
-        
+
         // Verify managed paths for foo-1.1.0
         mpaths = server.queryManagedPaths(null);
         Assert.assertEquals(5, mpaths.size());
@@ -138,19 +138,19 @@ public class SimpleUpdateTest {
         Assert.assertEquals(ManagedPath.fromString("config/propsB.properties [foo-1.0.0]"), mpaths.get(2));
         Assert.assertEquals(ManagedPath.fromString("lib [foo-1.1.0]"), mpaths.get(3));
         Assert.assertEquals(ManagedPath.fromString("lib/foo-1.1.0.jar [foo-1.1.0]"), mpaths.get(4));
-        
+
         // Verify selected managed paths for foo-1.1.0
         mpaths = server.queryManagedPaths("config" + File.separator + "props");
         Assert.assertEquals(2, mpaths.size());
         Assert.assertEquals(ManagedPath.fromString("config/propsA.properties [foo-1.1.0]"), mpaths.get(0));
         Assert.assertEquals(ManagedPath.fromString("config/propsB.properties [foo-1.0.0]"), mpaths.get(1));
-        
+
         // Query applied packages
         patches = server.queryAppliedPatches();
         Assert.assertEquals(1, patches.size());
         Assert.assertEquals(idB, patches.get(0));
         Assert.assertEquals(setB, server.getPatch("foo"));
-        
+
         // Cannot uninstall non-existing package
         try {
             patchTool.uninstall(PatchId.fromString("xxx-1.0.0"));
@@ -159,7 +159,7 @@ public class SimpleUpdateTest {
             String message = ex.getMessage();
             Assert.assertTrue(message, message.contains("not installed: xxx-1.0.0"));
         }
-        
+
         // Cannot uninstall old package
         try {
             patchTool.uninstall(setA.getPatchId());
@@ -169,7 +169,7 @@ public class SimpleUpdateTest {
             Assert.assertTrue(message, message.contains("" + setB.getPatchId()));
             Assert.assertTrue(message, message.contains("cannot uninstall: " + setA.getPatchId()));
         }
-        
+
         // Verify smart patch to downgrade to foo-1.0.0
         smartSet = Patch.smartDelta(setB, setA);
         smartPatch = SmartPatch.forInstall(smartSet, new DataHandler(new URLDataSource(Archives.getZipUrlFoo100())));
@@ -178,7 +178,7 @@ public class SimpleUpdateTest {
         Archives.assertActionPathEquals("ADD config/remove-me.properties", smartPatch.getRecords().get(1));
         Archives.assertActionPathEquals("ADD lib/foo-1.0.0.jar", smartPatch.getRecords().get(2));
         Archives.assertActionPathEquals("DEL lib/foo-1.1.0.jar", smartPatch.getRecords().get(3));
-        
+
         // Downgrade to foo-1.0.0
         curSet = patchTool.install(idA, false);
         Assert.assertEquals(idA, curSet.getPatchId());
@@ -186,13 +186,13 @@ public class SimpleUpdateTest {
         Assert.assertEquals(setA.getRecords(), curSet.getRecords());
         Archives.assertPathsEqual(setA.getRecords(), server.getPatch(idA).getRecords());
         Archives.assertPathsEqual(setA, serverPaths[0]);
-        
+
         // Query applied packages
         patches = server.queryAppliedPatches();
         Assert.assertEquals(1, patches.size());
         Assert.assertEquals(idA, patches.get(0));
         Assert.assertEquals(setA, server.getPatch("foo"));
-        
+
         // Verify managed paths for foo-1.0.0
         mpaths = server.queryManagedPaths(null);
         Assert.assertEquals(6, mpaths.size());
@@ -202,7 +202,7 @@ public class SimpleUpdateTest {
         Assert.assertEquals(ManagedPath.fromString("config/remove-me.properties [foo-1.0.0]"), mpaths.get(3));
         Assert.assertEquals(ManagedPath.fromString("lib [foo-1.0.0]"), mpaths.get(4));
         Assert.assertEquals(ManagedPath.fromString("lib/foo-1.0.0.jar [foo-1.0.0]"), mpaths.get(5));
-        
+
         // Uninstall the package
         curSet = patchTool.uninstall(idA);
         Assert.assertEquals(idA, curSet.getPatchId());
@@ -220,21 +220,21 @@ public class SimpleUpdateTest {
         patches = server.queryAppliedPatches();
         Assert.assertEquals(0, patches.size());
     }
-    
+
     @Test
     public void testAddingFileThatExists() throws Exception {
-        
+
         URL repoURL = repoPath.toFile().toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[1]).build();
         Server server = patchTool.getServer();
-        
+
         Path targetPath = serverPaths[1].resolve("config/propsA.properties");
-        
+
         // Copy a file to the server
         targetPath.getParent().toFile().mkdirs();
         Files.copy(Paths.get("src/test/resources/propsA2.properties"), targetPath);
         assertFileContent("some.prop = A2", targetPath);
-        
+
         // Install foo-1.0.0
         PatchId idA = PatchId.fromURL(Archives.getZipUrlFoo100());
         try {
@@ -243,15 +243,15 @@ public class SimpleUpdateTest {
         } catch (PatchException ex) {
             Assert.assertTrue(ex.getMessage().contains("existing file config" + File.separator  + "propsA.properties"));
         }
-        
+
         // Force the the override
         patchTool.install(idA, true);
         assertFileContent("some.prop = A1", targetPath);
-        
+
         // Delete the workspace
         IOUtils.rmdirs(serverPaths[1].resolve("fusepatch"));
         Assert.assertTrue("No patches applied", server.queryAppliedPatches().isEmpty());
-        
+
         // Verify that the files can be added if they have the same checksum
         patchTool.install(idA, false);
         Assert.assertEquals(1, server.queryAppliedPatches().size());
@@ -259,19 +259,19 @@ public class SimpleUpdateTest {
 
     @Test
     public void testOverrideModifiedFile() throws Exception {
-        
+
         URL repoURL = repoPath.toFile().toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[2]).build();
-        
+
         Path targetPath = serverPaths[2].resolve("config/propsA.properties");
-        
+
         // Install foo-1.0.0
         PatchId idA = PatchId.fromURL(Archives.getZipUrlFoo100());
         patchTool.install(idA, false);
         assertFileContent("some.prop = A1", targetPath);
-        
+
         Files.copy(Paths.get("src/test/resources/propsA2.properties"), targetPath, REPLACE_EXISTING);
-        
+
         // Install foo-1.1.0
         PatchId idB = PatchId.fromURL(Archives.getZipUrlFoo110());
         try {
@@ -280,7 +280,7 @@ public class SimpleUpdateTest {
         } catch (PatchException ex) {
             Assert.assertTrue(ex.getMessage().contains("already modified file config" + File.separator + "propsA.properties"));
         }
-        
+
         // force the the override
         patchTool.install(idB, true);
         assertFileContent("some.prop = A2", targetPath);
@@ -288,19 +288,19 @@ public class SimpleUpdateTest {
 
     @Test
     public void testRemoveNonExistingFile() throws Exception {
-        
+
         URL repoURL = repoPath.toFile().toURI().toURL();
         PatchTool patchTool = new PatchToolBuilder().repositoryURL(repoURL).serverPath(serverPaths[3]).build();
-        
+
         Path targetPath = serverPaths[3].resolve("config/remove-me.properties");
-        
+
         // Install foo-1.0.0
         PatchId idA = PatchId.fromURL(Archives.getZipUrlFoo100());
         patchTool.install(idA, false);
         assertFileContent("some.prop = A1", targetPath);
-        
+
         targetPath.toFile().delete();
-        
+
         // Install foo-1.1.0
         PatchId idB = PatchId.fromURL(Archives.getZipUrlFoo110());
         patchTool.install(idB, false);
