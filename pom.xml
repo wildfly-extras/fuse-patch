@@ -32,6 +32,9 @@
 
     <!-- Properties -->
     <properties>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
         <!-- WildFly version -->
         <version.wildfly>11.0.0.Final</version.wildfly>
 
