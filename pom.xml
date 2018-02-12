@@ -318,6 +318,7 @@
                 </executions>
                 <configuration>
                     <excludes>
+                        <exclude>fusepatch.log</exclude>
                         <exclude>velocity.log</exclude>
                     </excludes>
                 </configuration>
