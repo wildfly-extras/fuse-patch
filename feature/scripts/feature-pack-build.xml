@@ -32,7 +32,7 @@
     </config>
 
     <copy-artifacts>
-        <copy-artifact artifact="org.wildfly.extras.patch:fuse-patch-distro-wildfly" to-location="fusepatch/repository/"/>
+        <copy-artifact artifact="org.wildfly.extras.patch:fuse-patch-distro-wildfly:zip" to-location="fusepatch/repository/"/>
     </copy-artifacts>
 
     <file-permissions>

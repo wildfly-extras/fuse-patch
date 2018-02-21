@@ -36,7 +36,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- WildFly version -->
-        <version.wildfly>11.0.0.Final</version.wildfly>
+        <version.wildfly>12.0.0.Final</version.wildfly>
 
         <version.args4j>2.0.31</version.args4j>
         <version.apache.maven>3.3.3</version.apache.maven>
@@ -48,13 +48,14 @@
         <version.junit>4.11</version.junit>
         <version.log4j>1.2.17</version.log4j>
         <version.slf4j>1.6.6</version.slf4j>
-        <version.wildfly.arquillian>2.0.0.Final</version.wildfly.arquillian>
+        <version.wildfly.arquillian>2.1.0.Final</version.wildfly.arquillian>
 
         <!-- Plugin versions -->
         <version-editorconfig-maven-plugin>0.0.4</version-editorconfig-maven-plugin>
         <version-exec-maven-plugin>1.4.0</version-exec-maven-plugin>
         <version-license-maven-plugin>1.8</version-license-maven-plugin>
         <version-groovy-maven-plugin>2.0</version-groovy-maven-plugin>
+        <version-maven-antrun-plugin>1.7</version-maven-antrun-plugin>
         <version-maven-assembly-plugin>3.0.0</version-maven-assembly-plugin>
         <version-maven-compiler-plugin>3.1</version-maven-compiler-plugin>
         <version-maven-jar-plugin>2.6</version-maven-jar-plugin>
@@ -62,8 +63,8 @@
         <version-maven-release-plugin>2.5</version-maven-release-plugin>
         <version-maven-source-plugin>2.3</version-maven-source-plugin>
         <version-maven-surefire-plugin>2.18.1</version-maven-surefire-plugin>
-        <version-wildfly-build-tools>1.1.6.Final</version-wildfly-build-tools>
-        <version-wildfly-maven-plugin>1.2.0.Final</version-wildfly-maven-plugin>
+        <version-wildfly-build-tools>1.2.9.Final</version-wildfly-build-tools>
+        <version-wildfly-maven-plugin>1.2.1.Final</version-wildfly-maven-plugin>
     </properties>
 
     <!-- Source Control -->
@@ -180,6 +181,11 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>${version-maven-antrun-plugin}</version>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>

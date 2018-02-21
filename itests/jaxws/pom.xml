@@ -33,6 +33,7 @@
     <!-- Properties -->
     <properties>
         <jboss.home>${project.build.directory}/wildfly-${version.wildfly}</jboss.home>
+        <server.config>standalone.xml</server.config>
     </properties>
 
     <dependencies>
@@ -121,6 +122,38 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <!-- Add additional security domains -->
+                                <replace file="${jboss.home}/standalone/configuration/${server.config}">
+                                    <replacefilter>
+                                        <replacetoken><![CDATA[<security-domain name="other"]]></replacetoken>
+                                        <replacevalue><![CDATA[
+                                        <security-domain name="fuse-patch-policy" cache-type="default">
+                                            <authentication>
+                                                <login-module code="UsersRoles" flag="required">
+                                                    <module-option name="usersProperties" value="${jboss.server.config.dir}/application-users.properties"/>
+                                                    <module-option name="rolesProperties" value="${jboss.server.config.dir}/application-roles.properties"/>
+                                                </login-module>
+                                            </authentication>
+                                        </security-domain>
+                                        <security-domain name="other"]]></replacevalue>
+                                    </replacefilter>
+                                </replace>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.wildfly.plugins</groupId>
                 <artifactId>wildfly-maven-plugin</artifactId>
                 <configuration>
@@ -135,7 +168,7 @@
                         <phase>process-test-resources</phase>
                         <configuration>
                             <jbossHome>${jboss.home}</jbossHome>
-                            <serverConfig>standalone-extra.xml</serverConfig>
+                            <serverConfig>${server.config}</serverConfig>
                             <javaOpts>
                                 <option>-Dfusepatch.repository=file://${jboss.home}/fusepatch/repository</option>
                                 <option>-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=n</option>
