@@ -63,7 +63,7 @@
         <version-maven-release-plugin>2.5</version-maven-release-plugin>
         <version-maven-source-plugin>2.3</version-maven-source-plugin>
         <version-maven-surefire-plugin>2.18.1</version-maven-surefire-plugin>
-        <version-wildfly-build-tools>1.2.9.Final</version-wildfly-build-tools>
+        <version-wildfly-build-tools>1.2.10.Final</version-wildfly-build-tools>
         <version-wildfly-maven-plugin>1.2.1.Final</version-wildfly-maven-plugin>
     </properties>
 
