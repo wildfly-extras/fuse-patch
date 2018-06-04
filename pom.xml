@@ -24,7 +24,7 @@
     <artifactId>fuse-patch</artifactId>
     <packaging>pom</packaging>
 
-    <version>5.0.0</version>
+    <version>5.0.1-SNAPSHOT</version>
 
     <name>Fuse Patch</name>
     <description>Fuse Patching Tool</description>
@@ -72,7 +72,7 @@
         <connection>scm:git:git@github.com:wildfly-extras/fuse-patch.git</connection>
         <developerConnection>scm:git:git@github.com:wildfly-extras/fuse-patch.git</developerConnection>
         <url>http://github.com/wildfly-extras/fuse-patch</url>
-        <tag>5.0.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <!-- Modules -->
