@@ -24,7 +24,7 @@
     <artifactId>fuse-patch</artifactId>
     <packaging>pom</packaging>
 
-    <version>4.1.0-SNAPSHOT</version>
+    <version>5.0.0-SNAPSHOT</version>
 
     <name>Fuse Patch</name>
     <description>Fuse Patching Tool</description>
@@ -36,7 +36,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- WildFly version -->
-        <version.wildfly>12.0.0.Final</version.wildfly>
+        <version.wildfly>13.0.0.Final</version.wildfly>
 
         <version.args4j>2.0.31</version.args4j>
         <version.apache.maven>3.3.3</version.apache.maven>
@@ -63,7 +63,7 @@
         <version-maven-release-plugin>2.5</version-maven-release-plugin>
         <version-maven-source-plugin>2.3</version-maven-source-plugin>
         <version-maven-surefire-plugin>2.18.1</version-maven-surefire-plugin>
-        <version-wildfly-build-tools>1.2.9.Final</version-wildfly-build-tools>
+        <version-wildfly-build-tools>1.2.10.Final</version-wildfly-build-tools>
         <version-wildfly-maven-plugin>1.2.1.Final</version-wildfly-maven-plugin>
     </properties>
 
